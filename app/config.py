@@ -1,3 +1,4 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -13,6 +14,17 @@ class Settings(BaseSettings):
     kma_api_key: str = ""
 
     cors_origins: str = "http://localhost:3000"
+
+    @field_validator("database_url")
+    @classmethod
+    def _force_asyncpg(cls, v: str) -> str:
+        # fly Postgres attach injects `postgres://...`; SQLAlchemy 2.x needs an
+        # explicit driver, and the app uses asyncpg.
+        if v.startswith("postgres://"):
+            return "postgresql+asyncpg://" + v[len("postgres://") :]
+        if v.startswith("postgresql://") and "+asyncpg" not in v.split("://", 1)[0]:
+            return "postgresql+asyncpg://" + v[len("postgresql://") :]
+        return v
 
     @property
     def cors_origins_list(self) -> list[str]:
