@@ -1,0 +1,46 @@
+# Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual env (uv 기본 위치)
+.venv/
+venv/
+env/
+
+# uv 캐시
+# (uv.lock, .python-version 은 커밋)
+
+# Test / lint cache
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Packaging
+*.egg-info/
+build/
+dist/
+*.egg
+
+# Env
+.env
+.env.*
+!.env.example
+
+# 학습 모델 산출물 (git에 두기엔 큼)
+*.pkl
+*.joblib
+*.h5
+*.pt
+*.onnx
+models/
+
+# 대용량 시드 데이터 (개별 다운로드)
+seed/smartfarm_top.csv
+seed/kamis_history.csv
+
+# Alembic / SQLite 임시
+*.db-journal
+*.sqlite3
