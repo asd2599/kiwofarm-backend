@@ -14,10 +14,11 @@ _cache: dict[tuple, tuple[str, str]] = {}
 
 SYSTEM_PROMPT = (
     "너는 한국 농산물 도매 출하 시점 조언자다. "
-    "주어진 KAMIS 도매가 지표만 근거로 판단하고, 새로운 가격을 예측하지 않는다. "
+    "주어진 KAMIS 도매가 지표와 예측치만 근거로 판단하고, 새로운 수치를 임의로 만들지 않는다. "
     "한국어로 2~3문장, 단정적이고 간결하게 쓰되 느낌표는 쓰지 않는다. "
-    "흐름(현재가·추세·작년/평년 대비)을 한 문장으로 해석한 뒤, "
+    "현재가·최근 추세·작년/평년 대비와 함께 '향후 예측'을 핵심 근거로 해석한 뒤, "
     "'지금 출하 권장' 또는 '출하 대기 권장' 중 하나를 분명히 제시한다. "
+    "예측상 추가 하락이면 지금 출하, 추가 상승이면 대기 쪽으로 무게를 둔다. "
     "마지막에 'KAMIS 도매가 기반 참고 수치로 실제 시장 상황에 따라 달라질 수 있습니다.'를 덧붙인다."
 )
 
@@ -38,6 +39,9 @@ def _fmt_features(f: ShippingFeatures) -> str:
         lines.append(f"최근 변동성: {f.volatility_pct:.1f}%")
     if f.period_high is not None and f.period_low is not None:
         lines.append(f"기간 최고/최저: {f.period_high:,}/{f.period_low:,}원")
+    if f.forecast_price is not None:
+        pct = f" ({f.forecast_pct:+.1f}%)" if f.forecast_pct is not None else ""
+        lines.append(f"{f.forecast_days}일 후 예측가: {f.forecast_price:,}원{pct}")
     return "\n".join(lines)
 
 
@@ -47,12 +51,17 @@ def _rule_based(f: ShippingFeatures) -> str:
     price = f"{f.current_price:,}원/{f.unit}" if f.current_price is not None else "현재가 미상"
     disclaimer = "KAMIS 도매가 기반 참고 수치로 실제 시장 상황에 따라 달라질 수 있습니다."
 
-    if f.direction == "상승":
-        rec = "추가 상승 여력이 있어 단기 보관 후 출하를 고려할 수 있습니다. 출하 대기 권장."
+    fp = f.forecast_pct
+    if fp is not None and fp <= -3:
+        rec = f"{f.forecast_days}일 후 {fp:+.1f}% 하락이 예측돼 추가 하락 전 출하가 유리합니다. 지금 출하 권장."
+    elif fp is not None and fp >= 3:
+        rec = f"{f.forecast_days}일 후 {fp:+.1f}% 상승이 예측돼 단기 보관이 유리할 수 있습니다. 출하 대기 권장."
+    elif f.direction == "상승":
+        rec = "최근 상승세라 단기 보관 후 출하를 고려할 수 있습니다. 출하 대기 권장."
     elif f.direction == "하락":
-        rec = "하락세가 이어지고 있어 가격 추가 하락 전 빠른 출하가 유리합니다. 지금 출하 권장."
+        rec = "하락세가 이어지고 있어 추가 하락 전 빠른 출하가 유리합니다. 지금 출하 권장."
     else:
-        rec = "가격이 안정적이라 보관 비용을 고려하면 무리한 대기보다 현 시점 출하가 무난합니다. 지금 출하 권장."
+        rec = "가격이 안정적이라 보관 비용을 고려하면 현 시점 출하가 무난합니다. 지금 출하 권장."
 
     ctx = []
     if f.vs_year_ago_pct is not None:
@@ -65,7 +74,14 @@ def _rule_based(f: ShippingFeatures) -> str:
 
 
 def _cache_key(f: ShippingFeatures) -> tuple:
-    return (f.crop_name, f.current_price, f.direction, f.vs_year_ago_pct, f.vs_normal_pct)
+    return (
+        f.crop_name,
+        f.current_price,
+        f.direction,
+        f.vs_year_ago_pct,
+        f.vs_normal_pct,
+        f.forecast_pct,
+    )
 
 
 async def generate_shipping_advice(f: ShippingFeatures) -> tuple[str, str]:

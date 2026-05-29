@@ -10,7 +10,10 @@ import statistics
 from dataclasses import asdict, dataclass
 from datetime import date, timedelta
 
+from app.core.shipping.forecast import forecast_prices
 from app.data import kamis
+
+_FORECAST_DAYS = 7
 
 
 @dataclass
@@ -28,6 +31,9 @@ class ShippingFeatures:
     period_low: int | None           # ② 기간 최저
     direction: str                   # 상승 / 하락 / 보합
     samples: int                     # ③ 일별 표본 수
+    forecast_price: int | None       # 예측: N일 후 도매가
+    forecast_pct: float | None       # 예측: 최근 실측 대비 변화율
+    forecast_days: int               # 예측 기간(일)
 
     def as_metrics(self) -> dict:
         return asdict(self)
@@ -71,11 +77,12 @@ async def build_shipping_features(
         category_code=category_code,
         item_code=item_code,
         kind_code=kind_code,
-        start=today - timedelta(days=30),
+        start=today - timedelta(days=90),
         end=today,
     )
     by_county = kamis.group_by_county(points)
-    avg_series = [p.price for p in (by_county.get("평균") or [])]
+    avg_points = by_county.get("평균") or []
+    avg_series = [p.price for p in avg_points[-30:]]  # 변동성은 최근 30거래일
 
     current = recent.price if recent else (trend.latest if trend else None)
     prev = recent.prev_price if recent else None
@@ -95,6 +102,16 @@ async def build_shipping_features(
         if mean:
             volatility = round(statistics.pstdev(avg_series) / mean * 100, 1)
 
+    # 예측: ③ '평균' 일별 시계열 → Prophet (forecast_prices 내부 캐시 공유)
+    forecast_price = None
+    forecast_pct = None
+    fc_series = [(p.obs_date, p.price) for p in avg_points]
+    if len(fc_series) >= 3:
+        fc, _ = forecast_prices(fc_series, _FORECAST_DAYS)
+        if fc:
+            forecast_price = fc[-1].yhat
+            forecast_pct = _pct(forecast_price, fc_series[-1][1])
+
     return ShippingFeatures(
         crop_name=_display_name(item_name, kind_name) or (recent.item_name if recent else item_code),
         unit=unit,
@@ -109,4 +126,7 @@ async def build_shipping_features(
         period_low=trend.month_low if trend else (min(avg_series) if avg_series else None),
         direction=_direction(trend_pct, vs_prev),
         samples=len(avg_series),
+        forecast_price=forecast_price,
+        forecast_pct=forecast_pct,
+        forecast_days=_FORECAST_DAYS,
     )
