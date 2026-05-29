@@ -15,6 +15,7 @@ class OnboardingInput(BaseModel):
 
     mode: Mode
     region: str
+    province: str | None = None
     area: float = Field(gt=0)
     areaUnit: AreaUnit
     laborCount: int = Field(ge=1)
