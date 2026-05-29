@@ -1,0 +1,2322 @@
+[
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "111",
+    "itemName": "쌀",
+    "kindCode": "01",
+    "kindName": "20kg",
+    "label": "쌀 — 20kg",
+    "searchText": "20kg 쌀 식량작물"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "111",
+    "itemName": "쌀",
+    "kindCode": "02",
+    "kindName": "백미",
+    "label": "쌀 — 백미",
+    "searchText": "식량작물 쌀 백미"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "111",
+    "itemName": "쌀",
+    "kindCode": "03",
+    "kindName": "현미",
+    "label": "쌀 — 현미",
+    "searchText": "쌀 식량작물 현미"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "111",
+    "itemName": "쌀",
+    "kindCode": "05",
+    "kindName": "20kg(햅쌀)",
+    "label": "쌀 — 20kg(햅쌀)",
+    "searchText": "20kg(햅쌀) 쌀 식량작물"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "111",
+    "itemName": "쌀",
+    "kindCode": "06",
+    "kindName": "오대벼",
+    "label": "쌀 — 오대벼",
+    "searchText": "쌀 식량작물 오대벼"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "111",
+    "itemName": "쌀",
+    "kindCode": "07",
+    "kindName": "고시히카리",
+    "label": "쌀 — 고시히카리",
+    "searchText": "쌀 식량작물 고시히카리"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "111",
+    "itemName": "쌀",
+    "kindCode": "08",
+    "kindName": "추청",
+    "label": "쌀 — 추청",
+    "searchText": "추청 쌀 식량작물"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "111",
+    "itemName": "쌀",
+    "kindCode": "09",
+    "kindName": "삼광",
+    "label": "쌀 — 삼광",
+    "searchText": "쌀 식량작물 삼광"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "111",
+    "itemName": "쌀",
+    "kindCode": "10",
+    "kindName": "10kg",
+    "label": "쌀 — 10kg",
+    "searchText": "10kg 쌀 식량작물"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "111",
+    "itemName": "쌀",
+    "kindCode": "11",
+    "kindName": "10kg(햅쌀)",
+    "label": "쌀 — 10kg(햅쌀)",
+    "searchText": "10kg(햅쌀) 쌀 식량작물"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "112",
+    "itemName": "찹쌀",
+    "kindCode": "01",
+    "kindName": "일반계",
+    "label": "찹쌀 — 일반계",
+    "searchText": "식량작물 일반계 찹쌀"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "113",
+    "itemName": "혼합곡",
+    "kindCode": "00",
+    "kindName": "혼합곡",
+    "label": "혼합곡",
+    "searchText": "혼합곡 식량작물"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "114",
+    "itemName": "기장",
+    "kindCode": "01",
+    "kindName": "기장",
+    "label": "기장",
+    "searchText": "기장 식량작물"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "141",
+    "itemName": "콩",
+    "kindCode": "01",
+    "kindName": "흰 콩(국산)",
+    "label": "콩 — 흰 콩(국산)",
+    "searchText": "콩 식량작물 흰 콩(국산)"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "141",
+    "itemName": "콩",
+    "kindCode": "02",
+    "kindName": "콩나물콩",
+    "label": "콩 — 콩나물콩",
+    "searchText": "콩나물콩 콩 식량작물"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "141",
+    "itemName": "콩",
+    "kindCode": "03",
+    "kindName": "흰 콩(수입)",
+    "label": "콩 — 흰 콩(수입)",
+    "searchText": "콩 흰 콩(수입) 식량작물"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "142",
+    "itemName": "팥",
+    "kindCode": "00",
+    "kindName": "붉은 팥(국산)",
+    "label": "팥 — 붉은 팥(국산)",
+    "searchText": "붉은 팥(국산) 팥 식량작물"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "142",
+    "itemName": "팥",
+    "kindCode": "01",
+    "kindName": "붉은 팥(수입)",
+    "label": "팥 — 붉은 팥(수입)",
+    "searchText": "붉은 팥(수입) 팥 식량작물"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "143",
+    "itemName": "녹두",
+    "kindCode": "00",
+    "kindName": "국산",
+    "label": "녹두 — 국산",
+    "searchText": "식량작물 녹두 국산"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "143",
+    "itemName": "녹두",
+    "kindCode": "01",
+    "kindName": "수입",
+    "label": "녹두 — 수입",
+    "searchText": "수입 녹두 식량작물"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "144",
+    "itemName": "메밀",
+    "kindCode": "01",
+    "kindName": "메밀(수입)",
+    "label": "메밀 — 메밀(수입)",
+    "searchText": "식량작물 메밀(수입) 메밀"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "151",
+    "itemName": "고구마",
+    "kindCode": "00",
+    "kindName": "밤",
+    "label": "고구마 — 밤",
+    "searchText": "식량작물 밤 고구마"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "152",
+    "itemName": "감자",
+    "kindCode": "00",
+    "kindName": "감자",
+    "label": "감자",
+    "searchText": "감자 식량작물"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "152",
+    "itemName": "감자",
+    "kindCode": "01",
+    "kindName": "수미(노지)",
+    "label": "감자 — 수미(노지)",
+    "searchText": "수미(노지) 감자 식량작물"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "152",
+    "itemName": "감자",
+    "kindCode": "02",
+    "kindName": "대지마",
+    "label": "감자 — 대지마",
+    "searchText": "대지마 감자 식량작물"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "152",
+    "itemName": "감자",
+    "kindCode": "03",
+    "kindName": "노지",
+    "label": "감자 — 노지",
+    "searchText": "노지 감자 식량작물"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "152",
+    "itemName": "감자",
+    "kindCode": "04",
+    "kindName": "수미(시설)",
+    "label": "감자 — 수미(시설)",
+    "searchText": "감자 수미(시설) 식량작물"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "152",
+    "itemName": "감자",
+    "kindCode": "05",
+    "kindName": "기타(시설)",
+    "label": "감자 — 기타(시설)",
+    "searchText": "기타(시설) 감자 식량작물"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "152",
+    "itemName": "감자",
+    "kindCode": "06",
+    "kindName": "기타(노지)",
+    "label": "감자 — 기타(노지)",
+    "searchText": "기타(노지) 감자 식량작물"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "161",
+    "itemName": "귀리",
+    "kindCode": "01",
+    "kindName": "귀리",
+    "label": "귀리",
+    "searchText": "식량작물 귀리"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "162",
+    "itemName": "보리",
+    "kindCode": "01",
+    "kindName": "보리",
+    "label": "보리",
+    "searchText": "보리 식량작물"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "163",
+    "itemName": "수수",
+    "kindCode": "01",
+    "kindName": "수수",
+    "label": "수수",
+    "searchText": "수수 식량작물"
+  },
+  {
+    "groupCode": "100",
+    "groupName": "식량작물",
+    "itemCode": "164",
+    "itemName": "율무",
+    "kindCode": "01",
+    "kindName": "율무",
+    "label": "율무",
+    "searchText": "식량작물 율무"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "211",
+    "itemName": "배추",
+    "kindCode": "01",
+    "kindName": "봄",
+    "label": "배추 — 봄",
+    "searchText": "배추 채소류 봄"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "211",
+    "itemName": "배추",
+    "kindCode": "02",
+    "kindName": "여름(고랭지)",
+    "label": "배추 — 여름(고랭지)",
+    "searchText": "배추 채소류 여름(고랭지)"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "211",
+    "itemName": "배추",
+    "kindCode": "03",
+    "kindName": "가을",
+    "label": "배추 — 가을",
+    "searchText": "가을 배추 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "211",
+    "itemName": "배추",
+    "kindCode": "06",
+    "kindName": "월동",
+    "label": "배추 — 월동",
+    "searchText": "배추 채소류 월동"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "212",
+    "itemName": "양배추",
+    "kindCode": "00",
+    "kindName": "양배추",
+    "label": "양배추",
+    "searchText": "채소류 양배추"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "213",
+    "itemName": "시금치",
+    "kindCode": "00",
+    "kindName": "시금치",
+    "label": "시금치",
+    "searchText": "채소류 시금치"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "214",
+    "itemName": "상추",
+    "kindCode": "01",
+    "kindName": "적",
+    "label": "상추 — 적",
+    "searchText": "상추 채소류 적"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "214",
+    "itemName": "상추",
+    "kindCode": "02",
+    "kindName": "청",
+    "label": "상추 — 청",
+    "searchText": "청 상추 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "215",
+    "itemName": "얼갈이배추",
+    "kindCode": "00",
+    "kindName": "얼갈이배추",
+    "label": "얼갈이배추",
+    "searchText": "얼갈이배추 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "216",
+    "itemName": "갓",
+    "kindCode": "00",
+    "kindName": "갓",
+    "label": "갓",
+    "searchText": "갓 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "217",
+    "itemName": "연근",
+    "kindCode": "01",
+    "kindName": "연근",
+    "label": "연근",
+    "searchText": "채소류 연근"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "218",
+    "itemName": "우엉",
+    "kindCode": "01",
+    "kindName": "우엉",
+    "label": "우엉",
+    "searchText": "우엉 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "221",
+    "itemName": "수박",
+    "kindCode": "00",
+    "kindName": "수박",
+    "label": "수박",
+    "searchText": "수박 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "222",
+    "itemName": "참외",
+    "kindCode": "00",
+    "kindName": "참외",
+    "label": "참외",
+    "searchText": "참외 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "223",
+    "itemName": "오이",
+    "kindCode": "01",
+    "kindName": "가시계통",
+    "label": "오이 — 가시계통",
+    "searchText": "가시계통 오이 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "223",
+    "itemName": "오이",
+    "kindCode": "02",
+    "kindName": "다다기계통",
+    "label": "오이 — 다다기계통",
+    "searchText": "오이 다다기계통 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "223",
+    "itemName": "오이",
+    "kindCode": "03",
+    "kindName": "취청",
+    "label": "오이 — 취청",
+    "searchText": "오이 채소류 취청"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "224",
+    "itemName": "호박",
+    "kindCode": "01",
+    "kindName": "애호박",
+    "label": "호박 — 애호박",
+    "searchText": "애호박 채소류 호박"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "224",
+    "itemName": "호박",
+    "kindCode": "02",
+    "kindName": "쥬키니",
+    "label": "호박 — 쥬키니",
+    "searchText": "쥬키니 채소류 호박"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "224",
+    "itemName": "호박",
+    "kindCode": "03",
+    "kindName": "단호박",
+    "label": "호박 — 단호박",
+    "searchText": "단호박 채소류 호박"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "225",
+    "itemName": "토마토",
+    "kindCode": "00",
+    "kindName": "토마토",
+    "label": "토마토",
+    "searchText": "토마토 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "226",
+    "itemName": "딸기",
+    "kindCode": "00",
+    "kindName": "딸기",
+    "label": "딸기",
+    "searchText": "딸기 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "231",
+    "itemName": "무",
+    "kindCode": "01",
+    "kindName": "봄",
+    "label": "무 — 봄",
+    "searchText": "봄 채소류 무"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "231",
+    "itemName": "무",
+    "kindCode": "02",
+    "kindName": "고랭지",
+    "label": "무 — 고랭지",
+    "searchText": "채소류 고랭지 무"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "231",
+    "itemName": "무",
+    "kindCode": "03",
+    "kindName": "가을",
+    "label": "무 — 가을",
+    "searchText": "가을 채소류 무"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "231",
+    "itemName": "무",
+    "kindCode": "06",
+    "kindName": "월동",
+    "label": "무 — 월동",
+    "searchText": "채소류 무 월동"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "232",
+    "itemName": "당근",
+    "kindCode": "00",
+    "kindName": "당근",
+    "label": "당근",
+    "searchText": "당근 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "232",
+    "itemName": "당근",
+    "kindCode": "01",
+    "kindName": "무세척",
+    "label": "당근 — 무세척",
+    "searchText": "무세척 당근 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "232",
+    "itemName": "당근",
+    "kindCode": "02",
+    "kindName": "세척",
+    "label": "당근 — 세척",
+    "searchText": "세척 당근 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "232",
+    "itemName": "당근",
+    "kindCode": "10",
+    "kindName": "세척(수입)",
+    "label": "당근 — 세척(수입)",
+    "searchText": "세척(수입) 당근 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "233",
+    "itemName": "열무",
+    "kindCode": "00",
+    "kindName": "열무",
+    "label": "열무",
+    "searchText": "열무 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "241",
+    "itemName": "건고추",
+    "kindCode": "00",
+    "kindName": "화건",
+    "label": "건고추 — 화건",
+    "searchText": "화건 건고추 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "241",
+    "itemName": "건고추",
+    "kindCode": "01",
+    "kindName": "햇산화건",
+    "label": "건고추 — 햇산화건",
+    "searchText": "햇산화건 건고추 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "241",
+    "itemName": "건고추",
+    "kindCode": "02",
+    "kindName": "양건(~23.5)",
+    "label": "건고추 — 양건(~23.5)",
+    "searchText": "양건(~23.5) 건고추 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "241",
+    "itemName": "건고추",
+    "kindCode": "03",
+    "kindName": "햇산양건(~23.5)",
+    "label": "건고추 — 햇산양건(~23.5)",
+    "searchText": "건고추 채소류 햇산양건(~23.5)"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "241",
+    "itemName": "건고추",
+    "kindCode": "10",
+    "kindName": "수입",
+    "label": "건고추 — 수입",
+    "searchText": "수입 건고추 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "241",
+    "itemName": "건고추",
+    "kindCode": "90",
+    "kindName": "국산(화건)",
+    "label": "건고추 — 국산(화건)",
+    "searchText": "국산(화건) 건고추 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "241",
+    "itemName": "건고추",
+    "kindCode": "99",
+    "kindName": "수입(중국)",
+    "label": "건고추 — 수입(중국)",
+    "searchText": "건고추 채소류 수입(중국)"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "242",
+    "itemName": "풋고추",
+    "kindCode": "00",
+    "kindName": "풋고추(녹광 등)",
+    "label": "풋고추 — 풋고추(녹광 등)",
+    "searchText": "채소류 풋고추(녹광 등) 풋고추"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "242",
+    "itemName": "풋고추",
+    "kindCode": "02",
+    "kindName": "꽈리고추",
+    "label": "풋고추 — 꽈리고추",
+    "searchText": "꽈리고추 채소류 풋고추"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "242",
+    "itemName": "풋고추",
+    "kindCode": "03",
+    "kindName": "청양고추",
+    "label": "풋고추 — 청양고추",
+    "searchText": "청양고추 채소류 풋고추"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "242",
+    "itemName": "풋고추",
+    "kindCode": "04",
+    "kindName": "오이맛고추",
+    "label": "풋고추 — 오이맛고추",
+    "searchText": "채소류 오이맛고추 풋고추"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "243",
+    "itemName": "붉은고추",
+    "kindCode": "00",
+    "kindName": "붉은고추",
+    "label": "붉은고추",
+    "searchText": "붉은고추 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "244",
+    "itemName": "피마늘",
+    "kindCode": "01",
+    "kindName": "한지1접",
+    "label": "피마늘 — 한지1접",
+    "searchText": "한지1접 채소류 피마늘"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "244",
+    "itemName": "피마늘",
+    "kindCode": "02",
+    "kindName": "난지1접",
+    "label": "피마늘 — 난지1접",
+    "searchText": "난지1접 채소류 피마늘"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "244",
+    "itemName": "피마늘",
+    "kindCode": "03",
+    "kindName": "한지",
+    "label": "피마늘 — 한지",
+    "searchText": "한지 채소류 피마늘"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "244",
+    "itemName": "피마늘",
+    "kindCode": "04",
+    "kindName": "난지",
+    "label": "피마늘 — 난지",
+    "searchText": "난지 채소류 피마늘"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "244",
+    "itemName": "피마늘",
+    "kindCode": "06",
+    "kindName": "햇한지1접",
+    "label": "피마늘 — 햇한지1접",
+    "searchText": "햇한지1접 채소류 피마늘"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "244",
+    "itemName": "피마늘",
+    "kindCode": "07",
+    "kindName": "햇난지1접",
+    "label": "피마늘 — 햇난지1접",
+    "searchText": "햇난지1접 피마늘 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "244",
+    "itemName": "피마늘",
+    "kindCode": "08",
+    "kindName": "쪽마늘",
+    "label": "피마늘 — 쪽마늘",
+    "searchText": "쪽마늘 피마늘 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "244",
+    "itemName": "피마늘",
+    "kindCode": "21",
+    "kindName": "햇난지(대서)",
+    "label": "피마늘 — 햇난지(대서)",
+    "searchText": "햇난지(대서) 채소류 피마늘"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "244",
+    "itemName": "피마늘",
+    "kindCode": "22",
+    "kindName": "난지(대서)",
+    "label": "피마늘 — 난지(대서)",
+    "searchText": "채소류 피마늘 난지(대서)"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "244",
+    "itemName": "피마늘",
+    "kindCode": "23",
+    "kindName": "햇난지(남도)",
+    "label": "피마늘 — 햇난지(남도)",
+    "searchText": "햇난지(남도) 채소류 피마늘"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "244",
+    "itemName": "피마늘",
+    "kindCode": "24",
+    "kindName": "난지(남도)",
+    "label": "피마늘 — 난지(남도)",
+    "searchText": "난지(남도) 채소류 피마늘"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "245",
+    "itemName": "양파",
+    "kindCode": "00",
+    "kindName": "양파",
+    "label": "양파",
+    "searchText": "채소류 양파"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "245",
+    "itemName": "양파",
+    "kindCode": "02",
+    "kindName": "햇양파",
+    "label": "양파 — 햇양파",
+    "searchText": "햇양파 채소류 양파"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "245",
+    "itemName": "양파",
+    "kindCode": "10",
+    "kindName": "수입",
+    "label": "양파 — 수입",
+    "searchText": "수입 채소류 양파"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "246",
+    "itemName": "파",
+    "kindCode": "00",
+    "kindName": "대파",
+    "label": "파 — 대파",
+    "searchText": "대파 파 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "246",
+    "itemName": "파",
+    "kindCode": "02",
+    "kindName": "쪽파",
+    "label": "파 — 쪽파",
+    "searchText": "채소류 파 쪽파"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "247",
+    "itemName": "생강",
+    "kindCode": "00",
+    "kindName": "국산",
+    "label": "생강 — 국산",
+    "searchText": "채소류 생강 국산"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "247",
+    "itemName": "생강",
+    "kindCode": "01",
+    "kindName": "수입",
+    "label": "생강 — 수입",
+    "searchText": "수입 채소류 생강"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "248",
+    "itemName": "고춧가루",
+    "kindCode": "00",
+    "kindName": "국산",
+    "label": "고춧가루 — 국산",
+    "searchText": "국산 채소류 고춧가루"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "248",
+    "itemName": "고춧가루",
+    "kindCode": "01",
+    "kindName": "중국",
+    "label": "고춧가루 — 중국",
+    "searchText": "중국 채소류 고춧가루"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "251",
+    "itemName": "가지",
+    "kindCode": "00",
+    "kindName": "가지",
+    "label": "가지",
+    "searchText": "가지 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "252",
+    "itemName": "미나리",
+    "kindCode": "00",
+    "kindName": "미나리",
+    "label": "미나리",
+    "searchText": "채소류 미나리"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "253",
+    "itemName": "깻잎",
+    "kindCode": "00",
+    "kindName": "깻잎",
+    "label": "깻잎",
+    "searchText": "깻잎 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "254",
+    "itemName": "부추",
+    "kindCode": "00",
+    "kindName": "부추",
+    "label": "부추",
+    "searchText": "채소류 부추"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "255",
+    "itemName": "피망",
+    "kindCode": "00",
+    "kindName": "청",
+    "label": "피망 — 청",
+    "searchText": "청 피망 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "256",
+    "itemName": "파프리카",
+    "kindCode": "00",
+    "kindName": "파프리카",
+    "label": "파프리카",
+    "searchText": "채소류 파프리카"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "257",
+    "itemName": "멜론",
+    "kindCode": "00",
+    "kindName": "멜론",
+    "label": "멜론",
+    "searchText": "채소류 멜론"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "258",
+    "itemName": "깐마늘(국산)",
+    "kindCode": "01",
+    "kindName": "깐마늘(국산)",
+    "label": "깐마늘(국산)",
+    "searchText": "깐마늘(국산) 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "258",
+    "itemName": "깐마늘(국산)",
+    "kindCode": "03",
+    "kindName": "깐마늘(대서)",
+    "label": "깐마늘(국산) — 깐마늘(대서)",
+    "searchText": "깐마늘(국산) 깐마늘(대서) 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "258",
+    "itemName": "깐마늘(국산)",
+    "kindCode": "04",
+    "kindName": "햇깐마늘(대서)",
+    "label": "깐마늘(국산) — 햇깐마늘(대서)",
+    "searchText": "깐마늘(국산) 햇깐마늘(대서) 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "258",
+    "itemName": "깐마늘(국산)",
+    "kindCode": "05",
+    "kindName": "깐마늘(남도)",
+    "label": "깐마늘(국산) — 깐마늘(남도)",
+    "searchText": "깐마늘(국산) 깐마늘(남도) 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "258",
+    "itemName": "깐마늘(국산)",
+    "kindCode": "06",
+    "kindName": "햇깐마늘(남도)",
+    "label": "깐마늘(국산) — 햇깐마늘(남도)",
+    "searchText": "깐마늘(국산) 햇깐마늘(남도) 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "259",
+    "itemName": "깐마늘(수입)",
+    "kindCode": "01",
+    "kindName": "깐마늘(수입)",
+    "label": "깐마늘(수입)",
+    "searchText": "채소류 깐마늘(수입)"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "259",
+    "itemName": "깐마늘(수입)",
+    "kindCode": "03",
+    "kindName": "깐마늘(수입산)",
+    "label": "깐마늘(수입) — 깐마늘(수입산)",
+    "searchText": "채소류 깐마늘(수입산) 깐마늘(수입)"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "261",
+    "itemName": "브로콜리",
+    "kindCode": "01",
+    "kindName": "브로콜리",
+    "label": "브로콜리",
+    "searchText": "브로콜리 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "262",
+    "itemName": "양상추",
+    "kindCode": "01",
+    "kindName": "양상추",
+    "label": "양상추",
+    "searchText": "채소류 양상추"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "263",
+    "itemName": "청경채",
+    "kindCode": "01",
+    "kindName": "청경채",
+    "label": "청경채",
+    "searchText": "청경채 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "264",
+    "itemName": "케일",
+    "kindCode": "01",
+    "kindName": "케일",
+    "label": "케일",
+    "searchText": "케일 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "265",
+    "itemName": "콩나물",
+    "kindCode": "01",
+    "kindName": "콩나물",
+    "label": "콩나물",
+    "searchText": "콩나물 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "266",
+    "itemName": "절임배추",
+    "kindCode": "00",
+    "kindName": "절임배추",
+    "label": "절임배추",
+    "searchText": "채소류 절임배추"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "266",
+    "itemName": "절임배추",
+    "kindCode": "01",
+    "kindName": "봄",
+    "label": "절임배추 — 봄",
+    "searchText": "채소류 봄 절임배추"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "266",
+    "itemName": "절임배추",
+    "kindCode": "02",
+    "kindName": "여름(고랭지)",
+    "label": "절임배추 — 여름(고랭지)",
+    "searchText": "채소류 여름(고랭지) 절임배추"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "266",
+    "itemName": "절임배추",
+    "kindCode": "03",
+    "kindName": "가을",
+    "label": "절임배추 — 가을",
+    "searchText": "가을 채소류 절임배추"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "266",
+    "itemName": "절임배추",
+    "kindCode": "04",
+    "kindName": "월동",
+    "label": "절임배추 — 월동",
+    "searchText": "채소류 월동 절임배추"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "276",
+    "itemName": "쪽파",
+    "kindCode": "02",
+    "kindName": "쪽파",
+    "label": "쪽파",
+    "searchText": "채소류 쪽파"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "279",
+    "itemName": "알배기배추",
+    "kindCode": "00",
+    "kindName": "알배기배추",
+    "label": "알배기배추",
+    "searchText": "채소류 알배기배추"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "280",
+    "itemName": "브로콜리",
+    "kindCode": "00",
+    "kindName": "브로콜리(국산)",
+    "label": "브로콜리 — 브로콜리(국산)",
+    "searchText": "브로콜리(국산) 브로콜리 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "422",
+    "itemName": "방울토마토",
+    "kindCode": "01",
+    "kindName": "방울토마토",
+    "label": "방울토마토",
+    "searchText": "방울토마토 채소류"
+  },
+  {
+    "groupCode": "200",
+    "groupName": "채소류",
+    "itemCode": "422",
+    "itemName": "방울토마토",
+    "kindCode": "02",
+    "kindName": "대추방울토마토",
+    "label": "방울토마토 — 대추방울토마토",
+    "searchText": "채소류 방울토마토 대추방울토마토"
+  },
+  {
+    "groupCode": "300",
+    "groupName": "특용작물",
+    "itemCode": "312",
+    "itemName": "참깨",
+    "kindCode": "01",
+    "kindName": "백색(국산)",
+    "label": "참깨 — 백색(국산)",
+    "searchText": "특용작물 참깨 백색(국산)"
+  },
+  {
+    "groupCode": "300",
+    "groupName": "특용작물",
+    "itemCode": "312",
+    "itemName": "참깨",
+    "kindCode": "02",
+    "kindName": "중국",
+    "label": "참깨 — 중국",
+    "searchText": "중국 참깨 특용작물"
+  },
+  {
+    "groupCode": "300",
+    "groupName": "특용작물",
+    "itemCode": "312",
+    "itemName": "참깨",
+    "kindCode": "03",
+    "kindName": "인도",
+    "label": "참깨 — 인도",
+    "searchText": "인도 특용작물 참깨"
+  },
+  {
+    "groupCode": "300",
+    "groupName": "특용작물",
+    "itemCode": "313",
+    "itemName": "들깨",
+    "kindCode": "01",
+    "kindName": "국산",
+    "label": "들깨 — 국산",
+    "searchText": "특용작물 들깨 국산"
+  },
+  {
+    "groupCode": "300",
+    "groupName": "특용작물",
+    "itemCode": "313",
+    "itemName": "들깨",
+    "kindCode": "02",
+    "kindName": "수입",
+    "label": "들깨 — 수입",
+    "searchText": "수입 특용작물 들깨"
+  },
+  {
+    "groupCode": "300",
+    "groupName": "특용작물",
+    "itemCode": "314",
+    "itemName": "땅콩",
+    "kindCode": "01",
+    "kindName": "국산",
+    "label": "땅콩 — 국산",
+    "searchText": "땅콩 특용작물 국산"
+  },
+  {
+    "groupCode": "300",
+    "groupName": "특용작물",
+    "itemCode": "314",
+    "itemName": "땅콩",
+    "kindCode": "02",
+    "kindName": "수입",
+    "label": "땅콩 — 수입",
+    "searchText": "땅콩 수입 특용작물"
+  },
+  {
+    "groupCode": "300",
+    "groupName": "특용작물",
+    "itemCode": "315",
+    "itemName": "느타리버섯",
+    "kindCode": "00",
+    "kindName": "느타리버섯",
+    "label": "느타리버섯",
+    "searchText": "특용작물 느타리버섯"
+  },
+  {
+    "groupCode": "300",
+    "groupName": "특용작물",
+    "itemCode": "315",
+    "itemName": "느타리버섯",
+    "kindCode": "01",
+    "kindName": "애느타리버섯",
+    "label": "느타리버섯 — 애느타리버섯",
+    "searchText": "특용작물 애느타리버섯 느타리버섯"
+  },
+  {
+    "groupCode": "300",
+    "groupName": "특용작물",
+    "itemCode": "316",
+    "itemName": "팽이버섯",
+    "kindCode": "00",
+    "kindName": "팽이버섯",
+    "label": "팽이버섯",
+    "searchText": "특용작물 팽이버섯"
+  },
+  {
+    "groupCode": "300",
+    "groupName": "특용작물",
+    "itemCode": "317",
+    "itemName": "새송이버섯",
+    "kindCode": "00",
+    "kindName": "새송이버섯",
+    "label": "새송이버섯",
+    "searchText": "새송이버섯 특용작물"
+  },
+  {
+    "groupCode": "300",
+    "groupName": "특용작물",
+    "itemCode": "318",
+    "itemName": "호두",
+    "kindCode": "00",
+    "kindName": "수입",
+    "label": "호두 — 수입",
+    "searchText": "수입 특용작물 호두"
+  },
+  {
+    "groupCode": "300",
+    "groupName": "특용작물",
+    "itemCode": "319",
+    "itemName": "아몬드",
+    "kindCode": "00",
+    "kindName": "수입",
+    "label": "아몬드 — 수입",
+    "searchText": "아몬드 특용작물 수입"
+  },
+  {
+    "groupCode": "300",
+    "groupName": "특용작물",
+    "itemCode": "321",
+    "itemName": "양송이버섯",
+    "kindCode": "01",
+    "kindName": "양송이버섯",
+    "label": "양송이버섯",
+    "searchText": "특용작물 양송이버섯"
+  },
+  {
+    "groupCode": "300",
+    "groupName": "특용작물",
+    "itemCode": "322",
+    "itemName": "표고버섯",
+    "kindCode": "01",
+    "kindName": "표고버섯",
+    "label": "표고버섯",
+    "searchText": "특용작물 표고버섯"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "411",
+    "itemName": "사과",
+    "kindCode": "01",
+    "kindName": "홍옥",
+    "label": "사과 — 홍옥",
+    "searchText": "홍옥 과일류 사과"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "411",
+    "itemName": "사과",
+    "kindCode": "05",
+    "kindName": "후지",
+    "label": "사과 — 후지",
+    "searchText": "후지 과일류 사과"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "411",
+    "itemName": "사과",
+    "kindCode": "06",
+    "kindName": "쓰가루(아오리)",
+    "label": "사과 — 쓰가루(아오리)",
+    "searchText": "쓰가루(아오리) 과일류 사과"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "411",
+    "itemName": "사과",
+    "kindCode": "07",
+    "kindName": "홍로",
+    "label": "사과 — 홍로",
+    "searchText": "홍로 과일류 사과"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "412",
+    "itemName": "배",
+    "kindCode": "01",
+    "kindName": "신고",
+    "label": "배 — 신고",
+    "searchText": "과일류 배 신고"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "412",
+    "itemName": "배",
+    "kindCode": "02",
+    "kindName": "만삼길",
+    "label": "배 — 만삼길",
+    "searchText": "과일류 배 만삼길"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "412",
+    "itemName": "배",
+    "kindCode": "03",
+    "kindName": "장십랑",
+    "label": "배 — 장십랑",
+    "searchText": "장십랑 과일류 배"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "412",
+    "itemName": "배",
+    "kindCode": "04",
+    "kindName": "원황",
+    "label": "배 — 원황",
+    "searchText": "원황 과일류 배"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "413",
+    "itemName": "복숭아",
+    "kindCode": "01",
+    "kindName": "백도",
+    "label": "복숭아 — 백도",
+    "searchText": "복숭아 과일류 백도"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "413",
+    "itemName": "복숭아",
+    "kindCode": "04",
+    "kindName": "창방조생",
+    "label": "복숭아 — 창방조생",
+    "searchText": "창방조생 복숭아 과일류"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "413",
+    "itemName": "복숭아",
+    "kindCode": "05",
+    "kindName": "유명",
+    "label": "복숭아 — 유명",
+    "searchText": "복숭아 과일류 유명"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "414",
+    "itemName": "포도",
+    "kindCode": "01",
+    "kindName": "캠벨얼리",
+    "label": "포도 — 캠벨얼리",
+    "searchText": "과일류 포도 캠벨얼리"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "414",
+    "itemName": "포도",
+    "kindCode": "02",
+    "kindName": "거봉",
+    "label": "포도 — 거봉",
+    "searchText": "과일류 포도 거봉"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "414",
+    "itemName": "포도",
+    "kindCode": "03",
+    "kindName": "델라웨어",
+    "label": "포도 — 델라웨어",
+    "searchText": "델라웨어 과일류 포도"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "414",
+    "itemName": "포도",
+    "kindCode": "06",
+    "kindName": "MBA",
+    "label": "포도 — MBA",
+    "searchText": "과일류 MBA 포도"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "414",
+    "itemName": "포도",
+    "kindCode": "07",
+    "kindName": "수입",
+    "label": "포도 — 수입",
+    "searchText": "수입 과일류 포도"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "414",
+    "itemName": "포도",
+    "kindCode": "08",
+    "kindName": "레드글로브 칠레(~23.5)",
+    "label": "포도 — 레드글로브 칠레(~23.5)",
+    "searchText": "레드글로브 칠레(~23.5) 과일류 포도"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "414",
+    "itemName": "포도",
+    "kindCode": "09",
+    "kindName": "레드글로브 페루(~23.5)",
+    "label": "포도 — 레드글로브 페루(~23.5)",
+    "searchText": "레드글로브 페루(~23.5) 과일류 포도"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "414",
+    "itemName": "포도",
+    "kindCode": "10",
+    "kindName": "톰슨 미국(~23.5)",
+    "label": "포도 — 톰슨 미국(~23.5)",
+    "searchText": "과일류 포도 톰슨 미국(~23.5)"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "414",
+    "itemName": "포도",
+    "kindCode": "11",
+    "kindName": "톰슨 호주(~23.5)",
+    "label": "포도 — 톰슨 호주(~23.5)",
+    "searchText": "과일류 톰슨 호주(~23.5) 포도"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "414",
+    "itemName": "포도",
+    "kindCode": "12",
+    "kindName": "샤인머스켓",
+    "label": "포도 — 샤인머스켓",
+    "searchText": "샤인머스켓 과일류 포도"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "415",
+    "itemName": "감귤",
+    "kindCode": "00",
+    "kindName": "감귤",
+    "label": "감귤",
+    "searchText": "과일류 감귤"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "415",
+    "itemName": "감귤",
+    "kindCode": "01",
+    "kindName": "노지",
+    "label": "감귤 — 노지",
+    "searchText": "노지 과일류 감귤"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "415",
+    "itemName": "감귤",
+    "kindCode": "02",
+    "kindName": "시설",
+    "label": "감귤 — 시설",
+    "searchText": "시설 과일류 감귤"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "416",
+    "itemName": "단감",
+    "kindCode": "00",
+    "kindName": "단감",
+    "label": "단감",
+    "searchText": "단감 과일류"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "418",
+    "itemName": "바나나",
+    "kindCode": "02",
+    "kindName": "수입",
+    "label": "바나나 — 수입",
+    "searchText": "수입 과일류 바나나"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "419",
+    "itemName": "참다래",
+    "kindCode": "01",
+    "kindName": "국산",
+    "label": "참다래 — 국산",
+    "searchText": "과일류 참다래 국산"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "419",
+    "itemName": "참다래",
+    "kindCode": "02",
+    "kindName": "그린 뉴질랜드",
+    "label": "참다래 — 그린 뉴질랜드",
+    "searchText": "그린 뉴질랜드 과일류 참다래"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "420",
+    "itemName": "파인애플",
+    "kindCode": "02",
+    "kindName": "수입",
+    "label": "파인애플 — 수입",
+    "searchText": "수입 파인애플 과일류"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "421",
+    "itemName": "오렌지",
+    "kindCode": "02",
+    "kindName": "수입",
+    "label": "오렌지 — 수입",
+    "searchText": "수입 오렌지 과일류"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "421",
+    "itemName": "오렌지",
+    "kindCode": "03",
+    "kindName": "네이블 미국",
+    "label": "오렌지 — 네이블 미국",
+    "searchText": "오렌지 과일류 네이블 미국"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "421",
+    "itemName": "오렌지",
+    "kindCode": "04",
+    "kindName": "발렌시아 미국",
+    "label": "오렌지 — 발렌시아 미국",
+    "searchText": "오렌지 과일류 발렌시아 미국"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "421",
+    "itemName": "오렌지",
+    "kindCode": "05",
+    "kindName": "네이블 EU",
+    "label": "오렌지 — 네이블 EU",
+    "searchText": "오렌지 네이블 EU 과일류"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "421",
+    "itemName": "오렌지",
+    "kindCode": "06",
+    "kindName": "네이블 호주",
+    "label": "오렌지 — 네이블 호주",
+    "searchText": "오렌지 과일류 네이블 호주"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "423",
+    "itemName": "자몽",
+    "kindCode": "00",
+    "kindName": "수입",
+    "label": "자몽 — 수입",
+    "searchText": "수입 자몽 과일류"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "424",
+    "itemName": "레몬",
+    "kindCode": "00",
+    "kindName": "수입",
+    "label": "레몬 — 수입",
+    "searchText": "수입 과일류 레몬"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "425",
+    "itemName": "체리",
+    "kindCode": "00",
+    "kindName": "수입",
+    "label": "체리 — 수입",
+    "searchText": "체리 수입 과일류"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "426",
+    "itemName": "건포도",
+    "kindCode": "00",
+    "kindName": "수입",
+    "label": "건포도 — 수입",
+    "searchText": "수입 과일류 건포도"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "427",
+    "itemName": "건블루베리",
+    "kindCode": "00",
+    "kindName": "수입",
+    "label": "건블루베리 — 수입",
+    "searchText": "수입 과일류 건블루베리"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "428",
+    "itemName": "망고",
+    "kindCode": "00",
+    "kindName": "수입",
+    "label": "망고 — 수입",
+    "searchText": "수입 과일류 망고"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "429",
+    "itemName": "블루베리",
+    "kindCode": "01",
+    "kindName": "블루베리",
+    "label": "블루베리",
+    "searchText": "블루베리 과일류"
+  },
+  {
+    "groupCode": "400",
+    "groupName": "과일류",
+    "itemCode": "430",
+    "itemName": "아보카도",
+    "kindCode": "00",
+    "kindName": "수입",
+    "label": "아보카도 — 수입",
+    "searchText": "수입 과일류 아보카도"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "611",
+    "itemName": "고등어",
+    "kindCode": "01",
+    "kindName": "생선",
+    "label": "고등어 — 생선",
+    "searchText": "고등어 수산물 생선"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "611",
+    "itemName": "고등어",
+    "kindCode": "02",
+    "kindName": "냉동",
+    "label": "고등어 — 냉동",
+    "searchText": "냉동 고등어 수산물"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "611",
+    "itemName": "고등어",
+    "kindCode": "03",
+    "kindName": "국산(염장)",
+    "label": "고등어 — 국산(염장)",
+    "searchText": "고등어 국산(염장) 수산물"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "611",
+    "itemName": "고등어",
+    "kindCode": "04",
+    "kindName": "냉동(수입)",
+    "label": "고등어 — 냉동(수입)",
+    "searchText": "냉동(수입) 고등어 수산물"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "611",
+    "itemName": "고등어",
+    "kindCode": "05",
+    "kindName": "국산(신선 냉장)",
+    "label": "고등어 — 국산(신선 냉장)",
+    "searchText": "고등어 수산물 국산(신선 냉장)"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "611",
+    "itemName": "고등어",
+    "kindCode": "06",
+    "kindName": "국산(냉동)",
+    "label": "고등어 — 국산(냉동)",
+    "searchText": "수산물 고등어 국산(냉동)"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "611",
+    "itemName": "고등어",
+    "kindCode": "07",
+    "kindName": "수입산(냉동)",
+    "label": "고등어 — 수입산(냉동)",
+    "searchText": "수산물 고등어 수입산(냉동)"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "611",
+    "itemName": "고등어",
+    "kindCode": "08",
+    "kindName": "수입산(염장)",
+    "label": "고등어 — 수입산(염장)",
+    "searchText": "고등어 수입산(염장) 수산물"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "612",
+    "itemName": "꽁치",
+    "kindCode": "01",
+    "kindName": "냉동(수입)",
+    "label": "꽁치 — 냉동(수입)",
+    "searchText": "냉동(수입) 꽁치 수산물"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "613",
+    "itemName": "갈치",
+    "kindCode": "01",
+    "kindName": "생선",
+    "label": "갈치 — 생선",
+    "searchText": "갈치 생선 수산물"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "613",
+    "itemName": "갈치",
+    "kindCode": "02",
+    "kindName": "냉동",
+    "label": "갈치 — 냉동",
+    "searchText": "갈치 수산물 냉동"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "613",
+    "itemName": "갈치",
+    "kindCode": "03",
+    "kindName": "국산(냉장)",
+    "label": "갈치 — 국산(냉장)",
+    "searchText": "갈치 국산(냉장) 수산물"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "613",
+    "itemName": "갈치",
+    "kindCode": "04",
+    "kindName": "국산(냉동)",
+    "label": "갈치 — 국산(냉동)",
+    "searchText": "갈치 수산물 국산(냉동)"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "613",
+    "itemName": "갈치",
+    "kindCode": "05",
+    "kindName": "수입산(냉동)",
+    "label": "갈치 — 수입산(냉동)",
+    "searchText": "갈치 수산물 수입산(냉동)"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "614",
+    "itemName": "조기",
+    "kindCode": "01",
+    "kindName": "생선",
+    "label": "조기 — 생선",
+    "searchText": "생선 수산물 조기"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "614",
+    "itemName": "조기",
+    "kindCode": "04",
+    "kindName": "참조기(냉동)",
+    "label": "조기 — 참조기(냉동)",
+    "searchText": "참조기(냉동) 수산물 조기"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "614",
+    "itemName": "조기",
+    "kindCode": "05",
+    "kindName": "참조기(신선 냉장)",
+    "label": "조기 — 참조기(신선 냉장)",
+    "searchText": "참조기(신선 냉장) 수산물 조기"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "614",
+    "itemName": "조기",
+    "kindCode": "06",
+    "kindName": "참조기(냉동)",
+    "label": "조기 — 참조기(냉동)",
+    "searchText": "참조기(냉동) 수산물 조기"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "614",
+    "itemName": "조기",
+    "kindCode": "07",
+    "kindName": "굴비",
+    "label": "조기 — 굴비",
+    "searchText": "굴비 수산물 조기"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "615",
+    "itemName": "명태",
+    "kindCode": "01",
+    "kindName": "생선",
+    "label": "명태 — 생선",
+    "searchText": "명태 수산물 생선"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "615",
+    "itemName": "명태",
+    "kindCode": "02",
+    "kindName": "냉동",
+    "label": "명태 — 냉동",
+    "searchText": "냉동 명태 수산물"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "615",
+    "itemName": "명태",
+    "kindCode": "03",
+    "kindName": "원양산(냉동)",
+    "label": "명태 — 원양산(냉동)",
+    "searchText": "명태 원양산(냉동) 수산물"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "615",
+    "itemName": "명태",
+    "kindCode": "04",
+    "kindName": "냉동(원양수입통합)",
+    "label": "명태 — 냉동(원양수입통합)",
+    "searchText": "명태 냉동(원양수입통합) 수산물"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "615",
+    "itemName": "명태",
+    "kindCode": "05",
+    "kindName": "냉동가공",
+    "label": "명태 — 냉동가공",
+    "searchText": "수산물 명태 냉동가공"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "616",
+    "itemName": "삼치",
+    "kindCode": "02",
+    "kindName": "냉동",
+    "label": "삼치 — 냉동",
+    "searchText": "냉동 삼치 수산물"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "619",
+    "itemName": "물오징어",
+    "kindCode": "01",
+    "kindName": "생선",
+    "label": "물오징어 — 생선",
+    "searchText": "생선 수산물 물오징어"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "619",
+    "itemName": "물오징어",
+    "kindCode": "02",
+    "kindName": "냉동",
+    "label": "물오징어 — 냉동",
+    "searchText": "냉동 수산물 물오징어"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "619",
+    "itemName": "물오징어",
+    "kindCode": "03",
+    "kindName": "연근해(신선 냉장)",
+    "label": "물오징어 — 연근해(신선 냉장)",
+    "searchText": "연근해(신선 냉장) 수산물 물오징어"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "619",
+    "itemName": "물오징어",
+    "kindCode": "04",
+    "kindName": "연근해(냉동)",
+    "label": "물오징어 — 연근해(냉동)",
+    "searchText": "연근해(냉동) 수산물 물오징어"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "619",
+    "itemName": "물오징어",
+    "kindCode": "05",
+    "kindName": "원양(냉동)",
+    "label": "물오징어 — 원양(냉동)",
+    "searchText": "원양(냉동) 수산물 물오징어"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "638",
+    "itemName": "건멸치",
+    "kindCode": "00",
+    "kindName": "건멸치",
+    "label": "건멸치",
+    "searchText": "건멸치 수산물"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "639",
+    "itemName": "북어",
+    "kindCode": "01",
+    "kindName": "황태",
+    "label": "북어 — 황태",
+    "searchText": "북어 황태 수산물"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "639",
+    "itemName": "북어",
+    "kindCode": "02",
+    "kindName": "먹태",
+    "label": "북어 — 먹태",
+    "searchText": "북어 수산물 먹태"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "640",
+    "itemName": "건오징어",
+    "kindCode": "00",
+    "kindName": "건오징어",
+    "label": "건오징어",
+    "searchText": "수산물 건오징어"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "641",
+    "itemName": "김",
+    "kindCode": "00",
+    "kindName": "마른김",
+    "label": "김 — 마른김",
+    "searchText": "마른김 김 수산물"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "641",
+    "itemName": "김",
+    "kindCode": "01",
+    "kindName": "얼구운김",
+    "label": "김 — 얼구운김",
+    "searchText": "얼구운김 김 수산물"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "642",
+    "itemName": "건미역",
+    "kindCode": "00",
+    "kindName": "건미역",
+    "label": "건미역",
+    "searchText": "수산물 건미역"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "644",
+    "itemName": "굴",
+    "kindCode": "00",
+    "kindName": "굴",
+    "label": "굴",
+    "searchText": "굴 수산물"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "649",
+    "itemName": "수입조기",
+    "kindCode": "01",
+    "kindName": "부세수입(생선)",
+    "label": "수입조기 — 부세수입(생선)",
+    "searchText": "수입조기 수산물 부세수입(생선)"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "649",
+    "itemName": "수입조기",
+    "kindCode": "04",
+    "kindName": "부세수입(냉동)",
+    "label": "수입조기 — 부세수입(냉동)",
+    "searchText": "수입조기 수산물 부세수입(냉동)"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "650",
+    "itemName": "새우젓",
+    "kindCode": "00",
+    "kindName": "새우젓",
+    "label": "새우젓",
+    "searchText": "수산물 새우젓"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "651",
+    "itemName": "멸치액젓",
+    "kindCode": "00",
+    "kindName": "멸치액젓",
+    "label": "멸치액젓",
+    "searchText": "수산물 멸치액젓"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "652",
+    "itemName": "굵은소금",
+    "kindCode": "00",
+    "kindName": "굵은소금",
+    "label": "굵은소금",
+    "searchText": "굵은소금 수산물"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "653",
+    "itemName": "전복",
+    "kindCode": "00",
+    "kindName": "전복",
+    "label": "전복",
+    "searchText": "전복 수산물"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "654",
+    "itemName": "새우",
+    "kindCode": "01",
+    "kindName": "흰다리(수입)",
+    "label": "새우 — 흰다리(수입)",
+    "searchText": "수산물 새우 흰다리(수입)"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "657",
+    "itemName": "참조기",
+    "kindCode": "01",
+    "kindName": "냉동",
+    "label": "참조기 — 냉동",
+    "searchText": "냉동 참조기 수산물"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "658",
+    "itemName": "홍합",
+    "kindCode": "01",
+    "kindName": "깐홍합(냉장)",
+    "label": "홍합 — 깐홍합(냉장)",
+    "searchText": "홍합 깐홍합(냉장) 수산물"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "658",
+    "itemName": "홍합",
+    "kindCode": "02",
+    "kindName": "안깐홍합(냉장)",
+    "label": "홍합 — 안깐홍합(냉장)",
+    "searchText": "홍합 수산물 안깐홍합(냉장)"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "659",
+    "itemName": "가리비",
+    "kindCode": "01",
+    "kindName": "해만가리비(홍가리비)",
+    "label": "가리비 — 해만가리비(홍가리비)",
+    "searchText": "가리비 해만가리비(홍가리비) 수산물"
+  },
+  {
+    "groupCode": "600",
+    "groupName": "수산물",
+    "itemCode": "660",
+    "itemName": "건다시마",
+    "kindCode": "01",
+    "kindName": "완도산",
+    "label": "건다시마 — 완도산",
+    "searchText": "완도산 수산물 건다시마"
+  }
+]

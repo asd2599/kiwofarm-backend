@@ -9,6 +9,7 @@ class Settings(BaseSettings):
 
     openai_api_key: str = ""
     data_go_kr_key: str = ""
+    nongsaro_api_key: str = ""
     kamis_cert_key: str = ""
     kamis_cert_id: str = ""
     kma_api_key: str = ""

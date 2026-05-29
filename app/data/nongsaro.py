@@ -7,7 +7,7 @@
 
 엔드포인트:
   - http://api.nongsaro.go.kr/service/cropInfo
-  - 인증키: settings.data_go_kr_key (공공데이터포털 키)
+  - 인증키: settings.nongsaro_api_key (api.nongsaro.go.kr 자체 발급, data.go.kr 통합키와 별개)
 
 TODO 실구현:
   - 작목 마스터 동기화 (cropId ↔ 농사로 cntntsNo)
@@ -34,5 +34,5 @@ async def fetch_pest_risks(crop_id: str) -> list[PestRisk]:
 
     현재 구현: 빈 리스트. 농사로 API 연결 전 placeholder.
     """
-    _ = (settings.data_go_kr_key, crop_id)
+    _ = (settings.nongsaro_api_key, crop_id)
     return []
