@@ -35,6 +35,14 @@ def all_crops() -> list[CropRecord]:
     return _load()
 
 
+def get_by_codes(item_code: str, kind_code: str) -> CropRecord | None:
+    """itemCode·kindCode 조합으로 단일 작목 조회."""
+    for row in _load():
+        if row["itemCode"] == item_code and row["kindCode"] == kind_code:
+            return row
+    return None
+
+
 def search(query: str, limit: int = 10) -> list[CropRecord]:
     """품목명·품종명·부류명 부분일치. 매칭 강도가 높은 순으로 정렬.
 
