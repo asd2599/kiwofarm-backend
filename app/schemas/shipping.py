@@ -58,6 +58,21 @@ class ShippingRegions(BaseModel):
     note: str | None = None  # 데이터 없음 등 안내
 
 
+class ForecastResponse(BaseModel):
+    """도매가 예측 (Prophet, 폴백=선형추세)."""
+
+    found: bool
+    crop_name: str
+    unit: str | None = None
+    method: str | None = None  # "prophet" / "linear"
+    horizon_days: int = 0
+    series: list[PricePoint] = []  # 최근 실측 + 예측 (is_forecast 로 구분)
+    forecast_last: int | None = None        # 마지막 예측가
+    forecast_last_low: int | None = None
+    forecast_last_high: int | None = None
+    message: str | None = None
+
+
 class TrendPoint(BaseModel):
     label: str
     price: int
@@ -94,6 +109,9 @@ class ShippingAdviceResponse(BaseModel):
     trend_pct: float | None = None
     volatility_pct: float | None = None
     direction: str | None = None
+    forecast_price: int | None = None
+    forecast_pct: float | None = None
+    forecast_days: int | None = None
     message: str | None = None
 
 

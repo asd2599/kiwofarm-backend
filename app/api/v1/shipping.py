@@ -6,8 +6,10 @@ from fastapi.responses import JSONResponse
 
 from app.core.shipping.advice import generate_shipping_advice
 from app.core.shipping.features import build_shipping_features
-from app.data import kamis
+from app.core.shipping.forecast import forecast_prices
+from app.data import kamis, kamis_productno
 from app.schemas.shipping import (
+    ForecastResponse,
     PeerFarmStat,
     PriceTrendResponse,
     PricePoint,
@@ -19,6 +21,8 @@ from app.schemas.shipping import (
     ShippingRegions,
     TrendPoint,
 )
+
+_forecast_cache: dict[tuple, dict] = {}
 
 router = APIRouter(prefix="/shipping", tags=["shipping"])
 
@@ -139,6 +143,72 @@ def _decision(actual: list[PricePoint], forecast: list[PricePoint]) -> ShippingD
     )
 
 
+@router.get("/forecast", response_model=None)
+async def shipping_forecast_endpoint(
+    category_code: str = Query(..., description="KAMIS 부류코드"),
+    item_code: str = Query(...),
+    kind_code: str = Query(""),
+    item_name: str = Query(""),
+    kind_name: str = Query(""),
+    horizon: int = Query(7, ge=1, le=14),
+) -> JSONResponse:
+    """검색 작물의 도매가 예측 (③ 일별 시계열 → Prophet)."""
+    crop_name = _display_name(item_name, kind_name)
+    today = date.today()
+    points = await kamis.fetch_wholesale_period(
+        category_code=category_code,
+        item_code=item_code,
+        kind_code=kind_code,
+        start=today - timedelta(days=90),
+        end=today,
+    )
+    avg = kamis.group_by_county(points).get("평균") or []
+    series = [(p.obs_date, p.price) for p in avg]
+
+    if len(series) < 3:
+        payload = ForecastResponse(
+            found=False,
+            crop_name=crop_name,
+            message="예측에 필요한 도매가 데이터가 부족합니다.",
+        )
+        return JSONResponse(payload.model_dump(mode="json"))
+
+    last_date = series[-1][0]
+    cache_key = (item_code, kind_code, last_date.isoformat(), horizon)
+    if cache_key in _forecast_cache:
+        return JSONResponse(_forecast_cache[cache_key])
+
+    fc, method = forecast_prices(series, horizon)
+    rec = kamis_productno.find(item_code, kind_code)
+    unit = (rec.get("unit") if rec else None) or None
+
+    actual = [PricePoint(date=d, price=p, is_forecast=False) for d, p in series[-30:]]
+    forecast_pts = [
+        PricePoint(
+            date=f.date,
+            price=f.yhat,
+            is_forecast=True,
+            forecast_low=f.lower,
+            forecast_high=f.upper,
+        )
+        for f in fc
+    ]
+    last = fc[-1] if fc else None
+    payload = ForecastResponse(
+        found=True,
+        crop_name=crop_name or item_code,
+        unit=unit,
+        method=method,
+        horizon_days=horizon,
+        series=actual + forecast_pts,
+        forecast_last=last.yhat if last else None,
+        forecast_last_low=last.lower if last else None,
+        forecast_last_high=last.upper if last else None,
+    ).model_dump(mode="json")
+    _forecast_cache[cache_key] = payload
+    return JSONResponse(payload)
+
+
 @router.get("/trend", response_model=None)
 async def shipping_trend_endpoint(
     category_code: str = Query("", description="KAMIS 부류코드 (미사용, 일관성용)"),
@@ -213,6 +283,9 @@ async def shipping_advice_endpoint(
         trend_pct=feats.trend_pct,
         volatility_pct=feats.volatility_pct,
         direction=feats.direction,
+        forecast_price=feats.forecast_price,
+        forecast_pct=feats.forecast_pct,
+        forecast_days=feats.forecast_days,
     )
     return JSONResponse(payload.model_dump(mode="json"))
 
