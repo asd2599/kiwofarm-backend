@@ -1,6 +1,6 @@
 from datetime import date, timedelta
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 
 from app.schemas.shipping import (
     PeerFarmStat,
@@ -10,12 +10,6 @@ from app.schemas.shipping import (
 )
 
 router = APIRouter(prefix="/shipping", tags=["shipping"])
-
-CROP_NAMES = {
-    "tomato": "토마토",
-    "sweetpotato": "고구마",
-    "blueberry": "블루베리",
-}
 
 
 def _mock_series(today: date, base: int = 4200) -> list[PricePoint]:
@@ -45,16 +39,25 @@ def _mock_series(today: date, base: int = 4200) -> list[PricePoint]:
     return series
 
 
+def _display_name(item_name: str, kind_name: str) -> str:
+    if not kind_name or kind_name == item_name:
+        return item_name
+    return f"{item_name} — {kind_name}"
+
+
 @router.get("", response_model=ShippingDashboard)
 async def shipping_dashboard(
-    crop: str = "tomato",
-    region: str = "옥천",
+    item_code: str = Query(..., description="KAMIS 품목코드"),
+    kind_code: str = Query("00", description="KAMIS 품종코드"),
+    item_name: str = Query(..., description="화면 표시용 품목명"),
+    kind_name: str = Query("", description="화면 표시용 품종명"),
+    region: str = Query("옥천"),
 ) -> ShippingDashboard:
     """
     출하 도우미 (출하 의사결정).
 
     TODO 실데이터 연동:
-      - price_series 실측: KAMIS 14일 도매가
+      - price_series 실측: KAMIS 14일 도매가 (item_code/kind_code 사용)
       - price_series 예측: Prophet 14일 forecast (yhat, yhat_lower, yhat_upper)
       - peer: 스마트팜코리아 우수농가 동일 시점 출하 패턴
       - decision: core.shipping.score.compute() — 가격 추세 + 기상 + 우수농가 결합
@@ -79,8 +82,8 @@ async def shipping_dashboard(
     )
 
     return ShippingDashboard(
-        crop_id=crop,
-        crop_name=CROP_NAMES.get(crop, crop),
+        crop_id=f"{item_code}-{kind_code}",
+        crop_name=_display_name(item_name, kind_name),
         region=region,
         updated_at=today,
         decision=decision,
