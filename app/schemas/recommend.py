@@ -46,6 +46,9 @@ class CropRecommendationItem(BaseModel):
     peerFarms: int
     peerAgreeRate: int = Field(ge=0, le=100)
     color: CropColor
+    tier: str = "standard"  # premium=우수농가 실측 매칭 / standard=공공데이터 표준 매칭
+    peerEvidence: str | None = None  # premium 한정: 유사 우수농가 근거 한 줄
+    revenueBasis: str | None = None  # premium 한정: 매출 산출 근거(KAMIS 단가×수율×면적)
 
 
 class RecommendationResponse(BaseModel):

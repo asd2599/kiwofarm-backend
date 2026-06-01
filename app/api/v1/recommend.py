@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from app.core.recommend.engine import recommend
 from app.core.recommend.llm_reason import attach_reasons
+from app.core.recommend.revenue import attach_revenue
 from app.schemas.recommend import OnboardingInput, RecommendationResponse
 
 router = APIRouter(prefix="/recommend", tags=["recommend"])
@@ -17,5 +18,7 @@ async def post_recommend(payload: OnboardingInput) -> RecommendationResponse:
     TODO: core.recommend.engine 의 XGBoost 추론 연결.
     """
     result = recommend(payload)
-    items = await attach_reasons(result.items, payload)
+    # 매출 재계산(KAMIS 단가)을 먼저 → 그 결과를 llm_reason 이 근거로 인용.
+    items = await attach_revenue(result.items, payload)
+    items = await attach_reasons(items, payload)
     return RecommendationResponse(mode=result.mode, items=items)
