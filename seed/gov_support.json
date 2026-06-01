@@ -1,0 +1,236 @@
+[
+  {
+    "id": 1,
+    "name": "청년농업인 영농정착지원사업",
+    "agency": "농림축산식품부",
+    "category": "정착지원금",
+    "summary": "만 18~39세 청년농에게 영농정착지원금을 최장 3년 지급",
+    "support": "월 110·100·90만원(1~3년차) · 최장 3년",
+    "eligibility": {
+      "modes": ["returning"],
+      "age_min": 18,
+      "age_max": 39,
+      "farming_max_years": 3,
+      "audience": ["청년", "귀농인"],
+      "notes": "독립경영 3년 이하(예정 포함), 병역필·면제. 농지·시설 창업자금·농신보 우대 연계"
+    },
+    "apply": { "where": "Agrix 농림사업정보시스템 신청", "link": "https://www.rda.go.kr/young/custom.do", "phone": "1899-9097" },
+    "source_url": "https://www.rda.go.kr/young/custom.do"
+  },
+  {
+    "id": 2,
+    "name": "후계농업경영인 육성자금",
+    "agency": "농림축산식품부",
+    "category": "융자",
+    "summary": "청년·후계농에게 농지·시설 자금을 저리 융자",
+    "support": "세대당 최대 5억원 · 금리 1.5% · 5년거치 20년상환",
+    "eligibility": {
+      "modes": ["returning"],
+      "age_min": 18,
+      "age_max": 49,
+      "farming_max_years": 10,
+      "audience": ["청년", "후계농", "귀농인"],
+      "notes": "만 18~50세 미만, 영농경력 10년 이하. 농지 구입·임차·시설 설치"
+    },
+    "apply": { "where": "Agrix / 시·군 농업기술센터 신청", "link": "https://www.rda.go.kr/young/custom.do", "phone": "1899-9097" },
+    "source_url": "https://www.rda.go.kr/young/custom.do"
+  },
+  {
+    "id": 3,
+    "name": "귀농 농업창업 및 주택구입 지원사업",
+    "agency": "농림축산식품부 · 지자체",
+    "category": "융자",
+    "summary": "귀농인의 영농기반 조성·농촌주택 마련을 저리 융자",
+    "support": "창업자금 최대 3억원 + 주택자금 7,500만원 · 금리 1.5% · 5년거치 10년분할",
+    "eligibility": {
+      "modes": ["returning"],
+      "age_min": null,
+      "age_max": null,
+      "farming_max_years": 5,
+      "audience": ["귀농인"],
+      "notes": "농촌 외 지역 비농업 종사자가 농업 전업. 귀농 5년 이내. 농지·시설·장비·저장시설·주택"
+    },
+    "apply": { "where": "주소지 시·군 농업기술센터 신청", "link": "https://www.gov.kr/portal/service/serviceInfo/154300000011", "phone": "1899-9097" },
+    "source_url": "https://www.gov.kr/portal/service/serviceInfo/154300000011"
+  },
+  {
+    "id": 4,
+    "name": "스마트팜 종합자금",
+    "agency": "농림축산식품부",
+    "category": "융자",
+    "summary": "스마트팜·시설원예 창업·전환 자금을 초저리 융자",
+    "support": "농가당 최대 30억원(청년 우대) · 금리 1.0% 고정 · 5년거치 10년분할",
+    "eligibility": {
+      "modes": ["returning"],
+      "age_min": null,
+      "age_max": null,
+      "farming_max_years": null,
+      "audience": ["일반농업인", "청년"],
+      "notes": "농업경영체 등록 농업인. 비닐하우스·온실 등 시설 신·증축 및 스마트팜 장비. 소규모 사업 별도"
+    },
+    "apply": { "where": "스마트팜코리아 / 농협", "link": "https://www.smartfarmkorea.net", "phone": "" },
+    "source_url": "https://www.smartfarmkorea.net"
+  },
+  {
+    "id": 5,
+    "name": "스마트팜 청년창업 보육센터",
+    "agency": "농촌진흥청",
+    "category": "교육",
+    "summary": "청년에게 20개월 스마트팜 실습교육 + 임대형 스마트팜·창업자금 연계",
+    "support": "무상 교육(20개월) · 임대형 스마트팜 우선 입주 · 창업자금 연계",
+    "eligibility": {
+      "modes": ["returning"],
+      "age_min": 18,
+      "age_max": 39,
+      "farming_max_years": null,
+      "audience": ["청년"],
+      "notes": "만 18~39세. 영농 미경험자도 가능. 전국 4개소(경북·전북·경남·전남)"
+    },
+    "apply": { "where": "스마트팜코리아 신청", "link": "https://www.smartfarmkorea.net", "phone": "" },
+    "source_url": "https://www.smartfarmkorea.net"
+  },
+  {
+    "id": 6,
+    "name": "농업종합자금(시설·농기계)",
+    "agency": "농림축산식품부",
+    "category": "융자",
+    "summary": "일반 농업인의 시설현대화·농기계 구입을 저리 융자",
+    "support": "사업비 융자(시설·기계) · 저리",
+    "eligibility": {
+      "modes": ["returning"],
+      "age_min": null,
+      "age_max": null,
+      "farming_max_years": null,
+      "audience": ["일반농업인"],
+      "notes": "농업경영체 등록 농업인. 농기계·저온저장고·과원조성 등"
+    },
+    "apply": { "where": "농협 / 시·군 농업기술센터", "link": "https://www.mafra.go.kr", "phone": "" },
+    "source_url": "https://www.mafra.go.kr"
+  },
+  {
+    "id": 7,
+    "name": "농작물재해보험",
+    "agency": "농림축산식품부 · 농협",
+    "category": "보험",
+    "summary": "자연재해로 인한 농작물 피해를 보장, 보험료 대부분을 정부·지자체가 지원",
+    "support": "보험료 정부 50% + 지자체 추가 지원 · 자기부담 일부",
+    "eligibility": {
+      "modes": ["returning", "weekend"],
+      "age_min": null,
+      "age_max": null,
+      "farming_max_years": null,
+      "audience": ["일반농업인", "귀농인", "주말농장"],
+      "notes": "대상 품목·지역 한정. 가입은 작목별 가입기간 내. 농업경영체 등록 권장"
+    },
+    "apply": { "where": "가입 지역 농·축협", "link": "https://www.mafra.go.kr", "phone": "" },
+    "source_url": "https://www.mafra.go.kr"
+  },
+  {
+    "id": 8,
+    "name": "청년 농촌보금자리 조성사업",
+    "agency": "농림축산식품부 · 지자체",
+    "category": "주거",
+    "summary": "귀농·청년에게 임대형 단독주택 단지와 공동 보육·커뮤니티 제공",
+    "support": "임대주택 단지(저렴한 임대료) · 공동 보육시설",
+    "eligibility": {
+      "modes": ["returning"],
+      "age_min": 18,
+      "age_max": 40,
+      "farming_max_years": null,
+      "audience": ["청년", "귀농인"],
+      "notes": "만 40세 이하 귀농·귀촌 가구 우선. 조성 지자체 한정(공고 확인)"
+    },
+    "apply": { "where": "그린대로(귀농귀촌종합센터) / 조성 지자체", "link": "https://www.greendaero.go.kr", "phone": "1899-9097" },
+    "source_url": "https://www.greendaero.go.kr"
+  },
+  {
+    "id": 9,
+    "name": "농지은행 맞춤형 농지지원(임대·매매)",
+    "agency": "한국농어촌공사",
+    "category": "농지",
+    "summary": "청년·귀농인에게 공공임대 농지와 농지 매매를 우선 지원",
+    "support": "공공임대용 농지 임대 · 농지 매매 연계 · 장기 임차",
+    "eligibility": {
+      "modes": ["returning"],
+      "age_min": null,
+      "age_max": null,
+      "farming_max_years": null,
+      "audience": ["귀농인", "청년", "일반농업인"],
+      "notes": "농지 확보가 어려운 청년·귀농인 우대. 지역별 매물 한정"
+    },
+    "apply": { "where": "농지은행포털(농어촌공사)", "link": "https://www.fbo.or.kr", "phone": "1577-7770" },
+    "source_url": "https://www.fbo.or.kr"
+  },
+  {
+    "id": 10,
+    "name": "농촌융복합산업(6차산업) 사업자 인증",
+    "agency": "농림축산식품부",
+    "category": "인증",
+    "summary": "생산+가공+체험·관광을 연계한 농가에 인증·판로·자금 지원",
+    "support": "인증 시 정책자금·판로·컨설팅 우대",
+    "eligibility": {
+      "modes": ["returning"],
+      "age_min": null,
+      "age_max": null,
+      "farming_max_years": null,
+      "audience": ["일반농업인", "귀농인"],
+      "notes": "농산물 가공·체험·직매 등 부가가치 사업 영위. 지역 농촌융복합산업지원센터 신청"
+    },
+    "apply": { "where": "지역 농촌융복합산업지원센터", "link": "https://www.mafra.go.kr", "phone": "" },
+    "source_url": "https://www.mafra.go.kr"
+  },
+  {
+    "id": 11,
+    "name": "농기계 임대사업",
+    "agency": "지자체 농업기술센터",
+    "category": "임대",
+    "summary": "고가 농기계를 시·군 임대사업소에서 저렴하게 임대",
+    "support": "트랙터·관리기 등 농기계 일·주 단위 임대(시중 대비 저렴)",
+    "eligibility": {
+      "modes": ["returning", "weekend"],
+      "age_min": null,
+      "age_max": null,
+      "farming_max_years": null,
+      "audience": ["일반농업인", "주말농장", "귀농인"],
+      "notes": "해당 시·군 관내 경작자. 사전 예약·교육 필요"
+    },
+    "apply": { "where": "시·군 농업기술센터 농기계임대사업소", "link": "https://www.greendaero.go.kr", "phone": "" },
+    "source_url": "https://www.greendaero.go.kr"
+  },
+  {
+    "id": 12,
+    "name": "도시농업·주말체험영농 지원",
+    "agency": "지자체",
+    "category": "교육",
+    "summary": "도시민·주말농장인에게 텃밭 분양·교육·기초 농자재를 지원",
+    "support": "주말농장 텃밭 분양 · 도시농업 교육 · 기초 농자재",
+    "eligibility": {
+      "modes": ["weekend"],
+      "age_min": null,
+      "age_max": null,
+      "farming_max_years": null,
+      "audience": ["주말농장"],
+      "notes": "지자체 도시농업 프로그램. 분양 시기·규모 한정(공고 확인)"
+    },
+    "apply": { "where": "거주지 시·군·구 도시농업 담당", "link": "https://www.mafra.go.kr", "phone": "" },
+    "source_url": "https://www.mafra.go.kr"
+  },
+  {
+    "id": 13,
+    "name": "여성농업인 행복바우처",
+    "agency": "지자체",
+    "category": "복지",
+    "summary": "여성농업인에게 문화·건강·교육에 쓸 수 있는 바우처 지급",
+    "support": "연 10~20만원 상당 바우처(지자체별 상이)",
+    "eligibility": {
+      "modes": ["returning"],
+      "age_min": null,
+      "age_max": null,
+      "farming_max_years": null,
+      "audience": ["여성", "일반농업인"],
+      "notes": "농업경영체 등록 여성농업인. 지자체별 대상·금액 상이"
+    },
+    "apply": { "where": "거주지 시·군 농정부서", "link": "https://www.mafra.go.kr", "phone": "" },
+    "source_url": "https://www.mafra.go.kr"
+  }
+]

@@ -266,49 +266,47 @@ async def fetch_recent_price(
     if not settings.kamis_cert_key or not settings.kamis_cert_id:
         return None
 
-    base = regday or date.today()
-    items: list[dict] = []
-    used_day = base
-    for back in range(4):  # 주말/휴일 대비 며칠 뒤로
-        used_day = base - timedelta(days=back)
-        items = await _fetch_daily_category(product_cls_code, category_code, used_day)
-        if items:
-            break
-    if not items:
-        return None
-
-    rows = [r for r in items if _parse_str(r.get("item_code")) == item_code]
-    if not rows:
-        return None
-
     def pr(r: dict, key: str) -> int | None:
         return _parse_price(_parse_str(r.get(key)))
 
-    pool = [r for r in rows if pr(r, "dpr1") is not None] or rows
-    if kind_code:
-        kmatch = [r for r in pool if _parse_str(r.get("kind_code")) == kind_code]
-        pool = kmatch or pool
-    rank04 = [r for r in pool if _parse_str(r.get("rank_code")) == "04"]
-    chosen = (rank04 or pool)[0]
+    base = regday or date.today()
+    # 주말·연휴 대비 최대 7일 뒤로. 해당 품목 행이 있고 가격(dpr1~3)이 실제로
+    # 잡히는 날까지 거슬러야 한다 — 휴일 당일은 category 응답에 품목 행은 있어도
+    # 가격이 전부 '-' 인 경우가 있어, 행 존재만으로 멈추면 정보 없음으로 오인됨.
+    for back in range(7):
+        used_day = base - timedelta(days=back)
+        items = await _fetch_daily_category(product_cls_code, category_code, used_day)
+        rows = [r for r in items if _parse_str(r.get("item_code")) == item_code]
+        if not rows:
+            continue
 
-    price = pr(chosen, "dpr1") or pr(chosen, "dpr2") or pr(chosen, "dpr3")
-    if price is None:
-        return None
+        pool = [r for r in rows if pr(r, "dpr1") is not None] or rows
+        if kind_code:
+            kmatch = [r for r in pool if _parse_str(r.get("kind_code")) == kind_code]
+            pool = kmatch or pool
+        rank04 = [r for r in pool if _parse_str(r.get("rank_code")) == "04"]
+        chosen = (rank04 or pool)[0]
 
-    return RecentPrice(
-        item_code=item_code,
-        item_name=_parse_str(chosen.get("item_name")),
-        kind_code=_parse_str(chosen.get("kind_code")),
-        kind_name=_parse_str(chosen.get("kind_name")),
-        rank=_parse_str(chosen.get("rank")),
-        unit=_parse_str(chosen.get("unit")),
-        product_cls_code=product_cls_code,
-        obs_date=used_day,
-        price=price,
-        prev_price=pr(chosen, "dpr2"),
-        week_ago=pr(chosen, "dpr3"),
-        month_ago=pr(chosen, "dpr5"),
-    )
+        price = pr(chosen, "dpr1") or pr(chosen, "dpr2") or pr(chosen, "dpr3")
+        if price is None:
+            continue
+
+        return RecentPrice(
+            item_code=item_code,
+            item_name=_parse_str(chosen.get("item_name")),
+            kind_code=_parse_str(chosen.get("kind_code")),
+            kind_name=_parse_str(chosen.get("kind_name")),
+            rank=_parse_str(chosen.get("rank")),
+            unit=_parse_str(chosen.get("unit")),
+            product_cls_code=product_cls_code,
+            obs_date=used_day,
+            price=price,
+            prev_price=pr(chosen, "dpr2"),
+            week_ago=pr(chosen, "dpr3"),
+            month_ago=pr(chosen, "dpr5"),
+        )
+
+    return None
 
 
 # ───────────────────── 최근 가격추이 ─────────────────────
