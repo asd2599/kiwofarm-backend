@@ -13,13 +13,13 @@ TODO 실구현:
 
 from dataclasses import dataclass, field
 
+from app.core.recommend.peer_match import PeerStats, match_peers, to_pyeong
 from app.schemas.recommend import (
     CalendarMonth,
     CropRecommendationItem,
     OnboardingInput,
     RecommendationResponse,
 )
-
 
 # ───────────────────────── 지역 기후 ─────────────────────────
 
@@ -89,15 +89,19 @@ class CropProfile:
     tags: list[str]
     blurb: str  # 작목 특성 한 줄(추천 이유용)
     calendar: dict[str, list[int]] = field(default_factory=dict)
+    # premium=우수농가 실측 매칭(완숙토마토·딸기·파프리카, SmartFarmDATA2),
+    # standard=공공데이터 표준 매칭. 추천 카드/엔진이 매칭 방식을 분기하는 데 사용.
+    tier: str = "standard"
 
 
 CATALOG: list[CropProfile] = [
     CropProfile(
-        "tomato", "방울토마토", "🍅", 2, 12.0, 16.5, True, False, True,
-        2500, 4260, 2180, 24, 12000,
+        "tomato", "완숙토마토", "🍅", 2, 12.0, 16.5, True, False, True,
+        2500, 4260, 2180, 30, 6000,
         ["시설재배", "수도권 출하 유리", "연중 출하"],
         "수도권 도매가가 안정적이고 시설에서 연중 출하가 가능한",
         {"rest": [12, 1], "seeding": [2, 3], "growing": [4, 5, 6, 11], "harvest": [7, 8, 9, 10]},
+        tier="premium",  # SmartFarmDATA2 우수농가 실측 매칭 대상 (완숙토마토·딸기·파프리카)
     ),
     CropProfile(
         "sweetpotato", "고구마", "🍠", 1, 13.0, 17.0, False, False, True,
@@ -119,6 +123,7 @@ CATALOG: list[CropProfile] = [
         ["시설재배", "고단가", "체험·직거래 인기"],
         "겨울~봄 시설재배 단가가 높고 체험 수요가 큰",
         {"rest": [7, 8], "seeding": [9], "growing": [10, 11, 12], "harvest": [1, 2, 3, 4, 5, 6]},
+        tier="premium",
     ),
     CropProfile(
         "paprika", "파프리카", "🫑", 4, 13.0, 16.5, True, False, False,
@@ -126,6 +131,7 @@ CATALOG: list[CropProfile] = [
         ["스마트팜", "수출 작목", "고소득"],
         "스마트팜 기반 수출·고소득이 가능하지만 초기투자가 큰",
         {"rest": [12, 1], "seeding": [2], "growing": [3, 4, 11], "harvest": [5, 6, 7, 8, 9, 10]},
+        tier="premium",
     ),
     CropProfile(
         "pepper", "청양고추", "🌶️", 2, 13.0, 17.0, False, False, True,
@@ -235,13 +241,18 @@ def _score(crop: CropProfile, clim: RegionClimate, input_: OnboardingInput) -> f
 
 def _scale_factor(input_: OnboardingInput, base_pyeong: float) -> float:
     """면적을 평으로 환산해 기준 면적 대비 배율(0.2~5)을 구한다."""
-    if input_.areaUnit == "sqm":
-        pyeong = input_.area / 3.305785
-    elif input_.areaUnit == "hectare":
-        pyeong = input_.area * 3025.0
-    else:
-        pyeong = input_.area
+    pyeong = to_pyeong(input_.area, input_.areaUnit)
     return max(0.2, min(5.0, pyeong / base_pyeong))
+
+
+def _peer_boost(peer: PeerStats, input_: OnboardingInput) -> float:
+    """premium 작목 가산점. 실측 우수농가가 사용자 지역·조건과 맞을수록 크다."""
+    boost = 4.0  # 실측(우수농가) 기반이라는 기본 신뢰 가산
+    if peer.same_province:
+        boost += min(12.0, 3.0 + peer.same_province * 1.5)
+    boost += min(6.0, peer.matched * 0.4)
+    # 주말농장 모드에선 상업 우수농가 근거의 가중치를 낮춘다.
+    return boost if input_.mode == "returning" else boost * 0.4
 
 
 def _reason(crop: CropProfile, clim: RegionClimate, prov: str, input_: OnboardingInput) -> str:
@@ -278,6 +289,7 @@ def _build_item(
     input_: OnboardingInput,
     score: float,
     rank: int,
+    peer: PeerStats | None = None,
 ) -> CropRecommendationItem:
     match_score = max(40, min(97, round(score)))
     calendar = [
@@ -294,6 +306,16 @@ def _build_item(
         revenue, net = 0, 0
         yield_kg, price = round(crop.yield_kg * f), crop.direct_price_won
 
+    # premium: 실측 우수농가 수/유사도로 peer 지표를 채운다. 그 외엔 종전 근사치.
+    if peer is not None and peer.total:
+        peer_farms = peer.total
+        peer_agree = max(5, min(95, round(100 * peer.matched / peer.total)))
+        peer_evidence: str | None = peer.evidence
+    else:
+        peer_farms = 6 + match_score // 5
+        peer_agree = max(45, min(92, match_score - 8))
+        peer_evidence = None
+
     return CropRecommendationItem(
         cropId=crop.crop_id,
         name=crop.name,
@@ -307,9 +329,11 @@ def _build_item(
         llmReason=_reason(crop, clim, prov, input_),
         tags=crop.tags,
         calendar=calendar,
-        peerFarms=6 + match_score // 5,
-        peerAgreeRate=max(45, min(92, match_score - 8)),
+        peerFarms=peer_farms,
+        peerAgreeRate=peer_agree,
         color=_RANK_COLOR[rank],  # type: ignore[arg-type]
+        tier=crop.tier,
+        peerEvidence=peer_evidence,
     )
 
 
@@ -328,16 +352,32 @@ def recommend(input_: OnboardingInput) -> RecommendationResponse:
     소규모·단년 작목만(weekend_ok) 후보로 둔다.
     """
     prov, clim = _resolve_climate(input_)
+    user_prov = input_.province or prov
+    area_pyeong = to_pyeong(input_.area, input_.areaUnit)
 
     pool = [c for c in CATALOG if input_.mode == "returning" or c.weekend_ok]
+
+    # premium(완숙토마토·딸기·파프리카)은 우수농가 로스터로 유사매칭해 가산·근거를 붙이고,
+    # standard는 종전 룰베이스 점수만 쓴다.
+    peers: dict[str, PeerStats] = {}
+    scored_list: list[tuple[CropProfile, float]] = []
+    for c in pool:
+        s = _score(c, clim, input_)
+        if c.tier == "premium":
+            ps = match_peers(c.crop_id, user_prov, area_pyeong, input_.facility)
+            if ps is not None:
+                peers[c.crop_id] = ps
+                s += _peer_boost(ps, input_)
+        scored_list.append((c, s))
+
     scored = sorted(
-        ((c, _score(c, clim, input_)) for c in pool),
+        scored_list,
         key=lambda cs: (cs[1], cs[0].net_manwon, -CATALOG.index(cs[0])),
         reverse=True,
     )
 
     items = [
-        _build_item(crop, clim, prov, input_, score, rank)
+        _build_item(crop, clim, prov, input_, score, rank, peers.get(crop.crop_id))
         for rank, (crop, score) in enumerate(scored[:3])
     ]
     return RecommendationResponse(mode=input_.mode, items=items)
