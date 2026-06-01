@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     data_go_kr_key: str = ""
     nongsaro_api_key: str = ""
+    ncpms_api_key: str = ""  # 국가농작물병해충관리시스템(ncpms.rda.go.kr) Open API 키
     kamis_cert_key: str = ""
     kamis_cert_id: str = ""
     kma_api_key: str = ""
