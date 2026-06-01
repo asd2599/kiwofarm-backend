@@ -1,7 +1,11 @@
-from fastapi import APIRouter, HTTPException, Query
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.crops import summary as crop_summary
 from app.data import kamis_crops, nongsaro
+from app.db.session import get_session
 from app.schemas.crops import (
     CropOption,
     CropSummary,
@@ -11,6 +15,8 @@ from app.schemas.crops import (
 )
 
 router = APIRouter(prefix="/crops", tags=["crops"])
+
+SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
 def _to_option(row: kamis_crops.CropRecord) -> CropOption:
@@ -123,11 +129,14 @@ async def get_cultivation(item_code: str, kind_code: str) -> CultivationGuide:
 
 
 @router.get("/{item_code}/{kind_code}/summary", response_model=CropSummary)
-async def get_crop_summary(item_code: str, kind_code: str) -> CropSummary:
-    """농업기술길잡이 PDF 첫 권 → GPT-4o 키포인트 요약.
+async def get_crop_summary(
+    item_code: str, kind_code: str, session: SessionDep
+) -> CropSummary:
+    """농업기술길잡이 → RAG 기반 GPT 키포인트 요약.
 
-    cultivation 라우트가 매칭한 첫 e-book 의 file_url 을 사용합니다.
-    첫 호출은 PDF 다운+텍스트 추출+GPT 호출로 10~20초가 걸리고, 결과는 메모리 캐시.
+    계획 생성과 같은 RAG 파이프라인(농사로 PDF → 청크 → 임베딩 → pgvector 검색)으로
+    요약에 필요한 청크만 추려 GPT 로 보냅니다. 첫 호출은 PDF 다운+임베딩+GPT 로
+    길어지고(10~30초), 결과는 메모리 캐시. e-book 메타는 출처 표시용으로 함께 조회.
     """
     row = kamis_crops.get_by_codes(item_code, kind_code)
     if row is None:
@@ -158,13 +167,15 @@ async def get_crop_summary(item_code: str, kind_code: str) -> CropSummary:
 
     try:
         result = await crop_summary.build_summary(
+            session=session,
             item_code=item_code,
             kind_code=kind_code,
-            crop_name=row["label"],
+            crop_name=row["itemName"],  # 농사로 소분류 매칭·RAG 인제스트 기준명
             sub_category_name=match.sub_name,
             ebook_code=first.ebook_code if first else None,
             ebook_name=first.ebook_name if first else None,
             file_url=first.file_url if first else None,
+            group_name=row["groupName"],
         )
     except crop_summary.SummaryError as e:
         raise HTTPException(status_code=503, detail=f"요약 생성 실패: {e}") from e

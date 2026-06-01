@@ -1,10 +1,15 @@
-"""작목 농업기술길잡이 PDF → GPT-4o 키포인트 요약.
+"""작목 농업기술길잡이 → RAG 기반 GPT 키포인트 요약.
 
-흐름:
-  1. cultivation 라우트가 매칭한 첫 ebook 의 file_url 로 PDF 다운로드
-  2. pypdf 로 텍스트 추출 (앞 60p 까지)
-  3. GPT-4o 에 작목 컨텍스트와 함께 보내 키포인트 6~8개 + 핵심 한 줄 생성
-  4. (item_code, kind_code) 단위 메모리 캐시
+흐름 (계획 생성기와 동일한 RAG 파이프라인 재사용):
+  1. ensure_crop_ingested 로 작목 청크 확보 (농사로 PDF → 청크 → 임베딩,
+     PDF 실패 시 GPT general 지식 텍스트). idempotent.
+  2. 요약 facet 별 RAG 질의로 의미적으로 관련된 청크만 회수 → 컨텍스트 합성.
+  3. GPT 에 회수 컨텍스트를 보내 키포인트 6~8개 + 핵심 한 줄 생성.
+  4. doc_chunk.source 로 PDF/general 모드 판정.
+  5. (item_code, kind_code) 단위 메모리 캐시.
+
+이전 구현은 PDF 60p 전체를 18k자로 잘라 통째 GPT 로 보냈으나, 이제 계획
+생성과 같은 pgvector 검색으로 요약에 필요한 청크만 추려 보낸다.
 
 OPENAI_API_KEY 미설정 시 명시적 에러 → 라우트가 503 으로 매핑.
 """
@@ -17,18 +22,32 @@ import logging
 from dataclasses import dataclass
 
 from openai import APIError, AsyncOpenAI
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.data import nongsaro
+from app.core.rag import retrieve as rag_retrieve
+from app.core.rag.ingest import NCPMS_SOURCE, crop_key, ensure_crop_ingested
+from app.db.models.doc_chunk import DocChunk
 
 log = logging.getLogger(__name__)
 
 MODEL = "gpt-4o-mini"  # 비용·속도 우선. 품질 더 필요하면 "gpt-4o" 로 교체.
-MAX_TEXT_CHARS = 18_000  # 모델 컨텍스트 절약 (한글 18k ≈ 9~10k tokens)
+
+# 요약 facet → RAG 질의문. 키포인트가 고루 분포하도록 주제별로 회수한다.
+_SUMMARY_FACETS: list[str] = [
+    "재배 환경 기후 토양 일조 조건",
+    "파종 육묘 정식 시기와 방법",
+    "밑거름 웃거름 시비 시기와 방법",
+    "물주기 관수 토양 수분 관리",
+    "병해충 예방 시기별 방제 주요 병해충 주의사항",
+    "수확 시기 방법 수확 후 저장",
+]
+_RETRIEVE_K = 3  # facet 당 회수 청크 수
 
 
 class SummaryError(RuntimeError):
-    """요약 실패 (OpenAI 호출·PDF 다운·텍스트 추출 등)."""
+    """요약 실패 (OpenAI 호출·RAG 인제스트·검색 등)."""
 
 
 @dataclass(frozen=True)
@@ -41,8 +60,8 @@ class CropSummary:
     source_ebook_code: str | None
     source_ebook_name: str | None
     source_file_url: str | None
-    text_chars: int
-    mode: str  # "pdf" | "general" — PDF 본문 사용 여부
+    text_chars: int  # 회수해 GPT 로 보낸 컨텍스트 길이
+    mode: str  # "pdf" | "general" — 적재된 재배지식 청크의 출처
 
 
 # (item_code, kind_code) -> CropSummary
@@ -58,15 +77,15 @@ def _get_lock(key: tuple[str, str]) -> asyncio.Lock:
     return lock
 
 
-SYSTEM_PROMPT_PDF = (
-    "당신은 농업기술 전문가입니다. 농촌진흥청 농업기술길잡이 PDF 본문에서 "
-    "초보 농가가 가장 먼저 알아야 할 키포인트를 한국어로 추출합니다. "
-    "출력은 JSON 객체 하나만, 다른 텍스트 없이. 형식: "
+SYSTEM_PROMPT_RAG = (
+    "당신은 농업기술 전문가입니다. 농촌진흥청 농업기술길잡이에서 검색된 본문 "
+    "발췌(RAG) 를 근거로, 초보 농가가 가장 먼저 알아야 할 키포인트를 한국어로 "
+    "추출합니다. 출력은 JSON 객체 하나만, 다른 텍스트 없이. 형식: "
     '{"headline": "한 줄 요약 (60자 이내)", '
     '"key_points": ["키포인트 1", "키포인트 2", ...]}. '
     "key_points 는 정확히 6~8개. 각 항목은 80자 이내 단문. "
     "재배환경·핵심작업·시비·물관리·병해충·수확·저장·주의점 중에서 골고루 다룹니다. "
-    "본문에 없는 정보는 추측하지 말 것."
+    "발췌에 없는 정보는 추측하지 말 것."
 )
 
 SYSTEM_PROMPT_GENERAL = (
@@ -81,12 +100,12 @@ SYSTEM_PROMPT_GENERAL = (
 )
 
 
-def _build_user_prompt_pdf(crop_name: str, sub_category_name: str | None, text: str) -> str:
+def _build_user_prompt_rag(crop_name: str, sub_category_name: str | None, context: str) -> str:
     sub = f" ({sub_category_name})" if sub_category_name else ""
     return (
         f"작목: {crop_name}{sub}\n\n"
-        f"--- 농업기술길잡이 본문 (앞부분) ---\n{text}\n--- 끝 ---\n\n"
-        "위 본문을 바탕으로 JSON 키포인트를 출력하세요."
+        f"--- 농업기술길잡이 검색 발췌 (RAG) ---\n{context}\n--- 끝 ---\n\n"
+        "위 발췌를 바탕으로 JSON 키포인트를 출력하세요."
     )
 
 
@@ -136,12 +155,12 @@ async def _gpt_call(system_prompt: str, user_prompt: str) -> tuple[str, list[str
     return _parse_json_response(content)
 
 
-async def _gpt_summarize_pdf(
-    crop_name: str, sub_category_name: str | None, text: str
+async def _gpt_summarize_rag(
+    crop_name: str, sub_category_name: str | None, context: str
 ) -> tuple[str, list[str]]:
     return await _gpt_call(
-        SYSTEM_PROMPT_PDF,
-        _build_user_prompt_pdf(crop_name, sub_category_name, text),
+        SYSTEM_PROMPT_RAG,
+        _build_user_prompt_rag(crop_name, sub_category_name, context),
     )
 
 
@@ -154,7 +173,35 @@ async def _gpt_summarize_general(
     )
 
 
+async def _gather_context(session: AsyncSession, ckey: str) -> str:
+    """요약 facet 별 청크를 회수해 중복 제거 후 합성한다."""
+    seen: set[str] = set()
+    blocks: list[str] = []
+    for query in _SUMMARY_FACETS:
+        try:
+            chunks = await rag_retrieve.retrieve(session, ckey, query, k=_RETRIEVE_K)
+        except Exception as e:  # noqa: BLE001 - 한 facet 검색 실패가 전체를 막지 않게
+            log.info("summary retrieve 실패 ckey=%s reason=%s", ckey, e)
+            continue
+        for c in chunks:
+            if c and c not in seen:
+                seen.add(c)
+                blocks.append(c)
+    return "\n".join(f"- {b}" for b in blocks)
+
+
+async def _cultivation_source(session: AsyncSession, ckey: str) -> str | None:
+    """재배지식 청크(ncpms 제외)의 source. ebook_code → PDF, 'general' → 일반."""
+    stmt = (
+        select(DocChunk.source)
+        .where(DocChunk.crop_key == ckey, DocChunk.source != NCPMS_SOURCE)
+        .limit(1)
+    )
+    return await session.scalar(stmt)
+
+
 async def build_summary(
+    session: AsyncSession,
     item_code: str,
     kind_code: str,
     crop_name: str,
@@ -162,12 +209,13 @@ async def build_summary(
     ebook_code: str | None,
     ebook_name: str | None,
     file_url: str | None,
+    group_name: str | None = None,
 ) -> CropSummary:
-    """PDF 우선 → 실패 시 GPT 일반 지식 fallback. 결과는 (item, kind) 단위 캐시.
+    """RAG 로 작목 청크를 확보·회수해 GPT 키포인트 요약. (item, kind) 단위 캐시.
 
-    PDF 경로가 막힌 케이스 (농사로 다운로드 endpoint 폐쇄 / 스캔본 / 미등록):
-      file_url 없거나 download_pdf/extract_pdf_text 가 실패하면 자동으로
-      작목명·sub_category 만으로 GPT 키포인트 생성 (mode="general").
+    인제스트 파이프라인이 PDF 다운→청크→임베딩(또는 PDF 실패 시 GPT general
+    지식)을 처리하므로, 여기서는 요약에 필요한 청크만 검색해 GPT 로 보낸다.
+    RAG 컨텍스트가 비면(인제스트 실패 등) 작목명 기반 GPT general 로 폴백한다.
     """
     key = (item_code, kind_code)
     cached = _cache.get(key)
@@ -179,27 +227,22 @@ async def build_summary(
         if cached is not None:
             return cached
 
-        pdf_text: str = ""
-        pdf_error: str | None = None
-
-        if file_url:
-            try:
-                log.info("crop summary PDF attempt crop=%s url=%s", crop_name, file_url)
-                pdf_bytes = await nongsaro.download_pdf(file_url)
-                pdf_text = nongsaro.extract_pdf_text(pdf_bytes)
-                if not pdf_text:
-                    pdf_error = "PDF 텍스트 추출 결과가 비어있음 (스캔본 가능)"
-            except nongsaro.NongsaroError as e:
-                pdf_error = str(e)
-                log.info("crop summary PDF fallback crop=%s reason=%s", crop_name, pdf_error)
-        else:
-            pdf_error = "농사로 길잡이에 file_url 이 없음"
-
-        if pdf_text:
-            headline, key_points = await _gpt_summarize_pdf(
-                crop_name, sub_category_name, pdf_text[:MAX_TEXT_CHARS]
+        ckey = crop_key(item_code, kind_code)
+        context = ""
+        try:
+            await ensure_crop_ingested(
+                session, item_code, kind_code, crop_name, group_name=group_name
             )
-            mode = "pdf"
+            context = await _gather_context(session, ckey)
+        except Exception as e:  # noqa: BLE001 - 인제스트/검색 실패해도 general 폴백
+            log.info("summary RAG 인제스트/검색 실패 crop=%s reason=%s", crop_name, e)
+
+        if context:
+            headline, key_points = await _gpt_summarize_rag(
+                crop_name, sub_category_name, context
+            )
+            source = await _cultivation_source(session, ckey)
+            mode = "general" if source in (None, "general") else "pdf"
         else:
             headline, key_points = await _gpt_summarize_general(
                 crop_name, sub_category_name
@@ -215,11 +258,15 @@ async def build_summary(
             source_ebook_code=ebook_code,
             source_ebook_name=ebook_name,
             source_file_url=file_url,
-            text_chars=len(pdf_text),
+            text_chars=len(context),
             mode=mode,
         )
         _cache[key] = summary
         log.info(
-            "crop summary build done crop=%s mode=%s points=%d", crop_name, mode, len(key_points)
+            "crop summary build done crop=%s mode=%s points=%d ctx_chars=%d",
+            crop_name,
+            mode,
+            len(key_points),
+            len(context),
         )
         return summary

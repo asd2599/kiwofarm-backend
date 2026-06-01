@@ -1,0 +1,16 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: kiwofarm-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: kiwofarm
+      POSTGRES_PASSWORD: kiwofarm
+      POSTGRES_DB: kiwofarm
+    ports:
+      - "5432:5432"
+    volumes:
+      - kiwofarm-db-data:/var/lib/postgresql/data
+
+volumes:
+  kiwofarm-db-data:
