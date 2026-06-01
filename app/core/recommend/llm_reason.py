@@ -48,6 +48,9 @@ def _build_prompt(item: CropRecommendationItem, input_: OnboardingInput) -> str:
             f"적합도 {item.matchScore}%."
         )
         ask = "주말 방문 관리 관점(관리 편의성·가족 소비·직거래 적합성)에서"
+    if item.peerEvidence:
+        # premium 작목: 우수농가 실측 근거를 컨텍스트에 더해 이유를 사실 기반으로.
+        ctx += f" 우수농가 실측근거: {item.peerEvidence}."
     return (
         f"작목: {item.name}\n특징 태그: {', '.join(item.tags)}\n{ctx}\n\n"
         f"위 작목을 {region} 지역에서 추천하는 이유를 {ask} "
