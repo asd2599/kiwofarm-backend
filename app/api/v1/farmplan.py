@@ -22,6 +22,7 @@ from app.schemas.farmplan import (
     FarmTaskOut,
     MemoUpsert,
     SettingsUpdate,
+    TaskDelayBatch,
     TaskMemoOut,
     TaskStatusUpdate,
 )
@@ -117,6 +118,48 @@ async def update_settings(
     return _plan_out(plan)
 
 
+@router.patch("/{plan_id}/tasks/delay-batch", response_model=FarmPlanOut)
+async def delay_tasks_batch(
+    plan_id: int, payload: TaskDelayBatch, session: SessionDep
+) -> FarmPlanOut:
+    """같은 날짜의 여러 작업을 한 번에 같은 일수만큼 지연.
+
+    선택한 작업들(보통 같은 날짜)은 입력한 일수만큼 그대로 이동하고,
+    그 이후(order 가 더 큰) 작업만 방문 요일에 맞춰 스냅한다.
+    """
+    plan = await _load_plan(session, plan_id)
+    if not plan.track_progress:
+        raise HTTPException(
+            status_code=409, detail="진행 추적이 꺼져 있습니다. 먼저 settings 로 켜세요."
+        )
+
+    target_ids = set(payload.taskIds)
+    targets = [t for t in plan.tasks if t.id in target_ids]
+    if not targets:
+        raise HTTPException(status_code=404, detail="해당 작업을 찾을 수 없습니다.")
+
+    delay = payload.delayDays
+    # 선택 작업 중 가장 앞선 것부터 그 이후 작업을 일괄 시프트
+    min_order = min(t.order for t in targets)
+    affected = [t for t in plan.tasks if t.order >= min_order]
+    for t in affected:
+        t.day_offset += delay
+    # 입력 대상 작업들은 입력한 만큼만 그대로, 나머지(이후) 단기 작업만 방문 요일 스냅
+    others = [t for t in affected if t.id not in target_ids]
+    _snap_to_visit_days(others, plan.start_date, plan.visit_days)
+    plan.tasks.sort(key=lambda x: x.day_offset)
+    for i, t in enumerate(plan.tasks):
+        t.order = i
+
+    for t in targets:
+        t.status = "delayed"
+        t.actual_date = plan.start_date + timedelta(days=t.day_offset)
+
+    await session.commit()
+    plan = await _load_plan(session, plan_id)
+    return _plan_out(plan)
+
+
 @router.patch("/{plan_id}/tasks/{task_id}", response_model=FarmPlanOut)
 async def update_task(
     plan_id: int,
@@ -150,8 +193,10 @@ async def update_task(
             affected = [t for t in plan.tasks if t.order >= target.order]
             for t in affected:
                 t.day_offset += delay
-            # 밀린 단기 작업을 방문 요일에 다시 맞춤(없으면 no-op) 후 전체 재정렬
-            _snap_to_visit_days(affected, plan.start_date, plan.visit_days)
+            # 시프트를 입력한 대상 작업은 입력한 만큼만 그대로 이동.
+            # 방문 요일 스냅은 나머지(이후) 단기 작업에만 적용한다(없으면 no-op) 후 전체 재정렬.
+            others = [t for t in affected if t is not target]
+            _snap_to_visit_days(others, plan.start_date, plan.visit_days)
             plan.tasks.sort(key=lambda x: x.day_offset)
             for i, t in enumerate(plan.tasks):
                 t.order = i

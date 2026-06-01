@@ -69,6 +69,13 @@ class TaskStatusUpdate(BaseModel):
     delayDays: int | None = Field(default=None, ge=0)
 
 
+class TaskDelayBatch(BaseModel):
+    """같은 날짜의 여러 작업을 한 번에 같은 일수만큼 지연."""
+
+    taskIds: list[int] = Field(min_length=1)
+    delayDays: int = Field(ge=1)
+
+
 class MemoUpsert(BaseModel):
     memoDate: date
     content: str
