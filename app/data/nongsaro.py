@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import io
 import logging
+import time
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from typing import Any
@@ -118,11 +119,20 @@ def _to_int(s: str, default: int = 0) -> int:
         return default
 
 
-# ─────────────────────────── 캐시 (모듈 레벨) ───────────────────────────
+# ─────────────────────────── 캐시 (모듈 레벨, 1시간 TTL) ───────────────────────────
+#
+# 카테고리 트리는 거의 변하지 않지만, 장시간 떠 있는 프로세스가 영구히 stale 한
+# 값을 들고 있지 않도록 1시간 TTL 을 둔다. 값은 (적재시각, payload) 튜플로 보관.
 
-_main_cache: list[tuple[str, str]] | None = None  # [(code, name), ...]
-_middle_cache: dict[str, list[tuple[str, str]]] = {}  # main_code → [(code, name)]
-_sub_cache: dict[tuple[str, str | None], list[tuple[str, str]]] = {}  # (middle_code, name?) → ...
+CATEGORY_TTL = 3600.0  # 초
+
+_main_cache: tuple[float, list[tuple[str, str]]] | None = None
+_middle_cache: dict[str, tuple[float, list[tuple[str, str]]]] = {}
+_sub_cache: dict[tuple[str, str | None], tuple[float, list[tuple[str, str]]]] = {}
+
+
+def _fresh(stamped: tuple[float, Any] | None) -> bool:
+    return stamped is not None and (time.monotonic() - stamped[0]) < CATEGORY_TTL
 
 
 # ─────────────────────────── 카테고리 호출 ───────────────────────────
@@ -130,27 +140,28 @@ _sub_cache: dict[tuple[str, str | None], list[tuple[str, str]]] = {}  # (middle_
 
 async def fetch_main_categories() -> list[tuple[str, str]]:
     global _main_cache
-    if _main_cache is not None:
-        return _main_cache
+    if _fresh(_main_cache):
+        return _main_cache[1]  # type: ignore[index]
     root = await _call("mainCategoryList", {})
     out = [
         (_text(it.find("mainCategoryCode")), _text(it.find("mainCategoryNm")))
         for it in _items(root)
     ]
-    _main_cache = [(c, n) for c, n in out if c]
-    return _main_cache
+    fresh = [(c, n) for c, n in out if c]
+    _main_cache = (time.monotonic(), fresh)
+    return fresh
 
 
 async def fetch_middle_categories(main_code: str) -> list[tuple[str, str]]:
-    if main_code in _middle_cache:
-        return _middle_cache[main_code]
+    if _fresh(_middle_cache.get(main_code)):
+        return _middle_cache[main_code][1]
     root = await _call("middleCategoryList", {"mainCategoryCode": main_code})
     out = [
         (_text(it.find("middleCategoryCode")), _text(it.find("middleCategoryNm")))
         for it in _items(root)
     ]
     out = [(c, n) for c, n in out if c]
-    _middle_cache[main_code] = out
+    _middle_cache[main_code] = (time.monotonic(), out)
     return out
 
 
@@ -158,8 +169,8 @@ async def fetch_sub_categories(
     middle_code: str, name: str | None = None
 ) -> list[tuple[str, str]]:
     key = (middle_code, name)
-    if key in _sub_cache:
-        return _sub_cache[key]
+    if _fresh(_sub_cache.get(key)):
+        return _sub_cache[key][1]
     params: dict[str, Any] = {"middleCategoryCode": middle_code}
     if name:
         params["subCategoryNm"] = name
@@ -169,7 +180,7 @@ async def fetch_sub_categories(
         for it in _items(root)
     ]
     out = [(c, n) for c, n in out if c]
-    _sub_cache[key] = out
+    _sub_cache[key] = (time.monotonic(), out)
     return out
 
 

@@ -18,6 +18,7 @@ from openai import AsyncOpenAI
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.core.rag import knowledge
 from app.core.rag import retrieve as rag_retrieve
 from app.core.rag.ingest import crop_key, ensure_crop_ingested
 from app.db.models.farm_plan import FarmPlan, FarmTask
@@ -48,12 +49,12 @@ _VALID_CATEGORIES = {
 }
 
 
-async def _gather_context(session: AsyncSession, ckey: str) -> str:
+async def _gather_context(ckey: str) -> str:
     """facet 별 청크를 회수해 라벨링된 컨텍스트 블록으로 합성."""
     blocks: list[str] = []
     for label, query in _FACETS:
         try:
-            chunks = await rag_retrieve.retrieve(session, ckey, query, k=4)
+            chunks = await rag_retrieve.retrieve(ckey, query, k=4)
         except Exception as e:  # noqa: BLE001
             log.info("retrieve 실패 facet=%s reason=%s", label, e)
             chunks = []
@@ -231,16 +232,24 @@ async def generate_plan(session: AsyncSession, payload: FarmPlanCreate) -> FarmP
 
     try:
         await ensure_crop_ingested(
-            session,
             payload.itemCode,
             payload.kindCode,
             payload.cropName,
             group_name=None,
         )
-        context = await _gather_context(session, ckey)
+        context = await _gather_context(ckey)
     except Exception as e:  # noqa: BLE001 - 인제스트 실패해도 fallback 계획은 제공
         log.info("인제스트/컨텍스트 실패 → fallback crop=%s reason=%s", payload.cropName, e)
         context = ""
+
+    # 공통 지식 허브(knowledge)의 월별 작업 컨텍스트를 보강 주입.
+    # 추천·캘린더가 같은 허브를 공유하도록 하는 진입점이며, 실패 시 빈 문자열.
+    calendar_ctx = await knowledge.get_calendar_tasks(
+        payload.itemCode, payload.kindCode, payload.cropName
+    )
+    if calendar_ctx:
+        block = f"## 월별 표준 작업 (지식 허브)\n{calendar_ctx}"
+        context = f"{context}\n\n{block}" if context else block
 
     raw = await _gpt_tasks(payload, context)
     tasks = _normalize_tasks(raw) or _fallback_tasks()

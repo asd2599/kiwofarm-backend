@@ -1,10 +1,13 @@
-"""작목별 RAG 청크 인제스트.
+"""작목별 RAG 청크 인제스트 (로컬 임베딩 스토어).
 
 흐름 (idempotent):
-  1. doc_chunk 에 crop_key 가 이미 있으면 skip.
+  1. 스토어에 crop_key 의 cultivation 파일이 있으면 skip.
   2. 없으면 농사로 cropEbook 에서 PDF 텍스트 확보 (app/data/nongsaro.py 재사용).
   3. PDF 실패 시 GPT 로 작목 표준 재배지식(병해충 예방 포함) 텍스트 생성 (general fallback).
-  4. 텍스트를 청크로 분할 → 임베딩 → DocChunk 일괄 insert.
+  4. 텍스트를 청크로 분할 → 임베딩 → store.save (backend/data/embeddings/*.npy+json).
+
+이전엔 postgres(doc_chunk/pgvector)에 적재했으나, 로컬 파일 스토어로 전환했다.
+DB 세션이 필요 없다.
 """
 
 from __future__ import annotations
@@ -12,13 +15,11 @@ from __future__ import annotations
 import logging
 
 from openai import AsyncOpenAI
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.core.rag import store
 from app.core.rag.embeddings import embed_texts
 from app.data import ncpms, nongsaro
-from app.db.models.doc_chunk import DocChunk
 
 log = logging.getLogger(__name__)
 
@@ -26,6 +27,10 @@ CHUNK_SIZE = 800
 CHUNK_OVERLAP = 100
 MAX_CHUNKS = 80  # 임베딩 비용·시간 상한
 _GEN_MODEL = "gpt-4o-mini"
+
+# 스토어 kind / source 라벨.
+CULTIVATION_KIND = "cultivation"
+NCPMS_SOURCE = "ncpms"  # kind 이자 source 라벨
 
 
 def crop_key(item_code: str, kind_code: str) -> str:
@@ -103,44 +108,15 @@ async def _fetch_pdf_text(
     return text, first.ebook_code, sub_name
 
 
-NCPMS_SOURCE = "ncpms"
-
-
-async def _has_chunks(session: AsyncSession, ckey: str, *, source: str | None) -> bool:
-    """source 지정 시 그 소스의 청크 존재 여부, None 이면 ncpms 외(재배지식) 존재 여부."""
-    stmt = select(DocChunk.id).where(DocChunk.crop_key == ckey)
-    if source is not None:
-        stmt = stmt.where(DocChunk.source == source)
-    else:
-        stmt = stmt.where(DocChunk.source != NCPMS_SOURCE)
-    return (await session.scalar(stmt.limit(1))) is not None
-
-
-async def _add_chunks(
-    session: AsyncSession, ckey: str, source: str, chunks: list[str]
-) -> int:
+async def _add_chunks(ckey: str, kind: str, source: str, chunks: list[str]) -> int:
     if not chunks:
         return 0
     vectors = await embed_texts(chunks)
-    rows = [
-        DocChunk(
-            crop_key=ckey,
-            sub_category_code=None,
-            source=source,
-            chunk_index=i,
-            content=chunk,
-            embedding=vec,
-        )
-        for i, (chunk, vec) in enumerate(zip(chunks, vectors, strict=True))
-    ]
-    session.add_all(rows)
-    await session.commit()
-    log.info("ingest add crop=%s source=%s chunks=%d", ckey, source, len(rows))
-    return len(rows)
+    return store.save(ckey, kind, chunks, vectors, source)
 
 
 async def _ingest_cultivation(
-    session: AsyncSession, ckey: str, crop_name: str, group_name: str | None
+    ckey: str, crop_name: str, group_name: str | None
 ) -> int:
     text, source, sub_name = "", "general", None
     try:
@@ -155,10 +131,10 @@ async def _ingest_cultivation(
     chunks = _chunk_text(text)
     if not chunks:
         raise nongsaro.NongsaroError(f"인제스트할 텍스트가 없습니다 crop={crop_name}")
-    return await _add_chunks(session, ckey, source, chunks)
+    return await _add_chunks(ckey, CULTIVATION_KIND, source, chunks)
 
 
-async def _ingest_ncpms_pests(session: AsyncSession, ckey: str, crop_name: str) -> int:
+async def _ingest_ncpms_pests(ckey: str, crop_name: str) -> int:
     """NCPMS 병해충 도감을 청크로 추가. 키 없거나 결과 없으면 0."""
     try:
         pest_texts = await ncpms.fetch_pest_texts(crop_name)
@@ -168,11 +144,10 @@ async def _ingest_ncpms_pests(session: AsyncSession, ckey: str, crop_name: str) 
     chunks: list[str] = []
     for pt in pest_texts:
         chunks.extend(_chunk_text(pt))
-    return await _add_chunks(session, ckey, NCPMS_SOURCE, chunks)
+    return await _add_chunks(ckey, NCPMS_SOURCE, NCPMS_SOURCE, chunks)
 
 
 async def ensure_crop_ingested(
-    session: AsyncSession,
     item_code: str,
     kind_code: str,
     crop_name: str,
@@ -187,12 +162,10 @@ async def ensure_crop_ingested(
     ckey = crop_key(item_code, kind_code)
     added = 0
 
-    if not await _has_chunks(session, ckey, source=None):
-        added += await _ingest_cultivation(session, ckey, crop_name, group_name)
+    if not store.exists(ckey, CULTIVATION_KIND):
+        added += await _ingest_cultivation(ckey, crop_name, group_name)
 
-    if settings.ncpms_api_key and not await _has_chunks(
-        session, ckey, source=NCPMS_SOURCE
-    ):
-        added += await _ingest_ncpms_pests(session, ckey, crop_name)
+    if settings.ncpms_api_key and not store.exists(ckey, NCPMS_SOURCE):
+        added += await _ingest_ncpms_pests(ckey, crop_name)
 
     return added

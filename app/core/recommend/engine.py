@@ -199,6 +199,30 @@ _FACILITY_LABEL = {
 }
 
 
+# 추천 작목(crop_id) → 농사로 farminfo 조회 키(itemCode 단위). KAMIS itemCode 가 기본이며,
+# KAMIS 시드에 없는 작물(옥수수)은 정리 스크립트의 합성 키(x_corn)와 맞춘다.
+CROP_ITEM_CODE: dict[str, str] = {
+    "tomato": "225",  # 토마토
+    "sweetpotato": "151",  # 고구마
+    "blueberry": "429",  # 블루베리
+    "strawberry": "226",  # 딸기
+    "paprika": "256",  # 파프리카
+    "pepper": "242",  # 풋고추(생) — 농사로 'generic 고추' 별칭 버킷과 일치
+    "lettuce": "214",  # 상추
+    "citrus": "415",  # 감귤
+    "persimmon": "416",  # 단감
+    "apple": "411",  # 사과
+    "grape": "414",  # 포도
+    "potato": "152",  # 감자
+    "corn": "x_corn",  # 옥수수 (KAMIS 시드 미존재 → 합성 키, sync_farm_info_by_crop._EXTRA_CROPS)
+}
+
+
+def item_code_for(crop_id: str) -> str:
+    """추천 작목 crop_id 에 대응하는 KAMIS itemCode(없으면 빈 문자열)."""
+    return CROP_ITEM_CODE.get(crop_id, "")
+
+
 # ───────────────────────── 점수화 ─────────────────────────
 
 

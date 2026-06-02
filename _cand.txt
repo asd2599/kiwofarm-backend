@@ -1,0 +1,6 @@
+[블루베리] 427:건블루베리(farminfo=X), 429:블루베리(farminfo=O)
+[고추] 241:건고추(farminfo=O), 242:풋고추(farminfo=X), 243:붉은고추(farminfo=X)
+[옥수] 
+[감] 152:감자(farminfo=O), 415:감귤(farminfo=O), 416:단감(farminfo=O)
+[상추] 214:상추(farminfo=O), 262:양상추(farminfo=X)
+[단감] 416:단감(farminfo=O)

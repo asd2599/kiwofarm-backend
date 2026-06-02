@@ -1,11 +1,7 @@
-from typing import Annotated
-
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, HTTPException, Query
 
 from app.core.crops import summary as crop_summary
 from app.data import kamis_crops, nongsaro
-from app.db.session import get_session
 from app.schemas.crops import (
     CropOption,
     CropSummary,
@@ -15,8 +11,6 @@ from app.schemas.crops import (
 )
 
 router = APIRouter(prefix="/crops", tags=["crops"])
-
-SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
 def _to_option(row: kamis_crops.CropRecord) -> CropOption:
@@ -129,9 +123,7 @@ async def get_cultivation(item_code: str, kind_code: str) -> CultivationGuide:
 
 
 @router.get("/{item_code}/{kind_code}/summary", response_model=CropSummary)
-async def get_crop_summary(
-    item_code: str, kind_code: str, session: SessionDep
-) -> CropSummary:
+async def get_crop_summary(item_code: str, kind_code: str) -> CropSummary:
     """농업기술길잡이 → RAG 기반 GPT 키포인트 요약.
 
     계획 생성과 같은 RAG 파이프라인(농사로 PDF → 청크 → 임베딩 → pgvector 검색)으로
@@ -167,7 +159,6 @@ async def get_crop_summary(
 
     try:
         result = await crop_summary.build_summary(
-            session=session,
             item_code=item_code,
             kind_code=kind_code,
             crop_name=row["itemName"],  # 농사로 소분류 매칭·RAG 인제스트 기준명
