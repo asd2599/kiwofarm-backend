@@ -45,8 +45,9 @@ seed/kamis_history.csv
 *.db-journal
 *.sqlite3
 
-# 로컬 데이터 저장소 (SQLite DB + 임베딩 npy/json 캐시)
-data/
+# SQLite 런타임 DB는 제외(앱 시작 시 자동 생성, 사용자별 데이터).
+# data/embeddings·data/farminfo·data/weekfarm(RAG 임베딩/정리 데이터)는
+# 팀 공유를 위해 커밋한다 — 재생성에 농사로 키+OpenAI 비용+시간이 들기 때문.
 *.db
 *.db-wal
 *.db-shm
