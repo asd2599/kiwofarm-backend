@@ -131,6 +131,21 @@ _WATER_KEYWORDS = (
     "물공급",
 )
 
+# 수확·저장 카테고리로 들어가야 하는데 GPT 가 etc/growing 등으로 잘못 분류한 경우
+# 재분류하기 위한 키워드. '저장' 단독은 '토양 저장' 등 오탐 가능성 낮아 사용.
+_HARVEST_KEYWORDS = (
+    "수확",
+    "수확 후",
+    "수확후",
+    "저장",
+    "저온 저장",
+    "저온저장",
+    "저장 출하",
+    "저장출하",
+    "후숙",
+    "큐어링",
+)
+
 
 def _normalize_tasks(raw: list[dict]) -> list[FarmTask]:
     tasks: list[FarmTask] = []
@@ -149,6 +164,11 @@ def _normalize_tasks(raw: list[dict]) -> list[FarmTask]:
             k in f"{title} {detail or ''}" for k in _WATER_KEYWORDS
         ):
             category = "water"
+        # 수확/저장 키워드인데 etc 또는 growing 으로 잘못 분류된 경우 harvest 로 재분류
+        if category in ("etc", "growing") and any(
+            k in f"{title} {detail or ''}" for k in _HARVEST_KEYWORDS
+        ):
+            category = "harvest"
         try:
             day_offset = max(0, int(item.get("day_offset", 0)))
         except (TypeError, ValueError):
