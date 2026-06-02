@@ -1,10 +1,22 @@
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1 import crops, farmplan, recommend, sales, shipping, support, twin
 from app.config import settings
+from app.db.session import init_db
 
-app = FastAPI(title="KiwoFarm API", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    # 로컬 SQLite 테이블 생성(없을 때만). 임베딩은 DB 밖(로컬 파일 스토어)에 있다.
+    await init_db()
+    yield
+
+
+app = FastAPI(title="KiwoFarm API", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

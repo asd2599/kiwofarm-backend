@@ -5,11 +5,11 @@
      PDF 실패 시 GPT general 지식 텍스트). idempotent.
   2. 요약 facet 별 RAG 질의로 의미적으로 관련된 청크만 회수 → 컨텍스트 합성.
   3. GPT 에 회수 컨텍스트를 보내 키포인트 6~8개 + 핵심 한 줄 생성.
-  4. doc_chunk.source 로 PDF/general 모드 판정.
+  4. store.cultivation_source 로 PDF/general 모드 판정.
   5. (item_code, kind_code) 단위 메모리 캐시.
 
 이전 구현은 PDF 60p 전체를 18k자로 잘라 통째 GPT 로 보냈으나, 이제 계획
-생성과 같은 pgvector 검색으로 요약에 필요한 청크만 추려 보낸다.
+생성과 같은 로컬 임베딩 코사인 검색으로 요약에 필요한 청크만 추려 보낸다.
 
 OPENAI_API_KEY 미설정 시 명시적 에러 → 라우트가 503 으로 매핑.
 """
@@ -22,13 +22,11 @@ import logging
 from dataclasses import dataclass
 
 from openai import APIError, AsyncOpenAI
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.core.rag import retrieve as rag_retrieve
-from app.core.rag.ingest import NCPMS_SOURCE, crop_key, ensure_crop_ingested
-from app.db.models.doc_chunk import DocChunk
+from app.core.rag import store
+from app.core.rag.ingest import crop_key, ensure_crop_ingested
 
 log = logging.getLogger(__name__)
 
@@ -173,13 +171,13 @@ async def _gpt_summarize_general(
     )
 
 
-async def _gather_context(session: AsyncSession, ckey: str) -> str:
+async def _gather_context(ckey: str) -> str:
     """요약 facet 별 청크를 회수해 중복 제거 후 합성한다."""
     seen: set[str] = set()
     blocks: list[str] = []
     for query in _SUMMARY_FACETS:
         try:
-            chunks = await rag_retrieve.retrieve(session, ckey, query, k=_RETRIEVE_K)
+            chunks = await rag_retrieve.retrieve(ckey, query, k=_RETRIEVE_K)
         except Exception as e:  # noqa: BLE001 - 한 facet 검색 실패가 전체를 막지 않게
             log.info("summary retrieve 실패 ckey=%s reason=%s", ckey, e)
             continue
@@ -190,18 +188,7 @@ async def _gather_context(session: AsyncSession, ckey: str) -> str:
     return "\n".join(f"- {b}" for b in blocks)
 
 
-async def _cultivation_source(session: AsyncSession, ckey: str) -> str | None:
-    """재배지식 청크(ncpms 제외)의 source. ebook_code → PDF, 'general' → 일반."""
-    stmt = (
-        select(DocChunk.source)
-        .where(DocChunk.crop_key == ckey, DocChunk.source != NCPMS_SOURCE)
-        .limit(1)
-    )
-    return await session.scalar(stmt)
-
-
 async def build_summary(
-    session: AsyncSession,
     item_code: str,
     kind_code: str,
     crop_name: str,
@@ -231,9 +218,9 @@ async def build_summary(
         context = ""
         try:
             await ensure_crop_ingested(
-                session, item_code, kind_code, crop_name, group_name=group_name
+                item_code, kind_code, crop_name, group_name=group_name
             )
-            context = await _gather_context(session, ckey)
+            context = await _gather_context(ckey)
         except Exception as e:  # noqa: BLE001 - 인제스트/검색 실패해도 general 폴백
             log.info("summary RAG 인제스트/검색 실패 crop=%s reason=%s", crop_name, e)
 
@@ -241,7 +228,7 @@ async def build_summary(
             headline, key_points = await _gpt_summarize_rag(
                 crop_name, sub_category_name, context
             )
-            source = await _cultivation_source(session, ckey)
+            source = store.cultivation_source(ckey)
             mode = "general" if source in (None, "general") else "pdf"
         else:
             headline, key_points = await _gpt_summarize_general(

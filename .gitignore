@@ -44,3 +44,9 @@ seed/kamis_history.csv
 # Alembic / SQLite 임시
 *.db-journal
 *.sqlite3
+
+# 로컬 데이터 저장소 (SQLite DB + 임베딩 npy/json 캐시)
+data/
+*.db
+*.db-wal
+*.db-shm
