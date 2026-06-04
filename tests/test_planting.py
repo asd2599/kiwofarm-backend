@@ -8,10 +8,10 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from app.core.planting import matrix, region
+from app.core.planting import chat, matrix, region
 from app.core.planting.recommend import recommend
 from app.main import app
-from app.schemas.planting import PlantingInput
+from app.schemas.planting import ChatMessage, PlantingInput
 
 SAMPLE = PlantingInput(
     sigungu="경기도 성남시",
@@ -88,3 +88,32 @@ def test_get_crop_detail_endpoint():
     assert body["id"] == "lettuce"
     assert body["calendar"]  # 12개월 캘린더 존재
     assert client.get("/api/v1/planting/crops/__nope__").status_code == 404
+
+
+# ───────────────────────── 챗봇 ─────────────────────────
+
+
+def test_chat_detect_crops():
+    # 긴 이름 우선: 방울토마토 → cherry_tomato 먼저
+    assert chat.detect_crops("방울토마토 물 얼마나?", None)[0] == "cherry_tomato"
+    # 별칭: 총각무 → altari_radish 포함
+    assert "altari_radish" in chat.detect_crops("총각무 언제 심어요?", None)
+    # 컨텍스트 추천작물 우선 포함
+    ctx = {"recommendations": [{"crop_id": "basil", "name": "바질"}]}
+    assert chat.detect_crops("이거 어때요?", ctx) == ["basil"]
+
+
+def test_chat_chips_switch():
+    # 작물·추천 맥락 없으면 STARTER, 있으면 AFTER_RECO
+    assert chat._chips(None, []) == chat.STARTER_CHIPS
+    assert chat._chips({"recommendations": [{"crop_id": "basil"}]}, []) == chat.AFTER_RECO_CHIPS
+    assert chat._chips(None, ["lettuce"]) == chat.AFTER_RECO_CHIPS
+
+
+async def test_chat_fallback_without_key(monkeypatch):
+    # 키 없으면 200 안내문 + 칩 + sources(감지된 작물) 반환, 네트워크 호출 없음
+    monkeypatch.setattr("app.core.planting.chat.settings.openai_api_key", "")
+    monkeypatch.setattr("app.core.planting.chat._client", None)
+    res = await chat.answer([ChatMessage(role="user", content="상추 키우기 쉬워요?")], None)
+    assert res.chips and res.sources[0].crop_id == "lettuce"
+    assert "AI" in res.answer or "키" in res.answer
