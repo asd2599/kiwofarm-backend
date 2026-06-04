@@ -5,10 +5,13 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 
 from app.core.planting import matrix
+from app.core.planting.chat import answer as chat_answer
 from app.core.planting.llm import attach_ai_explain
 from app.core.planting.recommend import recommend
 from app.schemas.planting import (
     CalendarAction,
+    ChatRequest,
+    ChatResponse,
     CropDetail,
     CropSummary,
     PlantingInput,
@@ -76,3 +79,13 @@ async def post_recommend(payload: PlantingInput) -> PlantingRecommendResponse:
     result = recommend(payload)
     items = await attach_ai_explain(result.recommendations, payload, result.month)
     return result.model_copy(update={"recommendations": items})
+
+
+@router.post("/chat", response_model=ChatResponse)
+async def post_chat(payload: ChatRequest) -> ChatResponse:
+    """작목 상담 챗봇. 매트릭스(작물 카드) + RAG(garden 가중치 + _common) 근거로 답한다.
+
+    경로 A: context 에 {user_input, recommendations} 를 캐리하면 추천 작물을 우선
+    컨텍스트로 사용. 키 없거나 LLM 실패 시에도 안내문 + 칩을 200 으로 반환.
+    """
+    return await chat_answer(payload.messages, payload.context)
