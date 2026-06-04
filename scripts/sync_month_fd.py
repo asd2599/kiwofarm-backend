@@ -2,9 +2,10 @@
 
 수확인증 카드의 '관리(보관·손질)' + '음식(섭취·영양·레시피)' 데이터 원천.
 전체 연도 × 12개월을 순회해 식재료·레시피를 수집하고(중복은 cntntsNo 기준
-1회, 등장 월은 시즌 정보로 보존), KAMIS 품목 마스터와 이름 매칭해 작물별로
-분류 저장한다. --embed 시 작물 단위로 청크 임베딩해 로컬 스토어
-(backend/data/embeddings/{itemCode}.monthfd.npy/json)에 저장한다.
+1회, 등장 월은 시즌 정보로 보존), v3 작물 마스터(crops_master 40종)와 이름
+매칭해 작물별로 분류 저장한다. --embed 시 작물 단위로 청크 임베딩해 로컬
+스토어(backend/data/embeddings/{슬러그}.monthfd.npy/json)에 저장한다.
+40종 밖 식재료는 unmatchedIngredients 로 보존만 한다.
 
 실행:
     uv run python scripts/sync_month_fd.py                  # 수집+분류 전체
@@ -12,7 +13,7 @@
     uv run python scripts/sync_month_fd.py --no-recipes     # 레시피 제외
     uv run python scripts/sync_month_fd.py --embed          # + RAG 임베딩
 환경:
-    .env 의 NONGSARO_API_KEY3 (이달의음식 신청 키), --embed 는 OPENAI_API_KEY.
+    .env 의 NONGSARO_API_KEY (이달의음식 신청 키), --embed 는 OPENAI_API_KEY.
 산출:
     backend/data/monthfd/ingredients.json   식재료 상세 전체
     backend/data/monthfd/recipes.json       레시피 상세 전체
@@ -29,13 +30,14 @@ import re
 import sys
 from dataclasses import asdict
 from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
 
 import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.data import kamis_crops  # noqa: E402
+from app.data import crop_ids  # noqa: E402
 from app.data import nongsaro_monthfd as fd  # noqa: E402
 
 logging.basicConfig(
@@ -51,53 +53,48 @@ CONCURRENCY = 6
 CHUNK_SIZE = 800
 CHUNK_OVERLAP = 100
 
-# 식재료명 정규화: 괄호 보충어·공백 제거 ("총각무(알타리무)" → "총각무")
-_PAREN_RE = re.compile(r"\([^)]*\)")
-
-# KAMIS 품목명과 다른 식재료명 수동 별칭. 첫 수집 후 by_crop.json 의
-# unmatchedIngredients 를 보고 보강한다 (섣부른 접미사 추측 매칭 금지 —
-# "돼지감자"→"감자" 같은 오매칭 방지).
-ALIAS: dict[str, str] = {
-    "총각무": "무",
-    "알타리무": "무",
-    "방울양배추": "양배추",
-}
+# 식재료명 정규화: 괄호 보충어·공백 제거. 괄호 안도 별도 후보로 시도
+# ("총각무(알타리무)" → "총각무", "알타리무" 둘 다).
+_PAREN_RE = re.compile(r"\(([^)]*)\)")
 
 
-def _norm(name: str) -> str:
-    return _PAREN_RE.sub("", name).replace(" ", "").strip().lower()
+def _candidates(name: str) -> list[str]:
+    main = _PAREN_RE.sub("", name).replace(" ", "").strip()
+    inner = [m.replace(" ", "").strip() for m in _PAREN_RE.findall(name)]
+    return [c for c in [main, *inner] if c]
 
 
-def _match_crop(name: str) -> kamis_crops.CropRecord | None:
-    """식재료명 → KAMIS 품목.
+def _match_crop(name: str) -> dict | None:
+    """식재료명 → v3 작물 마스터 레코드(40종). 미매칭 None.
 
-    품목명 정확 일치 > 품종명 정확 일치("총각무"→무) > 접두 일치(긴 이름 우선).
+    별칭은 crop_ids.NAME_ALIAS 에서 관리 — 첫 수집 후 by_crop.json 의
+    unmatchedIngredients 를 보고 보강한다 (접미사 추측 매칭 금지).
     """
-    n = _norm(name)
-    n = ALIAS.get(n, n)
-    if not n:
-        return None
-    item_exact: kamis_crops.CropRecord | None = None
-    kind_exact: kamis_crops.CropRecord | None = None
-    prefix: list[tuple[int, kamis_crops.CropRecord]] = []
-    for row in kamis_crops.all_crops():
-        item = _norm(row["itemName"])
-        if not item:
-            continue
-        if item == n:
-            item_exact = item_exact or row
-        elif _norm(row["kindName"]) == n:
-            kind_exact = kind_exact or row
-        elif n.startswith(item) or item.startswith(n):
-            prefix.append((len(item), row))
-    if item_exact:
-        return item_exact
-    if kind_exact:
-        return kind_exact
-    if prefix:
-        prefix.sort(key=lambda t: -t[0])
-        return prefix[0][1]
+    for cand in _candidates(name):
+        crop = crop_ids.find_by_name(cand)
+        if crop:
+            return crop
     return None
+
+
+@lru_cache(maxsize=1)
+def _containment_names() -> list[tuple[str, str]]:
+    """음식명 부분일치 스캔용 (이름, 슬러그). 2자 이상만 — '무'·'갓'·'파' 같은
+    1자 이름은 '무침'·'갓김치 외 오탐'·'파전 외 오탐' 때문에 제외."""
+    from app.core.planting import matrix  # noqa: PLC0415
+
+    pairs = [(c["name"], c["id"]) for c in matrix.all_crops() if len(c["name"]) >= 2]
+    for alias, target in crop_ids.NAME_ALIAS.items():
+        crop = crop_ids.find_by_name(target)
+        if crop and len(alias) >= 2:
+            pairs.append((alias, crop["id"]))
+    # 긴 이름 우선 매칭(방울토마토 > 토마토 — 둘 다 같은 요리에 잡혀도 무방하나 정렬 유지)
+    return sorted(set(pairs), key=lambda p: -len(p[0]))
+
+
+def match_recipe_crops(title: str) -> set[str]:
+    """음식명("구운마늘 연근조림")에 포함된 40종 작물 슬러그 전부."""
+    return {slug for name, slug in _containment_names() if name in title}
 
 
 # ───────────────────────── 수집 ─────────────────────────
@@ -182,10 +179,10 @@ async def collect_recipes(
 def group_by_crop(
     ingredients: list[fd.FoodIngredient], recipes: list[fd.FoodRecipe]
 ) -> dict:
-    """식재료를 KAMIS 품목과 매칭해 작물별 그룹으로 묶고, 레시피는
+    """식재료를 v3 작물 마스터(40종)와 매칭해 작물별 그룹으로 묶고, 레시피는
     목록 제목(식재료명)으로 같은 그룹에 연결한다."""
-    groups: dict[str, dict] = {}  # itemCode → group
-    name_to_code: dict[str, str] = {}  # 정규화 식재료명 → itemCode
+    groups: dict[str, dict] = {}  # 슬러그 → group
+    name_to_slug: dict[str, str] = {}  # 식재료 원문명 → 슬러그
     unmatched: list[dict] = []
 
     for ing in ingredients:
@@ -194,35 +191,35 @@ def group_by_crop(
         if crop is None:
             unmatched.append(rec)
             continue
-        code = crop["itemCode"]
+        slug = crop["id"]
         g = groups.setdefault(
-            code,
+            slug,
             {
-                "itemCode": code,
-                "itemName": crop["itemName"],
-                "groupName": crop["groupName"],
+                "slug": slug,
+                "cropName": crop["name"],
+                "category": crop["category"],
                 "ingredients": [],
                 "recipes": [],
             },
         )
         g["ingredients"].append(rec)
-        name_to_code[_norm(ing.name)] = code
+        name_to_slug[ing.name] = slug
 
     matched_recipes = 0
     unmatched_recipes: list[dict] = []
     for r in recipes:
         rec = asdict(r)
-        code = name_to_code.get(_norm(r.list_title))
-        if code is None:
-            crop = _match_crop(r.list_title)
-            code = crop["itemCode"] if crop else None
-        if code and code in groups:
-            groups[code]["recipes"].append(rec)
+        # 레시피 목록의 fdmtNm 은 대부분 비어 있어 음식명(fdNm) 부분일치로 매칭.
+        # 여러 작물이 든 요리는 해당 작물 그룹 전부에 연결한다(수확카드 용도).
+        slugs = match_recipe_crops(f"{r.list_title} {r.name}") & set(groups)
+        if slugs:
+            for slug in slugs:
+                groups[slug]["recipes"].append(rec)
             matched_recipes += 1
         else:
             unmatched_recipes.append(rec)
 
-    crops_sorted = sorted(groups.values(), key=lambda g: g["itemName"])
+    crops_sorted = sorted(groups.values(), key=lambda g: g["slug"])
     log.info(
         "작물 매칭: 식재료 %d/%d, 레시피 %d/%d, 작물그룹 %d개",
         sum(len(g["ingredients"]) for g in crops_sorted), len(ingredients),
@@ -297,7 +294,7 @@ def build_chunks(group: dict) -> list[str]:
         if not body:
             continue
         for part in _split(body):
-            chunks.append(f"[{group['itemName']} 레시피] {r['name']}\n{part}")
+            chunks.append(f"[{group['cropName']} 레시피] {r['name']}\n{part}")
     return chunks
 
 
@@ -311,9 +308,9 @@ async def embed_groups(grouped: dict) -> None:
         if not chunks:
             continue
         vectors = await embed_texts(chunks)
-        n = store.save(group["itemCode"], "monthfd", chunks, vectors, source="monthFd")
+        n = store.save(group["slug"], "monthfd", chunks, vectors, source="monthFd")
         total += n
-        log.info("임베딩 저장 %s(%s): %d청크", group["itemName"], group["itemCode"], n)
+        log.info("임베딩 저장 %s(%s): %d청크", group["cropName"], group["slug"], n)
     log.info("임베딩 완료: 총 %d청크", total)
 
 
@@ -333,7 +330,7 @@ async def main() -> None:
             years = await fd.fetch_years(client=client)
         except fd.MonthFdError as e:
             log.error("연도 목록 조회 실패: %s", e)
-            log.error("NONGSARO_API_KEY3 설정·monthFd 서비스 승인 상태를 확인하세요.")
+            log.error("NONGSARO_API_KEY 설정·monthFd 서비스 승인 상태를 확인하세요.")
             return
         if not years:
             log.error("연도 목록이 비어 있음 — 키/서비스 신청 상태 확인 필요")

@@ -25,14 +25,16 @@ log = logging.getLogger(__name__)
 # backend/app/core/rag/store.py → parents[3] = backend
 EMBED_DIR = Path(__file__).resolve().parents[3] / "data" / "embeddings"
 
-# kind 구분과 키 단위:
-#  - CROP_KINDS: crop_key(item:kind) 단위. cultivation=농사로PDF/GPT 재배지식, ncpms=병해충,
-#    garden=농사로 텃밭가꾸기(텃밭·도시농업 소규모 재배 정보).
-#  - ITEM_KINDS: item_code 단위(품종 공유). monthtech=이달의 농업기술(작물특화),
-#    weekfarm=주간농사정보(다작물 회보), general=농사로 미등장 작물의 GPT 표준 재배지식 폴백.
-#    출처별로 나눠 저장해 검색 시 가중치를 줄 수 있다.
+# kind 구분과 키 단위 (v3 표준 키 = crops_master 슬러그 — 슬러그 키에선 두 단위가 동일):
+#  - CROP_KINDS: crop_key 단위. cultivation=농사로PDF/GPT 재배지식, ncpms=병해충,
+#    garden=농사로 텃밭가꾸기(fildMnfct, v3 1순위 — 배치 sync_garden + 온디맨드 ingest).
+#  - ITEM_KINDS: item_code 단위(레거시 품종 공유). monthtech=이달의 농업기술(텃밭 선별본),
+#    general=GPT 표준 재배지식 폴백. 출처별로 나눠 저장해 검색 시 가중치를 줄 수 있다.
+#  - weekfarm 은 2026-06-04 폐기(회보 통짜 복사라 작물간 중복·무관 내용 오염).
+#  - monthfd(보관·손질·영양)는 수확인증 카드 전용 — 의도적으로 KINDS 제외, 카드에서 명시 로드.
+#  - "_common".garden = 작물 공통 텃밭 가이드(챗봇이 작물 키와 병행 검색).
 CROP_KINDS: tuple[str, ...] = ("cultivation", "ncpms", "garden")
-ITEM_KINDS: tuple[str, ...] = ("monthtech", "weekfarm", "general")
+ITEM_KINDS: tuple[str, ...] = ("monthtech", "general")
 KINDS: tuple[str, ...] = CROP_KINDS + ITEM_KINDS
 
 

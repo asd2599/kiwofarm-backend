@@ -1,4 +1,4 @@
-# Bytecode
+﻿# Bytecode
 __pycache__/
 *.py[cod]
 *$py.class
@@ -35,7 +35,8 @@ dist/
 *.h5
 *.pt
 *.onnx
-models/
+# app/db/models 는 소스 코드 — ML 산출물은 루트 /models/ 만 무시
+/models/
 
 # 대용량 시드 데이터 (개별 다운로드)
 seed/smartfarm_top.csv
@@ -51,3 +52,6 @@ seed/kamis_history.csv
 *.db
 *.db-wal
 *.db-shm
+
+# 수확 인증 사용자 업로드 사진 (커밋 금지)
+data/uploads/

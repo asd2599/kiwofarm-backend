@@ -1,7 +1,7 @@
 """농사로 이달의 농업기술(monthFarmTech) 클라이언트.
 
 서비스: http://api.nongsaro.go.kr/service/monthFarmTech/...
-인증키: settings.nongsaro_api_key2 (주간농사정보와 같은 신규 신청 키).
+인증키: settings.nongsaro_api_key (주간농사정보와 같은 신규 신청 키).
 
 이달의 농업기술은 "큐레이션" 단위 기사(이달의 핵심 농업기술)로, cropEbook/주간과
 달리 **본문 HTML 을 API 로 직접** 준다(파일 다운로드 불필요). 작물 태깅(prdlstCode)도
@@ -66,9 +66,9 @@ def _strip_html(s: str) -> str:
 async def _call(
     op: str, params: dict[str, str], *, client: httpx.AsyncClient
 ) -> ET.Element:
-    if not settings.nongsaro_api_key2:
-        raise MonthTechError("NONGSARO_API_KEY2 미설정 (.env 확인)")
-    q = {"apiKey": settings.nongsaro_api_key2, **params}
+    if not settings.nongsaro_api_key:
+        raise MonthTechError("NONGSARO_API_KEY 미설정 (.env 확인)")
+    q = {"apiKey": settings.nongsaro_api_key, **params}
     url = f"{BASE}/{op}"
     last: Exception | None = None
     for attempt in range(MAX_RETRIES):

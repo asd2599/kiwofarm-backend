@@ -1,744 +1,98 @@
 {
-  "generatedAt": "2026-06-02T13:56:09",
-  "cropCount": 67,
-  "totalPassages": 3892,
-  "crops": [
-    {
-      "key": "411",
-      "cropName": "사과",
-      "itemCode": "411",
-      "inKamis": true,
-      "count": 252,
-      "sources": {
-        "monthtech": 104,
-        "weekfarm": 148
-      }
-    },
-    {
-      "key": "244",
-      "cropName": "마늘",
-      "itemCode": "244",
-      "inKamis": true,
-      "count": 248,
-      "sources": {
-        "monthtech": 100,
-        "weekfarm": 148
-      }
-    },
-    {
-      "key": "x_ginseng",
-      "cropName": "인삼",
-      "itemCode": "x_ginseng",
-      "inKamis": false,
-      "count": 224,
-      "sources": {
-        "monthtech": 88,
-        "weekfarm": 136
-      }
-    },
-    {
-      "key": "245",
-      "cropName": "양파",
-      "itemCode": "245",
-      "inKamis": true,
-      "count": 223,
-      "sources": {
-        "monthtech": 74,
-        "weekfarm": 149
-      }
-    },
-    {
-      "key": "242",
-      "cropName": "고추",
-      "itemCode": "242",
-      "inKamis": true,
-      "count": 211,
-      "sources": {
-        "monthtech": 107,
-        "weekfarm": 104
-      }
-    },
-    {
-      "key": "151",
-      "cropName": "고구마",
-      "itemCode": "151",
-      "inKamis": true,
-      "count": 187,
-      "sources": {
-        "monthtech": 86,
-        "weekfarm": 101
-      }
-    },
-    {
-      "key": "x_rice",
-      "cropName": "벼",
-      "itemCode": "x_rice",
-      "inKamis": false,
-      "count": 176,
-      "sources": {
-        "monthtech": 93,
-        "weekfarm": 83
-      }
-    },
-    {
-      "key": "413",
-      "cropName": "복숭아",
-      "itemCode": "413",
-      "inKamis": true,
-      "count": 171,
-      "sources": {
-        "monthtech": 52,
-        "weekfarm": 119
-      }
-    },
-    {
-      "key": "226",
-      "cropName": "딸기",
-      "itemCode": "226",
-      "inKamis": true,
-      "count": 167,
-      "sources": {
-        "monthtech": 124,
-        "weekfarm": 43
-      }
-    },
-    {
-      "key": "141",
-      "cropName": "콩",
-      "itemCode": "141",
-      "inKamis": true,
-      "count": 142,
-      "sources": {
-        "monthtech": 86,
-        "weekfarm": 56
-      }
-    },
-    {
-      "key": "152",
-      "cropName": "감자",
-      "itemCode": "152",
-      "inKamis": true,
-      "count": 130,
-      "sources": {
-        "monthtech": 38,
-        "weekfarm": 92
-      }
-    },
-    {
-      "key": "211",
-      "cropName": "배추",
-      "itemCode": "211",
-      "inKamis": true,
-      "count": 125,
-      "sources": {
-        "monthtech": 63,
-        "weekfarm": 62
-      }
-    },
-    {
-      "key": "162",
-      "cropName": "보리",
-      "itemCode": "162",
-      "inKamis": true,
-      "count": 112,
-      "sources": {
-        "monthtech": 46,
-        "weekfarm": 66
-      }
-    },
-    {
-      "key": "x_corn",
-      "cropName": "옥수수",
-      "itemCode": "x_corn",
-      "inKamis": false,
-      "count": 101,
-      "sources": {
-        "monthtech": 30,
-        "weekfarm": 71
-      }
-    },
-    {
-      "key": "312",
-      "cropName": "참깨",
-      "itemCode": "312",
-      "inKamis": true,
-      "count": 96,
-      "sources": {
-        "monthtech": 28,
-        "weekfarm": 68
-      }
-    },
-    {
-      "key": "225",
-      "cropName": "토마토",
-      "itemCode": "225",
-      "inKamis": true,
-      "count": 91,
-      "sources": {
-        "monthtech": 73,
-        "weekfarm": 18
-      }
-    },
-    {
-      "key": "315",
-      "cropName": "느타리버섯",
-      "itemCode": "315",
-      "inKamis": true,
-      "count": 84,
-      "sources": {
-        "monthtech": 5,
-        "weekfarm": 79
-      }
-    },
-    {
-      "key": "412",
-      "cropName": "배",
-      "itemCode": "412",
-      "inKamis": true,
-      "count": 82,
-      "sources": {
-        "monthtech": 40,
-        "weekfarm": 42
-      }
-    },
-    {
-      "key": "414",
-      "cropName": "포도",
-      "itemCode": "414",
-      "inKamis": true,
-      "count": 79,
-      "sources": {
-        "monthtech": 32,
-        "weekfarm": 47
-      }
-    },
-    {
-      "key": "221",
-      "cropName": "수박",
-      "itemCode": "221",
-      "inKamis": true,
-      "count": 73,
-      "sources": {
-        "monthtech": 53,
-        "weekfarm": 20
-      }
-    },
-    {
-      "key": "415",
-      "cropName": "감귤",
-      "itemCode": "415",
-      "inKamis": true,
-      "count": 67,
-      "sources": {
-        "monthtech": 59,
-        "weekfarm": 8
-      }
-    },
-    {
-      "key": "231",
-      "cropName": "무",
-      "itemCode": "231",
-      "inKamis": true,
-      "count": 66,
-      "sources": {
-        "monthtech": 15,
-        "weekfarm": 51
-      }
-    },
-    {
-      "key": "223",
-      "cropName": "오이",
-      "itemCode": "223",
-      "inKamis": true,
-      "count": 64,
-      "sources": {
-        "monthtech": 48,
-        "weekfarm": 16
-      }
-    },
-    {
-      "key": "163",
-      "cropName": "수수",
-      "itemCode": "163",
-      "inKamis": true,
-      "count": 60,
-      "sources": {
-        "monthtech": 3,
-        "weekfarm": 57
-      }
-    },
-    {
-      "key": "416",
-      "cropName": "단감",
-      "itemCode": "416",
-      "inKamis": true,
-      "count": 59,
-      "sources": {
-        "monthtech": 24,
-        "weekfarm": 35
-      }
-    },
-    {
-      "key": "313",
-      "cropName": "들깨",
-      "itemCode": "313",
-      "inKamis": true,
-      "count": 50,
-      "sources": {
-        "monthtech": 20,
-        "weekfarm": 30
-      }
-    },
-    {
-      "key": "x_chrysanthemum",
-      "cropName": "국화",
-      "itemCode": "x_chrysanthemum",
-      "inKamis": false,
-      "count": 49,
-      "sources": {
-        "monthtech": 3,
-        "weekfarm": 46
-      }
-    },
-    {
-      "key": "x_rose",
-      "cropName": "장미",
-      "itemCode": "x_rose",
-      "inKamis": false,
-      "count": 48,
-      "sources": {
-        "monthtech": 8,
-        "weekfarm": 40
-      }
-    },
-    {
-      "key": "247",
-      "cropName": "생강",
-      "itemCode": "247",
-      "inKamis": true,
-      "count": 37,
-      "sources": {
-        "monthtech": 37,
-        "weekfarm": 0
-      }
-    },
-    {
-      "key": "314",
-      "cropName": "땅콩",
-      "itemCode": "314",
-      "inKamis": true,
-      "count": 32,
-      "sources": {
-        "monthtech": 12,
-        "weekfarm": 20
-      }
-    },
-    {
-      "key": "111",
-      "cropName": "쌀",
-      "itemCode": "111",
-      "inKamis": true,
-      "count": 32,
-      "sources": {
-        "monthtech": 25,
-        "weekfarm": 7
-      }
-    },
-    {
-      "key": "429",
-      "cropName": "블루베리",
-      "itemCode": "429",
-      "inKamis": true,
-      "count": 32,
-      "sources": {
-        "monthtech": 32,
-        "weekfarm": 0
-      }
-    },
-    {
-      "key": "222",
-      "cropName": "참외",
-      "itemCode": "222",
-      "inKamis": true,
-      "count": 31,
-      "sources": {
-        "monthtech": 19,
-        "weekfarm": 12
-      }
-    },
-    {
-      "key": "142",
-      "cropName": "팥",
-      "itemCode": "142",
-      "inKamis": true,
-      "count": 26,
-      "sources": {
-        "monthtech": 12,
-        "weekfarm": 14
-      }
-    },
-    {
-      "key": "256",
-      "cropName": "파프리카",
-      "itemCode": "256",
-      "inKamis": true,
-      "count": 23,
-      "sources": {
-        "monthtech": 21,
-        "weekfarm": 2
-      }
-    },
-    {
-      "key": "412",
-      "cropName": "배나무",
-      "itemCode": "412",
-      "inKamis": true,
-      "count": 20,
-      "sources": {
-        "monthtech": 18,
-        "weekfarm": 2
-      }
-    },
-    {
-      "key": "257",
-      "cropName": "멜론",
-      "itemCode": "257",
-      "inKamis": true,
-      "count": 18,
-      "sources": {
-        "monthtech": 11,
-        "weekfarm": 7
-      }
-    },
-    {
-      "key": "224",
-      "cropName": "호박",
-      "itemCode": "224",
-      "inKamis": true,
-      "count": 15,
-      "sources": {
-        "monthtech": 10,
-        "weekfarm": 5
-      }
-    },
-    {
-      "key": "428",
-      "cropName": "망고",
-      "itemCode": "428",
-      "inKamis": true,
-      "count": 14,
-      "sources": {
-        "monthtech": 14,
-        "weekfarm": 0
-      }
-    },
-    {
-      "key": "419",
-      "cropName": "키위",
-      "itemCode": "419",
-      "inKamis": true,
-      "count": 14,
-      "sources": {
-        "monthtech": 12,
-        "weekfarm": 2
-      }
-    },
-    {
-      "key": "144",
-      "cropName": "메밀",
-      "itemCode": "144",
-      "inKamis": true,
-      "count": 13,
-      "sources": {
-        "monthtech": 11,
-        "weekfarm": 2
-      }
-    },
-    {
-      "key": "161",
-      "cropName": "귀리",
-      "itemCode": "161",
-      "inKamis": true,
-      "count": 13,
-      "sources": {
-        "monthtech": 9,
-        "weekfarm": 4
-      }
-    },
-    {
-      "key": "416",
-      "cropName": "감나무",
-      "itemCode": "416",
-      "inKamis": true,
-      "count": 12,
-      "sources": {
-        "monthtech": 5,
-        "weekfarm": 7
-      }
-    },
-    {
-      "key": "214",
-      "cropName": "상추",
-      "itemCode": "214",
-      "inKamis": true,
-      "count": 10,
-      "sources": {
-        "monthtech": 9,
-        "weekfarm": 1
-      }
-    },
-    {
-      "key": "276",
-      "cropName": "쪽파",
-      "itemCode": "276",
-      "inKamis": true,
-      "count": 9,
-      "sources": {
-        "monthtech": 9,
-        "weekfarm": 0
-      }
-    },
-    {
-      "key": "425",
-      "cropName": "체리",
-      "itemCode": "425",
-      "inKamis": true,
-      "count": 9,
-      "sources": {
-        "monthtech": 9,
-        "weekfarm": 0
-      }
-    },
-    {
-      "key": "246",
-      "cropName": "파",
-      "itemCode": "246",
-      "inKamis": true,
-      "count": 9,
-      "sources": {
-        "monthtech": 0,
-        "weekfarm": 9
-      }
-    },
-    {
-      "key": "416",
-      "cropName": "감",
-      "itemCode": "416",
-      "inKamis": true,
-      "count": 8,
-      "sources": {
-        "monthtech": 2,
-        "weekfarm": 6
-      }
-    },
-    {
-      "key": "x_fig",
-      "cropName": "무화과",
-      "itemCode": "x_fig",
-      "inKamis": false,
-      "count": 8,
-      "sources": {
-        "monthtech": 8,
-        "weekfarm": 0
-      }
-    },
-    {
-      "key": "143",
-      "cropName": "녹두",
-      "itemCode": "143",
-      "inKamis": true,
-      "count": 8,
-      "sources": {
-        "monthtech": 6,
-        "weekfarm": 2
-      }
-    },
-    {
-      "key": "x_durup",
-      "cropName": "두릅",
-      "itemCode": "x_durup",
-      "inKamis": false,
-      "count": 7,
-      "sources": {
-        "monthtech": 7,
-        "weekfarm": 0
-      }
-    },
-    {
-      "key": "251",
-      "cropName": "가지",
-      "itemCode": "251",
-      "inKamis": true,
-      "count": 7,
-      "sources": {
-        "monthtech": 7,
-        "weekfarm": 0
-      }
-    },
-    {
-      "key": "322",
-      "cropName": "표고버섯",
-      "itemCode": "322",
-      "inKamis": true,
-      "count": 6,
-      "sources": {
-        "monthtech": 6,
-        "weekfarm": 0
-      }
-    },
-    {
-      "key": "419",
-      "cropName": "참다래",
-      "itemCode": "419",
-      "inKamis": true,
-      "count": 6,
-      "sources": {
-        "monthtech": 6,
-        "weekfarm": 0
-      }
-    },
-    {
-      "key": "430",
-      "cropName": "아보카도",
-      "itemCode": "430",
-      "inKamis": true,
-      "count": 6,
-      "sources": {
-        "monthtech": 6,
-        "weekfarm": 0
-      }
-    },
-    {
-      "key": "x_hydrangea",
-      "cropName": "수국",
-      "itemCode": "x_hydrangea",
-      "inKamis": false,
-      "count": 5,
-      "sources": {
-        "monthtech": 5,
-        "weekfarm": 0
-      }
-    },
-    {
-      "key": "253",
-      "cropName": "깻잎",
-      "itemCode": "253",
-      "inKamis": true,
-      "count": 4,
-      "sources": {
-        "monthtech": 4,
-        "weekfarm": 0
-      }
-    },
-    {
-      "key": "241",
-      "cropName": "건고추",
-      "itemCode": "241",
-      "inKamis": true,
-      "count": 3,
-      "sources": {
-        "monthtech": 2,
-        "weekfarm": 1
-      }
-    },
-    {
-      "key": "213",
-      "cropName": "시금치",
-      "itemCode": "213",
-      "inKamis": true,
-      "count": 3,
-      "sources": {
-        "monthtech": 0,
-        "weekfarm": 3
-      }
-    },
-    {
-      "key": "114",
-      "cropName": "기장",
-      "itemCode": "114",
-      "inKamis": true,
-      "count": 3,
-      "sources": {
-        "monthtech": 0,
-        "weekfarm": 3
-      }
-    },
-    {
-      "key": "248",
-      "cropName": "고춧가루",
-      "itemCode": "248",
-      "inKamis": true,
-      "count": 2,
-      "sources": {
-        "monthtech": 2,
-        "weekfarm": 0
-      }
-    },
-    {
-      "key": "265",
-      "cropName": "콩나물",
-      "itemCode": "265",
-      "inKamis": true,
-      "count": 2,
-      "sources": {
-        "monthtech": 0,
-        "weekfarm": 2
-      }
-    },
-    {
-      "key": "112",
-      "cropName": "찹쌀",
-      "itemCode": "112",
-      "inKamis": true,
-      "count": 2,
-      "sources": {
-        "monthtech": 0,
-        "weekfarm": 2
-      }
-    },
-    {
-      "key": "164",
-      "cropName": "율무",
-      "itemCode": "164",
-      "inKamis": true,
-      "count": 2,
-      "sources": {
-        "monthtech": 0,
-        "weekfarm": 2
-      }
-    },
-    {
-      "key": "242",
-      "cropName": "풋고추",
-      "itemCode": "242",
-      "inKamis": true,
-      "count": 2,
-      "sources": {
-        "monthtech": 0,
-        "weekfarm": 2
-      }
-    },
-    {
-      "key": "421",
-      "cropName": "오렌지",
-      "itemCode": "421",
-      "inKamis": true,
-      "count": 1,
-      "sources": {
-        "monthtech": 0,
-        "weekfarm": 1
-      }
-    },
-    {
-      "key": "318",
-      "cropName": "호두",
-      "itemCode": "318",
-      "inKamis": true,
-      "count": 1,
-      "sources": {
-        "monthtech": 0,
-        "weekfarm": 1
-      }
-    }
-  ]
+ "generatedAt": "2026-06-04T15:00:04",
+ "idScheme": "crops_master slug (v3)",
+ "cropCount": 18,
+ "totalPassages": 1359,
+ "crops": [
+  {
+   "key": "chili_pepper",
+   "cropName": "고추",
+   "count": 2
+  },
+  {
+   "key": "corn",
+   "cropName": "옥수수",
+   "count": 101
+  },
+  {
+   "key": "cucumber",
+   "cropName": "오이",
+   "count": 64
+  },
+  {
+   "key": "eggplant",
+   "cropName": "가지",
+   "count": 7
+  },
+  {
+   "key": "garlic",
+   "cropName": "마늘",
+   "count": 248
+  },
+  {
+   "key": "green_onion",
+   "cropName": "대파",
+   "count": 9
+  },
+  {
+   "key": "lettuce",
+   "cropName": "상추",
+   "count": 10
+  },
+  {
+   "key": "onion",
+   "cropName": "양파",
+   "count": 223
+  },
+  {
+   "key": "paprika",
+   "cropName": "파프리카",
+   "count": 23
+  },
+  {
+   "key": "perilla",
+   "cropName": "깻잎",
+   "count": 4
+  },
+  {
+   "key": "potato",
+   "cropName": "감자",
+   "count": 130
+  },
+  {
+   "key": "pumpkin",
+   "cropName": "호박",
+   "count": 15
+  },
+  {
+   "key": "radish",
+   "cropName": "무",
+   "count": 66
+  },
+  {
+   "key": "spinach",
+   "cropName": "시금치",
+   "count": 3
+  },
+  {
+   "key": "spring_onion",
+   "cropName": "쪽파",
+   "count": 9
+  },
+  {
+   "key": "strawberry",
+   "cropName": "딸기",
+   "count": 167
+  },
+  {
+   "key": "sweet_potato",
+   "cropName": "고구마",
+   "count": 187
+  },
+  {
+   "key": "tomato",
+   "cropName": "토마토",
+   "count": 91
+  }
+ ]
 }

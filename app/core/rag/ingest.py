@@ -35,6 +35,18 @@ GARDEN_SOURCE = "garden"  # 농사로 텃밭가꾸기(fildMnfct). kind 이자 so
 
 
 def crop_key(item_code: str, kind_code: str) -> str:
+    """스토어 키. v3 작물 마스터(40종)에 매핑되면 슬러그로 정규화한다.
+
+    호출자(추천·캘린더·요약)는 계속 KAMIS 코드를 넘겨도 슬러그 파일
+    ({slug}.cultivation 등)을 읽는다. 40종 밖 작물은 기존 item:kind 유지.
+    """
+    from app.data.crop_ids import is_slug, slug_for  # noqa: PLC0415 - 순환 import 회피
+
+    if is_slug(item_code):
+        return item_code
+    slug = slug_for(item_code)
+    if slug:
+        return slug
     return f"{item_code}:{kind_code}"
 
 
