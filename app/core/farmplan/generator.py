@@ -34,7 +34,7 @@ _FACETS: list[tuple[str, str]] = [
     ("시비", "밑거름 웃거름 시비 시기와 방법"),
     ("물·관수 관리", "물주기 관수 토양 수분 관리"),
     ("병해충 예방", "병해충 예방 시기별 방제 주요 병해충 주의사항"),
-    ("수확·저장", "수확 시기 방법 수확 후 저장"),
+    ("수확", "수확 시기와 방법"),
     ("생육 단계별 작업", "월별 생육 단계별 주요 농작업"),
 ]
 
@@ -76,6 +76,7 @@ def _build_prompt(payload: FarmPlanCreate, context: str) -> str:
         "각 작업은 시작일로부터의 day_offset(0=시작일 당일)과 "
         "duration_days(작업 지속 일수)로 표현합니다. "
         "지역 기후와 면적을 고려해 현실적인 시기를 잡고, 병해충 예방 작업을 반드시 포함하세요. "
+        "일정은 수확까지만 다루고, 수확 후 저장·선별·유통 같은 작업은 넣지 마세요. "
         "출력은 JSON 객체 하나만. 형식: "
         '{"tasks": [{"title": "작업명(30자 이내)", "detail": "구체 방법 80자 이내", '
         '"category": "seeding|growing|fertilize|water|pest|harvest|etc", '
@@ -204,7 +205,7 @@ _FALLBACK: list[tuple[str, str, int, int]] = [
     ("2차 웃거름", "fertilize", 75, 2),
     ("병해충 정기 방제", "pest", 90, 3),
     ("수확 시작", "harvest", 110, 14),
-    ("수확 마무리 · 저장", "harvest", 130, 7),
+    ("수확 마무리", "harvest", 130, 7),
 ]
 
 

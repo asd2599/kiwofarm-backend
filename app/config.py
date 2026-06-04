@@ -20,6 +20,10 @@ class Settings(BaseSettings):
 
     cors_origins: str = "http://localhost:3000"
 
+    # 사용자 업로드(메모 사진 등) 로컬 저장 디렉터리 + 1파일 최대 크기(MB).
+    upload_dir: str = "./data/uploads"
+    max_upload_mb: int = 10
+
     @field_validator("database_url")
     @classmethod
     def _force_asyncpg(cls, v: str) -> str:
