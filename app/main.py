@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api.v1 import crops, farmplan, recommend, sales, support, twin
+from app.api.v1 import crops, farmplan, planting, recommend, sales, support, twin
 from app.config import settings
 from app.core.storage import UPLOAD_URL_PREFIX
 from app.db.session import init_db

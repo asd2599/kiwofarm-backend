@@ -4,7 +4,7 @@
 파일로 저장한다. 규모가 작고(작목 수십 × ~80청크) 쓰기 1회·읽기 위주라 벡터 DB
 없이 numpy brute-force 코사인으로 충분히 빠르며, 인프라가 필요 없다.
 
-파일 레이아웃 (kind = "cultivation" | "ncpms"):
+파일 레이아웃 (kind = "cultivation" | "ncpms" | "garden" | ...):
   {safe_key}.{kind}.npy   float32 (N, 1536) 임베딩 행렬
   {safe_key}.{kind}.json  {"source": str, "chunks": [str, ...]}
 
@@ -26,11 +26,12 @@ log = logging.getLogger(__name__)
 EMBED_DIR = Path(__file__).resolve().parents[3] / "data" / "embeddings"
 
 # kind 구분과 키 단위:
-#  - CROP_KINDS: crop_key(item:kind) 단위. cultivation=농사로PDF/GPT 재배지식, ncpms=병해충.
+#  - CROP_KINDS: crop_key(item:kind) 단위. cultivation=농사로PDF/GPT 재배지식, ncpms=병해충,
+#    garden=농사로 텃밭가꾸기(텃밭·도시농업 소규모 재배 정보).
 #  - ITEM_KINDS: item_code 단위(품종 공유). monthtech=이달의 농업기술(작물특화),
 #    weekfarm=주간농사정보(다작물 회보), general=농사로 미등장 작물의 GPT 표준 재배지식 폴백.
 #    출처별로 나눠 저장해 검색 시 가중치를 줄 수 있다.
-CROP_KINDS: tuple[str, ...] = ("cultivation", "ncpms")
+CROP_KINDS: tuple[str, ...] = ("cultivation", "ncpms", "garden")
 ITEM_KINDS: tuple[str, ...] = ("monthtech", "weekfarm", "general")
 KINDS: tuple[str, ...] = CROP_KINDS + ITEM_KINDS
 
