@@ -26,6 +26,12 @@ class FarmPlanCreate(BaseModel):
     visitDays: list[int] | None = None
 
 
+class FarmPlanBatchCreate(BaseModel):
+    """여러 작물 계획을 한 번에 생성."""
+
+    plans: list[FarmPlanCreate] = Field(min_length=1, max_length=20)
+
+
 class FarmTaskOut(BaseModel):
     id: int
     title: str
@@ -41,10 +47,19 @@ class FarmTaskOut(BaseModel):
     sourceNote: str | None = None
 
 
+class MemoImageOut(BaseModel):
+    id: int
+    url: str  # 정적 서빙 URL (/uploads/...)
+    originalName: str | None = None
+    contentType: str | None = None
+    size: int = 0
+
+
 class TaskMemoOut(BaseModel):
     id: int
     memoDate: date
     content: str
+    images: list[MemoImageOut] = []
 
 
 class FarmPlanOut(BaseModel):
@@ -62,6 +77,17 @@ class FarmPlanOut(BaseModel):
     trackProgress: bool
     tasks: list[FarmTaskOut]
     memos: list[TaskMemoOut]
+
+
+class BatchFailure(BaseModel):
+    index: int  # 입력 plans 배열에서의 위치
+    cropName: str
+    error: str
+
+
+class FarmPlanBatchOut(BaseModel):
+    created: list[FarmPlanOut]
+    failed: list[BatchFailure]
 
 
 class TaskStatusUpdate(BaseModel):
@@ -83,3 +109,40 @@ class MemoUpsert(BaseModel):
 
 class SettingsUpdate(BaseModel):
     trackProgress: bool
+
+
+# ── 멀티 작물 통합 캘린더 ──────────────────────────────────────────────
+class FarmPlanSummary(BaseModel):
+    """통합 캘린더에서 작물(plan)을 선택하기 위한 요약."""
+
+    id: int
+    cropName: str
+    cropItemCode: str
+    cropKindCode: str
+    startDate: date
+    region: str
+    province: str | None = None
+    area: float
+    areaUnit: AreaUnit
+    trackProgress: bool
+    taskCount: int
+
+
+class CalendarTaskOut(FarmTaskOut):
+    """작업 + 어떤 작물(plan) 것인지 식별 정보."""
+
+    planId: int
+    cropName: str
+
+
+class CalendarMemoOut(TaskMemoOut):
+    """메모 + 어떤 작물(plan) 것인지 식별 정보."""
+
+    planId: int
+    cropName: str
+
+
+class CalendarOut(BaseModel):
+    plans: list[FarmPlanSummary]  # 이번 조회에 포함된 작물 목록
+    tasks: list[CalendarTaskOut]
+    memos: list[CalendarMemoOut]
