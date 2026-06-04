@@ -127,6 +127,21 @@ class WeeklyDigestOut(BaseModel):
     tasks: list[WeeklyTaskOut]  # 이번 주 작업 전체(작업별 멘트 포함)
 
 
+# ── 위기 알림 (병해충 발생정보 + 기상 특보) ───────────────────────────
+class CrisisAlertOut(BaseModel):
+    type: str  # pest | weather
+    severity: str  # info | warn | danger
+    title: str
+    detail: str
+    source: str
+    link: str | None = None
+    date: str | None = None
+
+
+class AlertsOut(BaseModel):
+    alerts: list[CrisisAlertOut]
+
+
 # ── 멀티 작물 통합 캘린더 ──────────────────────────────────────────────
 class FarmPlanSummary(BaseModel):
     """통합 캘린더에서 작물(plan)을 선택하기 위한 요약."""

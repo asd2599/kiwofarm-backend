@@ -88,3 +88,47 @@ async def weekly_task_messages(
     if not isinstance(msgs, list) or len(msgs) != len(task_titles):
         return fallback
     return [_clean(str(m)) or fallback[i] for i, m in enumerate(msgs)]
+
+
+_PEST_SYS = (
+    "당신은 한국어 식물의학 코치입니다. 주어진 '병해충 발생정보 회보' 본문에서 "
+    "해당 작물(또는 이 시기 공통)에 지금 주의할 병해충과 대응을 추립니다. "
+    "회보 본문에 없는 내용은 지어내지 말고 본문 근거로만, 현재 상황처럼 자연스럽게. "
+    "이모지·특수문자 장식 금지."
+)
+
+
+async def pest_situation(
+    crop_name: str, region: str, period_label: str, source_text: str
+) -> tuple[str, str] | None:
+    """회보 본문 → (제목, 본문) 현재 병해충 상황 요약. 키 없거나 본문 없으면 None."""
+    if not source_text or not settings.openai_api_key:
+        return None
+    client = AsyncOpenAI(api_key=settings.openai_api_key, timeout=15.0)
+    user = (
+        f"작물: {crop_name} ({region})\n기간: {period_label}\n\n"
+        f"[병해충 발생정보 회보 본문]\n{source_text[:5000]}\n\n"
+        '아래 JSON 으로만 답하세요. title 은 작물·핵심 병해충 중심 20자 내외, '
+        'detail 은 지금 상황과 대응을 1~2문장(60자 내외)으로. '
+        '{"title": "...", "detail": "..."}'
+    )
+    try:
+        resp = await client.chat.completions.create(
+            model=_MODEL,
+            temperature=0.4,
+            max_tokens=300,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": _PEST_SYS},
+                {"role": "user", "content": user},
+            ],
+        )
+        data = json.loads(resp.choices[0].message.content or "{}")
+    except Exception as e:  # noqa: BLE001 - 실패 시 호출부가 폴백 처리
+        log.info("병해충 상황 요약 LLM 실패: %s", e)
+        return None
+    title = _clean(str(data.get("title", "")))
+    detail = _clean(str(data.get("detail", "")))
+    if not title or not detail:
+        return None
+    return title, detail

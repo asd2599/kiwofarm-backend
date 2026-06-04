@@ -15,16 +15,19 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.farmplan.alerts import build_alerts
 from app.core.farmplan.coach import weekly_task_messages
 from app.core.farmplan.generator import _snap_to_visit_days, generate_plan
 from app.core.storage import delete_file, file_url, save_image
 from app.db.models.farm_plan import FarmPlan, FarmTask, MemoImage, TaskMemo
 from app.db.session import async_session_factory, get_session
 from app.schemas.farmplan import (
+    AlertsOut,
     BatchFailure,
     CalendarMemoOut,
     CalendarOut,
     CalendarTaskOut,
+    CrisisAlertOut,
     FarmPlanBatchCreate,
     FarmPlanBatchOut,
     FarmPlanCreate,
@@ -328,6 +331,22 @@ async def weekly_digest(
             for i, (d, t) in enumerate(in_week)
         ],
     )
+
+
+@router.get("/{plan_id}/alerts", response_model=AlertsOut)
+async def plan_alerts(
+    plan_id: int,
+    session: SessionDep,
+    ref: Annotated[
+        date | None, Query(alias="date", description="기준 날짜. 미지정 시 오늘.")
+    ] = None,
+) -> AlertsOut:
+    """위기 알림 — 병해충 발생정보(+ 향후 기상특보). 작물 계획의 지역 기준."""
+    plan = await _load_plan(session, plan_id)
+    alerts = await build_alerts(
+        plan.crop_name, plan.region, plan.province, ref or date.today()
+    )
+    return AlertsOut(alerts=[CrisisAlertOut(**vars(a)) for a in alerts])
 
 
 @router.patch("/{plan_id}/settings", response_model=FarmPlanOut)
