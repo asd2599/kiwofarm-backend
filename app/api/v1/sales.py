@@ -1,7 +1,4 @@
-"""판매 도우미 API — 가까운 직매장 추천 + 채널별 수익 비교.
-
-출하 도우미(/shipping)에서 작물·무게를 들고 넘어와 판매 채널을 결정한다.
-"""
+"""판매 도우미 API — 가까운 직매장 추천 + 채널별 수익 비교."""
 
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
