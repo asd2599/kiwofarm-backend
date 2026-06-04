@@ -1,0 +1,1058 @@
+[
+ {
+  "group": "논농사",
+  "group_code": "210004",
+  "sj": "녹두",
+  "cntntsNo": "259526"
+ },
+ {
+  "group": "논농사",
+  "group_code": "210004",
+  "sj": "들깨",
+  "cntntsNo": "259524"
+ },
+ {
+  "group": "논농사",
+  "group_code": "210004",
+  "sj": "벼 기계이앙재배",
+  "cntntsNo": "30697"
+ },
+ {
+  "group": "논농사",
+  "group_code": "210004",
+  "sj": "벼 직파재배",
+  "cntntsNo": "30698"
+ },
+ {
+  "group": "논농사",
+  "group_code": "210004",
+  "sj": "사료용벼",
+  "cntntsNo": "259520"
+ },
+ {
+  "group": "논농사",
+  "group_code": "210004",
+  "sj": "옥수수",
+  "cntntsNo": "259522"
+ },
+ {
+  "group": "논농사",
+  "group_code": "210004",
+  "sj": "참깨",
+  "cntntsNo": "259523"
+ },
+ {
+  "group": "논농사",
+  "group_code": "210004",
+  "sj": "콩(논재배)",
+  "cntntsNo": "259521"
+ },
+ {
+  "group": "논농사",
+  "group_code": "210004",
+  "sj": "팥",
+  "cntntsNo": "259525"
+ },
+ {
+  "group": "밭농사",
+  "group_code": "210005",
+  "sj": "감자",
+  "cntntsNo": "30699"
+ },
+ {
+  "group": "밭농사",
+  "group_code": "210005",
+  "sj": "강낭콩",
+  "cntntsNo": "30700"
+ },
+ {
+  "group": "밭농사",
+  "group_code": "210005",
+  "sj": "고구마",
+  "cntntsNo": "30701"
+ },
+ {
+  "group": "밭농사",
+  "group_code": "210005",
+  "sj": "녹두",
+  "cntntsNo": "30702"
+ },
+ {
+  "group": "밭농사",
+  "group_code": "210005",
+  "sj": "들깨(잎)",
+  "cntntsNo": "30607"
+ },
+ {
+  "group": "밭농사",
+  "group_code": "210005",
+  "sj": "들깨(종실)",
+  "cntntsNo": "30703"
+ },
+ {
+  "group": "밭농사",
+  "group_code": "210005",
+  "sj": "땅콩",
+  "cntntsNo": "30704"
+ },
+ {
+  "group": "밭농사",
+  "group_code": "210005",
+  "sj": "맥주보리",
+  "cntntsNo": "30705"
+ },
+ {
+  "group": "밭농사",
+  "group_code": "210005",
+  "sj": "메밀",
+  "cntntsNo": "30706"
+ },
+ {
+  "group": "밭농사",
+  "group_code": "210005",
+  "sj": "밀",
+  "cntntsNo": "30707"
+ },
+ {
+  "group": "밭농사",
+  "group_code": "210005",
+  "sj": "수수",
+  "cntntsNo": "30708"
+ },
+ {
+  "group": "밭농사",
+  "group_code": "210005",
+  "sj": "옥수수",
+  "cntntsNo": "30709"
+ },
+ {
+  "group": "밭농사",
+  "group_code": "210005",
+  "sj": "완두",
+  "cntntsNo": "30710"
+ },
+ {
+  "group": "밭농사",
+  "group_code": "210005",
+  "sj": "유채",
+  "cntntsNo": "30711"
+ },
+ {
+  "group": "밭농사",
+  "group_code": "210005",
+  "sj": "일반보리",
+  "cntntsNo": "30712"
+ },
+ {
+  "group": "밭농사",
+  "group_code": "210005",
+  "sj": "조",
+  "cntntsNo": "30713"
+ },
+ {
+  "group": "밭농사",
+  "group_code": "210005",
+  "sj": "참깨",
+  "cntntsNo": "30714"
+ },
+ {
+  "group": "밭농사",
+  "group_code": "210005",
+  "sj": "콩",
+  "cntntsNo": "30715"
+ },
+ {
+  "group": "밭농사",
+  "group_code": "210005",
+  "sj": "팥",
+  "cntntsNo": "30716"
+ },
+ {
+  "group": "밭농사",
+  "group_code": "210005",
+  "sj": "풋콩",
+  "cntntsNo": "30717"
+ },
+ {
+  "group": "버섯",
+  "group_code": "210008",
+  "sj": "느타리버섯",
+  "cntntsNo": "30733"
+ },
+ {
+  "group": "버섯",
+  "group_code": "210008",
+  "sj": "양송이",
+  "cntntsNo": "30735"
+ },
+ {
+  "group": "버섯",
+  "group_code": "210008",
+  "sj": "영지버섯",
+  "cntntsNo": "30734"
+ },
+ {
+  "group": "버섯",
+  "group_code": "210008",
+  "sj": "팽이",
+  "cntntsNo": "30736"
+ },
+ {
+  "group": "약초",
+  "group_code": "210009",
+  "sj": "구기자",
+  "cntntsNo": "30739"
+ },
+ {
+  "group": "약초",
+  "group_code": "210009",
+  "sj": "길경(도라지)",
+  "cntntsNo": "30740"
+ },
+ {
+  "group": "약초",
+  "group_code": "210009",
+  "sj": "더덕(양유)",
+  "cntntsNo": "30741"
+ },
+ {
+  "group": "약초",
+  "group_code": "210009",
+  "sj": "두충",
+  "cntntsNo": "30743"
+ },
+ {
+  "group": "약초",
+  "group_code": "210009",
+  "sj": "산약(마)",
+  "cntntsNo": "30747"
+ },
+ {
+  "group": "약초",
+  "group_code": "210009",
+  "sj": "오미자",
+  "cntntsNo": "30749"
+ },
+ {
+  "group": "약초",
+  "group_code": "210009",
+  "sj": "천마",
+  "cntntsNo": "30756"
+ },
+ {
+  "group": "약초",
+  "group_code": "210009",
+  "sj": "황기",
+  "cntntsNo": "30761"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "가지",
+  "cntntsNo": "30770"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "갓",
+  "cntntsNo": "30595"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "결구상추",
+  "cntntsNo": "30596"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "고들빼기",
+  "cntntsNo": "30597"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "고사리",
+  "cntntsNo": "30598"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "고추(꽈리고추 반촉성)",
+  "cntntsNo": "30599"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "고추(보통재배)",
+  "cntntsNo": "30600"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "고추(촉성재배)",
+  "cntntsNo": "30601"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "곰취",
+  "cntntsNo": "30602"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "근대",
+  "cntntsNo": "30603"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "냉이",
+  "cntntsNo": "30604"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "당근",
+  "cntntsNo": "30605"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "두릅",
+  "cntntsNo": "30606"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "딸기(사계성여름재배)",
+  "cntntsNo": "30609"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "딸기(촉성재배)",
+  "cntntsNo": "30610"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "마늘",
+  "cntntsNo": "30611"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "마늘(잎마늘)",
+  "cntntsNo": "30612"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "멜론",
+  "cntntsNo": "30613"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "무",
+  "cntntsNo": "30614"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "무(고랭지재배)",
+  "cntntsNo": "30615"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "미나리",
+  "cntntsNo": "30616"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "배추",
+  "cntntsNo": "30618"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "배추(고랭지재배)",
+  "cntntsNo": "30619"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "부추",
+  "cntntsNo": "30620"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "브로콜리(녹색꽃양배추 고랭지재배)",
+  "cntntsNo": "30621"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "브로콜리(평야지재배)",
+  "cntntsNo": "30622"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "비트",
+  "cntntsNo": "30623"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "상추",
+  "cntntsNo": "30624"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "생강",
+  "cntntsNo": "30625"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "셀러리(양미나리)",
+  "cntntsNo": "30626"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "수박",
+  "cntntsNo": "30627"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "시금치",
+  "cntntsNo": "30628"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "신선초",
+  "cntntsNo": "30629"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "쑥갓",
+  "cntntsNo": "30630"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "아스파라거스",
+  "cntntsNo": "30632"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "아욱",
+  "cntntsNo": "30631"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "양배추",
+  "cntntsNo": "30634"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "양파",
+  "cntntsNo": "30633"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "연근",
+  "cntntsNo": "30635"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "오이",
+  "cntntsNo": "30636"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "적채",
+  "cntntsNo": "30638"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "쪽파",
+  "cntntsNo": "30639"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "참외",
+  "cntntsNo": "30640"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "참취",
+  "cntntsNo": "30641"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "청경채",
+  "cntntsNo": "30643"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "치커리(쌈용, 잎치커리)",
+  "cntntsNo": "258609"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "치커리(치콘,뿌리치커리)",
+  "cntntsNo": "30644"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "컬리플라워(백색꽃양배추 고랭지재배)",
+  "cntntsNo": "258607"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "토란",
+  "cntntsNo": "30645"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "토마토,방울토마토",
+  "cntntsNo": "30646"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "파",
+  "cntntsNo": "30647"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "파드득나물",
+  "cntntsNo": "258611"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "파슬리(향미나리)",
+  "cntntsNo": "258608"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "파프리카",
+  "cntntsNo": "30649"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "피망",
+  "cntntsNo": "30650"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "호박",
+  "cntntsNo": "30651"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "호박(늙은호박)",
+  "cntntsNo": "30652"
+ },
+ {
+  "group": "채소",
+  "group_code": "210001",
+  "sj": "호박(단호박)",
+  "cntntsNo": "30653"
+ },
+ {
+  "group": "과수",
+  "group_code": "210002",
+  "sj": "감귤(노지재배)",
+  "cntntsNo": "30654"
+ },
+ {
+  "group": "과수",
+  "group_code": "210002",
+  "sj": "감귤(시설재배)",
+  "cntntsNo": "30655"
+ },
+ {
+  "group": "과수",
+  "group_code": "210002",
+  "sj": "단감",
+  "cntntsNo": "30656"
+ },
+ {
+  "group": "과수",
+  "group_code": "210002",
+  "sj": "매실",
+  "cntntsNo": "30658"
+ },
+ {
+  "group": "과수",
+  "group_code": "210002",
+  "sj": "무화과(노지재배)",
+  "cntntsNo": "30659"
+ },
+ {
+  "group": "과수",
+  "group_code": "210002",
+  "sj": "무화과(무가온 시설재배)",
+  "cntntsNo": "30660"
+ },
+ {
+  "group": "과수",
+  "group_code": "210002",
+  "sj": "배",
+  "cntntsNo": "30661"
+ },
+ {
+  "group": "과수",
+  "group_code": "210002",
+  "sj": "복숭아",
+  "cntntsNo": "30662"
+ },
+ {
+  "group": "과수",
+  "group_code": "210002",
+  "sj": "블루베리",
+  "cntntsNo": "258549"
+ },
+ {
+  "group": "과수",
+  "group_code": "210002",
+  "sj": "사과",
+  "cntntsNo": "30663"
+ },
+ {
+  "group": "과수",
+  "group_code": "210002",
+  "sj": "살구",
+  "cntntsNo": "30664"
+ },
+ {
+  "group": "과수",
+  "group_code": "210002",
+  "sj": "양앵두(체리)",
+  "cntntsNo": "30665"
+ },
+ {
+  "group": "과수",
+  "group_code": "210002",
+  "sj": "유자",
+  "cntntsNo": "30666"
+ },
+ {
+  "group": "과수",
+  "group_code": "210002",
+  "sj": "자두",
+  "cntntsNo": "30667"
+ },
+ {
+  "group": "과수",
+  "group_code": "210002",
+  "sj": "참다래",
+  "cntntsNo": "30668"
+ },
+ {
+  "group": "과수",
+  "group_code": "210002",
+  "sj": "포도(무가온)",
+  "cntntsNo": "30669"
+ },
+ {
+  "group": "과수",
+  "group_code": "210002",
+  "sj": "포도(표준가온)",
+  "cntntsNo": "258613"
+ },
+ {
+  "group": "과수",
+  "group_code": "210002",
+  "sj": "플럼코트",
+  "cntntsNo": "258633"
+ },
+ {
+  "group": "과수",
+  "group_code": "210002",
+  "sj": "한라봉(부지화)",
+  "cntntsNo": "30670"
+ },
+ {
+  "group": "화훼",
+  "group_code": "210003",
+  "sj": "거베라",
+  "cntntsNo": "30671"
+ },
+ {
+  "group": "화훼",
+  "group_code": "210003",
+  "sj": "국화",
+  "cntntsNo": "30672"
+ },
+ {
+  "group": "화훼",
+  "group_code": "210003",
+  "sj": "글라디올러스",
+  "cntntsNo": "30673"
+ },
+ {
+  "group": "화훼",
+  "group_code": "210003",
+  "sj": "금어초",
+  "cntntsNo": "30674"
+ },
+ {
+  "group": "화훼",
+  "group_code": "210003",
+  "sj": "꽃도라지",
+  "cntntsNo": "30675"
+ },
+ {
+  "group": "화훼",
+  "group_code": "210003",
+  "sj": "꽃해바라기",
+  "cntntsNo": "30676"
+ },
+ {
+  "group": "화훼",
+  "group_code": "210003",
+  "sj": "덴드로비움",
+  "cntntsNo": "30677"
+ },
+ {
+  "group": "화훼",
+  "group_code": "210003",
+  "sj": "산호수",
+  "cntntsNo": "30678"
+ },
+ {
+  "group": "화훼",
+  "group_code": "210003",
+  "sj": "선인장",
+  "cntntsNo": "30679"
+ },
+ {
+  "group": "화훼",
+  "group_code": "210003",
+  "sj": "수국",
+  "cntntsNo": "30680"
+ },
+ {
+  "group": "화훼",
+  "group_code": "210003",
+  "sj": "스타티스",
+  "cntntsNo": "30681"
+ },
+ {
+  "group": "화훼",
+  "group_code": "210003",
+  "sj": "시클라멘",
+  "cntntsNo": "30682"
+ },
+ {
+  "group": "화훼",
+  "group_code": "210003",
+  "sj": "심비디움",
+  "cntntsNo": "30683"
+ },
+ {
+  "group": "화훼",
+  "group_code": "210003",
+  "sj": "아이리스",
+  "cntntsNo": "30684"
+ },
+ {
+  "group": "화훼",
+  "group_code": "210003",
+  "sj": "안개초",
+  "cntntsNo": "30685"
+ },
+ {
+  "group": "화훼",
+  "group_code": "210003",
+  "sj": "오리엔탈나리(촉성재배)",
+  "cntntsNo": "30686"
+ },
+ {
+  "group": "화훼",
+  "group_code": "210003",
+  "sj": "온시디움",
+  "cntntsNo": "30687"
+ },
+ {
+  "group": "화훼",
+  "group_code": "210003",
+  "sj": "장미",
+  "cntntsNo": "30688"
+ },
+ {
+  "group": "화훼",
+  "group_code": "210003",
+  "sj": "철쭉",
+  "cntntsNo": "30689"
+ },
+ {
+  "group": "화훼",
+  "group_code": "210003",
+  "sj": "카네이션",
+  "cntntsNo": "30690"
+ },
+ {
+  "group": "화훼",
+  "group_code": "210003",
+  "sj": "칼라",
+  "cntntsNo": "30691"
+ },
+ {
+  "group": "화훼",
+  "group_code": "210003",
+  "sj": "칼랑코에",
+  "cntntsNo": "30692"
+ },
+ {
+  "group": "화훼",
+  "group_code": "210003",
+  "sj": "튤립",
+  "cntntsNo": "30693"
+ },
+ {
+  "group": "화훼",
+  "group_code": "210003",
+  "sj": "팔레놉시스",
+  "cntntsNo": "30694"
+ },
+ {
+  "group": "화훼",
+  "group_code": "210003",
+  "sj": "포인세티아",
+  "cntntsNo": "30695"
+ },
+ {
+  "group": "화훼",
+  "group_code": "210003",
+  "sj": "프리지아",
+  "cntntsNo": "30696"
+ },
+ {
+  "group": "축산",
+  "group_code": "210007",
+  "sj": "꿀벌",
+  "cntntsNo": "30720"
+ },
+ {
+  "group": "축산",
+  "group_code": "210007",
+  "sj": "돼지(번식)",
+  "cntntsNo": "30721"
+ },
+ {
+  "group": "축산",
+  "group_code": "210007",
+  "sj": "돼지(비육)",
+  "cntntsNo": "258522"
+ },
+ {
+  "group": "축산",
+  "group_code": "210007",
+  "sj": "말",
+  "cntntsNo": "258523"
+ },
+ {
+  "group": "축산",
+  "group_code": "210007",
+  "sj": "번식한우",
+  "cntntsNo": "30729"
+ },
+ {
+  "group": "축산",
+  "group_code": "210007",
+  "sj": "번식흑염소",
+  "cntntsNo": "258635"
+ },
+ {
+  "group": "축산",
+  "group_code": "210007",
+  "sj": "비육한우",
+  "cntntsNo": "30730"
+ },
+ {
+  "group": "축산",
+  "group_code": "210007",
+  "sj": "비육흑염소",
+  "cntntsNo": "30732"
+ },
+ {
+  "group": "축산",
+  "group_code": "210007",
+  "sj": "사슴",
+  "cntntsNo": "258634"
+ },
+ {
+  "group": "축산",
+  "group_code": "210007",
+  "sj": "산란계",
+  "cntntsNo": "30724"
+ },
+ {
+  "group": "축산",
+  "group_code": "210007",
+  "sj": "오리",
+  "cntntsNo": "30725"
+ },
+ {
+  "group": "축산",
+  "group_code": "210007",
+  "sj": "육계",
+  "cntntsNo": "30726"
+ },
+ {
+  "group": "축산",
+  "group_code": "210007",
+  "sj": "젖소(착유우)",
+  "cntntsNo": "30727"
+ },
+ {
+  "group": "축산",
+  "group_code": "210007",
+  "sj": "토종닭",
+  "cntntsNo": "30773"
+ },
+ {
+  "group": "사료작물",
+  "group_code": "210010",
+  "sj": "담근먹이 옥수수",
+  "cntntsNo": "30763"
+ },
+ {
+  "group": "사료작물",
+  "group_code": "210010",
+  "sj": "동계 사료작물(곤포담근먹이)",
+  "cntntsNo": "258480"
+ },
+ {
+  "group": "사료작물",
+  "group_code": "210010",
+  "sj": "동하계 사료작물 작부체계",
+  "cntntsNo": "258612"
+ },
+ {
+  "group": "사료작물",
+  "group_code": "210010",
+  "sj": "볏짚(곤포담근먹이)",
+  "cntntsNo": "258753"
+ },
+ {
+  "group": "사료작물",
+  "group_code": "210010",
+  "sj": "사료용 귀리",
+  "cntntsNo": "258524"
+ },
+ {
+  "group": "사료작물",
+  "group_code": "210010",
+  "sj": "사료용 벼(총체벼)",
+  "cntntsNo": "258525"
+ },
+ {
+  "group": "사료작물",
+  "group_code": "210010",
+  "sj": "사료용 보리(청보리)",
+  "cntntsNo": "258526"
+ },
+ {
+  "group": "사료작물",
+  "group_code": "210010",
+  "sj": "사료용 호밀",
+  "cntntsNo": "258527"
+ },
+ {
+  "group": "사료작물",
+  "group_code": "210010",
+  "sj": "수수,수단그라스 교잡종",
+  "cntntsNo": "258528"
+ },
+ {
+  "group": "사료작물",
+  "group_code": "210010",
+  "sj": "이탈리안라이그라스",
+  "cntntsNo": "30765"
+ },
+ {
+  "group": "사료작물",
+  "group_code": "210010",
+  "sj": "초지",
+  "cntntsNo": "30766"
+ },
+ {
+  "group": "사료작물",
+  "group_code": "210010",
+  "sj": "트리티케일",
+  "cntntsNo": "258529"
+ },
+ {
+  "group": "Foreign workers",
+  "group_code": "210011",
+  "sj": "외국인근로자 주요 품목 농작업일정_라오어",
+  "cntntsNo": "263982"
+ },
+ {
+  "group": "Foreign workers",
+  "group_code": "210011",
+  "sj": "외국인근로자 주요 품목 농작업일정_몽골어",
+  "cntntsNo": "263981"
+ },
+ {
+  "group": "Foreign workers",
+  "group_code": "210011",
+  "sj": "외국인근로자 주요 품목 농작업일정_베트남어",
+  "cntntsNo": "263978"
+ },
+ {
+  "group": "Foreign workers",
+  "group_code": "210011",
+  "sj": "외국인근로자 주요 품목 농작업일정_영어",
+  "cntntsNo": "263977"
+ },
+ {
+  "group": "Foreign workers",
+  "group_code": "210011",
+  "sj": "외국인근로자 주요 품목 농작업일정_크메르어",
+  "cntntsNo": "263980"
+ },
+ {
+  "group": "Foreign workers",
+  "group_code": "210011",
+  "sj": "외국인근로자 주요 품목 농작업일정_태국어",
+  "cntntsNo": "263979"
+ }
+]
