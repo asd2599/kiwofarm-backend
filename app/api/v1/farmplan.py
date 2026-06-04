@@ -5,21 +5,32 @@
 
 from __future__ import annotations
 
+import asyncio
+import logging
 from datetime import date, timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import delete, select
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.farmplan.generator import _snap_to_visit_days, generate_plan
-from app.db.models.farm_plan import FarmPlan, FarmTask, TaskMemo
-from app.db.session import get_session
+from app.core.storage import delete_file, file_url, save_image
+from app.db.models.farm_plan import FarmPlan, FarmTask, MemoImage, TaskMemo
+from app.db.session import async_session_factory, get_session
 from app.schemas.farmplan import (
+    BatchFailure,
+    CalendarMemoOut,
+    CalendarOut,
+    CalendarTaskOut,
+    FarmPlanBatchCreate,
+    FarmPlanBatchOut,
     FarmPlanCreate,
     FarmPlanOut,
+    FarmPlanSummary,
     FarmTaskOut,
+    MemoImageOut,
     MemoUpsert,
     SettingsUpdate,
     TaskDelayBatch,
@@ -27,7 +38,12 @@ from app.schemas.farmplan import (
     TaskStatusUpdate,
 )
 
+log = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/plans", tags=["plans"])
+
+# 배치 생성 동시 처리 상한(OpenAI/RAG 부하 보호). 작물마다 별도 세션을 쓴다.
+_BATCH_CONCURRENCY = 4
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
@@ -52,6 +68,24 @@ def _task_out(task: FarmTask, start: date) -> FarmTaskOut:
     )
 
 
+def _memo_out(memo: TaskMemo) -> TaskMemoOut:
+    return TaskMemoOut(
+        id=memo.id,
+        memoDate=memo.memo_date,
+        content=memo.content,
+        images=[
+            MemoImageOut(
+                id=img.id,
+                url=file_url(img.file_path),
+                originalName=img.original_name,
+                contentType=img.content_type,
+                size=img.size_bytes,
+            )
+            for img in memo.images
+        ],
+    )
+
+
 def _plan_out(plan: FarmPlan) -> FarmPlanOut:
     return FarmPlanOut(
         id=plan.id,
@@ -67,17 +101,43 @@ def _plan_out(plan: FarmPlan) -> FarmPlanOut:
         visitDays=plan.visit_days,
         trackProgress=plan.track_progress,
         tasks=[_task_out(t, plan.start_date) for t in plan.tasks],
-        memos=[
-            TaskMemoOut(id=m.id, memoDate=m.memo_date, content=m.content) for m in plan.memos
-        ],
+        memos=[_memo_out(m) for m in plan.memos],
     )
+
+
+def _plan_summary(plan: FarmPlan) -> FarmPlanSummary:
+    return FarmPlanSummary(
+        id=plan.id,
+        cropName=plan.crop_name,
+        cropItemCode=plan.crop_item_code,
+        cropKindCode=plan.crop_kind_code,
+        startDate=plan.start_date,
+        region=plan.region,
+        province=plan.province,
+        area=plan.area,
+        areaUnit=plan.area_unit,  # type: ignore[arg-type]
+        trackProgress=plan.track_progress,
+        taskCount=len(plan.tasks),
+    )
+
+
+def _delete_memo_files(memo: TaskMemo) -> None:
+    """메모에 달린 사진 파일들을 디스크에서 제거(DB 행은 CASCADE 가 처리)."""
+    for img in memo.images:
+        delete_file(img.file_path)
 
 
 async def _load_plan(session: AsyncSession, plan_id: int) -> FarmPlan:
     stmt = (
         select(FarmPlan)
         .where(FarmPlan.id == plan_id)
-        .options(selectinload(FarmPlan.tasks), selectinload(FarmPlan.memos))
+        .options(
+            selectinload(FarmPlan.tasks),
+            selectinload(FarmPlan.memos).selectinload(TaskMemo.images),
+        )
+        # 같은 세션에서 add 후 재조회 시, 이미 로드된 인스턴스의 컬렉션을
+        # 새 쿼리 결과로 덮어쓴다(신규 메모/사진이 응답에 빠지는 문제 방지).
+        .execution_options(populate_existing=True)
     )
     plan = await session.scalar(stmt)
     if plan is None:
@@ -96,6 +156,121 @@ async def create_plan(
     plan = await generate_plan(session, payload)
     plan = await _load_plan(session, plan.id)
     return _plan_out(plan)
+
+
+@router.post("/batch", response_model=FarmPlanBatchOut)
+async def create_plans_batch(
+    payload: FarmPlanBatchCreate, session: SessionDep
+) -> FarmPlanBatchOut:
+    """여러 작물 계획을 한 번에 생성(작물당 RAG+GPT, 최대 4개 동시 처리).
+
+    작물마다 독립 세션으로 생성하므로 한 작물이 실패해도 나머지는 계속 만들고,
+    실패는 failed 로 보고한다. created 는 입력 순서를 따른다.
+    """
+    sem = asyncio.Semaphore(_BATCH_CONCURRENCY)
+
+    async def _one(idx: int, p: FarmPlanCreate) -> tuple[int, int | None, str | None]:
+        async with sem:
+            try:
+                # 동시 실행 안전을 위해 작물마다 별도 세션 사용(AsyncSession 은 공유 불가).
+                async with async_session_factory() as s:
+                    plan = await generate_plan(s, p)
+                    return idx, plan.id, None
+            except Exception as e:  # noqa: BLE001 - 개별 실패가 전체 배치를 막지 않도록
+                log.exception("배치 계획 생성 실패 idx=%s crop=%s", idx, p.cropName)
+                return idx, None, str(e)
+
+    results = await asyncio.gather(
+        *[_one(i, p) for i, p in enumerate(payload.plans)]
+    )
+
+    created: list[FarmPlanOut] = []
+    failed: list[BatchFailure] = []
+    for idx, plan_id, err in sorted(results):
+        if plan_id is not None:
+            plan = await _load_plan(session, plan_id)
+            created.append(_plan_out(plan))
+        else:
+            failed.append(
+                BatchFailure(
+                    index=idx, cropName=payload.plans[idx].cropName, error=err or "unknown"
+                )
+            )
+    return FarmPlanBatchOut(created=created, failed=failed)
+
+
+@router.get("", response_model=list[FarmPlanSummary])
+async def list_plans(session: SessionDep) -> list[FarmPlanSummary]:
+    """모든 농사계획 요약 목록. 통합 캘린더에서 볼 작물을 고르는 데 쓴다."""
+    stmt = (
+        select(FarmPlan).options(selectinload(FarmPlan.tasks)).order_by(FarmPlan.start_date)
+    )
+    plans = (await session.scalars(stmt)).all()
+    return [_plan_summary(p) for p in plans]
+
+
+@router.get("/calendar", response_model=CalendarOut)
+async def calendar(
+    session: SessionDep,
+    planIds: Annotated[
+        str | None,
+        Query(description="콤마 구분 plan ID(예: 1,2,3). 미지정 시 전체 작물."),
+    ] = None,
+    from_: Annotated[date | None, Query(alias="from", description="조회 시작일(포함)")] = None,
+    to: Annotated[date | None, Query(description="조회 종료일(포함)")] = None,
+    includeMemos: Annotated[bool, Query(description="메모 포함 여부")] = True,
+) -> CalendarOut:
+    """ 여러 작물을 하나의 캘린더로 통합 조회. (개별 선택 가능) """
+    ids: list[int] | None = None
+    if planIds:
+        try:
+            ids = [int(x) for x in planIds.split(",") if x.strip()]
+        except ValueError:
+            raise HTTPException(
+                status_code=422, detail="planIds 는 콤마로 구분된 정수여야 합니다."
+            ) from None
+
+    stmt = select(FarmPlan).options(
+        selectinload(FarmPlan.tasks),
+        selectinload(FarmPlan.memos).selectinload(TaskMemo.images),
+    )
+    if ids:
+        stmt = stmt.where(FarmPlan.id.in_(ids))
+    stmt = stmt.order_by(FarmPlan.start_date)
+    plans = (await session.scalars(stmt)).all()
+
+    tasks: list[CalendarTaskOut] = []
+    memos: list[CalendarMemoOut] = []
+    for p in plans:
+        for t in p.tasks:
+            base = _task_out(t, p.start_date)
+            # [date, endDate] 가 [from, to] 와 겹치는 작업만 포함.
+            if from_ is not None and base.endDate < from_:
+                continue
+            if to is not None and base.date > to:
+                continue
+            tasks.append(
+                CalendarTaskOut(**base.model_dump(), planId=p.id, cropName=p.crop_name)
+            )
+        if includeMemos:
+            for m in p.memos:
+                if from_ is not None and m.memo_date < from_:
+                    continue
+                if to is not None and m.memo_date > to:
+                    continue
+                memos.append(
+                    CalendarMemoOut(
+                        **_memo_out(m).model_dump(), planId=p.id, cropName=p.crop_name
+                    )
+                )
+
+    tasks.sort(key=lambda x: (x.date, x.order))
+    memos.sort(key=lambda x: x.memoDate)
+    return CalendarOut(
+        plans=[_plan_summary(p) for p in plans],
+        tasks=tasks,
+        memos=memos,
+    )
 
 
 @router.get("/{plan_id}", response_model=FarmPlanOut)
@@ -221,8 +396,10 @@ async def upsert_memo(
     existing = next((m for m in plan.memos if m.memo_date == payload.memoDate), None)
     content = payload.content.strip()
 
-    if not content:
+    # 텍스트가 비어도 사진이 있으면 메모를 유지한다(사진만 있는 메모 허용).
+    if not content and (existing is None or not existing.images):
         if existing is not None:
+            _delete_memo_files(existing)
             await session.delete(existing)
     elif existing is not None:
         existing.content = content
@@ -234,16 +411,68 @@ async def upsert_memo(
     return _plan_out(plan)
 
 
+@router.post("/{plan_id}/memos/{memo_date}/images", response_model=FarmPlanOut)
+async def upload_memo_images(
+    plan_id: int,
+    memo_date: date,
+    session: SessionDep,
+    files: Annotated[list[UploadFile], File(description="첨부할 이미지(여러 장 가능)")],
+) -> FarmPlanOut:
+    """해당 날짜 메모에 사진을 첨부(여러 장 가능). 메모가 없으면 자동 생성한다."""
+    plan = await _load_plan(session, plan_id)
+
+    memo = next((m for m in plan.memos if m.memo_date == memo_date), None)
+    if memo is None:
+        memo = TaskMemo(plan_id=plan_id, memo_date=memo_date, content="")
+        session.add(memo)
+        await session.flush()  # memo.id 확보
+
+    for f in files:
+        rel, size = await save_image(f, subdir="memo")
+        session.add(
+            MemoImage(
+                memo_id=memo.id,
+                file_path=rel,
+                original_name=f.filename,
+                content_type=f.content_type,
+                size_bytes=size,
+            )
+        )
+
+    await session.commit()
+    plan = await _load_plan(session, plan_id)
+    return _plan_out(plan)
+
+
+@router.delete("/{plan_id}/memos/images/{image_id}", response_model=FarmPlanOut)
+async def delete_memo_image(
+    plan_id: int, image_id: int, session: SessionDep
+) -> FarmPlanOut:
+    """메모 사진 1장 삭제(파일 + DB 행). 사진 삭제로 메모가 비어도 메모는 유지한다."""
+    plan = await _load_plan(session, plan_id)
+
+    target = next(
+        (img for m in plan.memos for img in m.images if img.id == image_id), None
+    )
+    if target is None:
+        raise HTTPException(status_code=404, detail="해당 사진을 찾을 수 없습니다.")
+
+    delete_file(target.file_path)
+    await session.delete(target)
+    await session.commit()
+    plan = await _load_plan(session, plan_id)
+    return _plan_out(plan)
+
+
 @router.delete("/{plan_id}/memos/{memo_date}", response_model=FarmPlanOut)
 async def delete_memo(
     plan_id: int, memo_date: date, session: SessionDep
 ) -> FarmPlanOut:
-    await _load_plan(session, plan_id)  # 존재 확인
-    await session.execute(
-        delete(TaskMemo).where(
-            TaskMemo.plan_id == plan_id, TaskMemo.memo_date == memo_date
-        )
-    )
-    await session.commit()
     plan = await _load_plan(session, plan_id)
+    existing = next((m for m in plan.memos if m.memo_date == memo_date), None)
+    if existing is not None:
+        _delete_memo_files(existing)  # 디스크 파일 정리(DB 행은 CASCADE)
+        await session.delete(existing)
+        await session.commit()
+        plan = await _load_plan(session, plan_id)
     return _plan_out(plan)

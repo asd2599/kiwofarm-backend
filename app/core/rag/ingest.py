@@ -19,7 +19,7 @@ from openai import AsyncOpenAI
 from app.config import settings
 from app.core.rag import store
 from app.core.rag.embeddings import embed_texts
-from app.data import ncpms, nongsaro
+from app.data import ncpms, nongsaro, nongsaro_garden
 
 log = logging.getLogger(__name__)
 
@@ -31,6 +31,7 @@ _GEN_MODEL = "gpt-4o-mini"
 # 스토어 kind / source 라벨.
 CULTIVATION_KIND = "cultivation"
 NCPMS_SOURCE = "ncpms"  # kind 이자 source 라벨
+GARDEN_SOURCE = "garden"  # 농사로 텃밭가꾸기(fildMnfct). kind 이자 source 라벨
 
 
 def crop_key(item_code: str, kind_code: str) -> str:
@@ -90,7 +91,7 @@ async def _generate_general_text(crop_name: str, sub_category_name: str | None) 
                     "재배 환경(기후·토양·일조), 파종/육묘/정식 시기, "
                     "시비(밑거름·웃거름) 시기와 방법, 물·관수 관리, "
                     "주요 생육 단계별 작업, 병해충 예방(시기별 예방조치·주의 병해충), "
-                    "수확 시기와 방법, 수확 후 저장. "
+                    "수확 시기와 방법. "
                     "한국 노지·시설 재배 기준으로 구체적인 시기를 포함하세요."
                 ),
             },
@@ -159,6 +160,19 @@ async def _ingest_ncpms_pests(ckey: str, crop_name: str) -> int:
     return await _add_chunks(ckey, NCPMS_SOURCE, NCPMS_SOURCE, chunks)
 
 
+async def _ingest_garden(ckey: str, crop_name: str) -> int:
+    """농사로 텃밭가꾸기 본문(제목에 작목명 포함)을 청크로 추가. 결과 없으면 0."""
+    try:
+        texts = await nongsaro_garden.fetch_garden_texts(crop_name)
+    except Exception as e:  # noqa: BLE001 - 텃밭 보강 실패해도 인제스트 전체는 진행
+        log.info("텃밭가꾸기 인제스트 실패 crop=%s reason=%s", crop_name, e)
+        return 0
+    chunks: list[str] = []
+    for t in texts:
+        chunks.extend(_chunk_text(t))
+    return await _add_chunks(ckey, GARDEN_SOURCE, GARDEN_SOURCE, chunks)
+
+
 async def ensure_crop_ingested(
     item_code: str,
     kind_code: str,
@@ -170,6 +184,7 @@ async def ensure_crop_ingested(
     - 재배지식(농사로 PDF→실패 시 GPT general)이 없으면 적재.
     - NCPMS_API_KEY 가 있고 해당 작목의 병해충(ncpms) 청크가 아직 없으면 추가 적재.
       → 나중에 키를 넣으면, 이미 인제스트된 작목도 다음 호출 때 병해충 근거가 보강된다.
+    - NONGSARO_API_KEY 가 있고 텃밭가꾸기(garden) 청크가 아직 없으면 추가 적재(텃밭 작물에 한함).
     """
     ckey = crop_key(item_code, kind_code)
     added = 0
@@ -179,5 +194,8 @@ async def ensure_crop_ingested(
 
     if settings.ncpms_api_key and not store.exists(ckey, NCPMS_SOURCE):
         added += await _ingest_ncpms_pests(ckey, crop_name)
+
+    if settings.nongsaro_api_key and not store.exists(ckey, GARDEN_SOURCE):
+        added += await _ingest_garden(ckey, crop_name)
 
     return added

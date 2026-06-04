@@ -4,7 +4,7 @@
 파일로 저장한다. 규모가 작고(작목 수십 × ~80청크) 쓰기 1회·읽기 위주라 벡터 DB
 없이 numpy brute-force 코사인으로 충분히 빠르며, 인프라가 필요 없다.
 
-파일 레이아웃 (kind = "cultivation" | "ncpms"):
+파일 레이아웃 (kind = "cultivation" | "ncpms" | "garden" | ...):
   {safe_key}.{kind}.npy   float32 (N, 1536) 임베딩 행렬
   {safe_key}.{kind}.json  {"source": str, "chunks": [str, ...]}
 
@@ -25,17 +25,16 @@ log = logging.getLogger(__name__)
 # backend/app/core/rag/store.py → parents[3] = backend
 EMBED_DIR = Path(__file__).resolve().parents[3] / "data" / "embeddings"
 
-# kind 구분과 키 단위:
-#  - CROP_KINDS: crop_key 단위(v3 슬러그 표준). cultivation=농사로PDF/GPT 재배지식,
-#    ncpms=병해충.
-#  - ITEM_KINDS: 작물 슬러그 단위. garden=농사로 텃밭가꾸기(fildMnfct, v3 1순위),
-#    monthtech=이달의 농업기술(텃밭 관련성 선별본), general=GPT 표준 재배지식 폴백.
-#    출처별로 나눠 저장해 검색 시 가중치를 줄 수 있다.
+# kind 구분과 키 단위 (v3 표준 키 = crops_master 슬러그 — 슬러그 키에선 두 단위가 동일):
+#  - CROP_KINDS: crop_key 단위. cultivation=농사로PDF/GPT 재배지식, ncpms=병해충,
+#    garden=농사로 텃밭가꾸기(fildMnfct, v3 1순위 — 배치 sync_garden + 온디맨드 ingest).
+#  - ITEM_KINDS: item_code 단위(레거시 품종 공유). monthtech=이달의 농업기술(텃밭 선별본),
+#    general=GPT 표준 재배지식 폴백. 출처별로 나눠 저장해 검색 시 가중치를 줄 수 있다.
 #  - weekfarm 은 2026-06-04 폐기(회보 통짜 복사라 작물간 중복·무관 내용 오염).
-#  - monthfd(보관·손질·영양)는 수확인증 카드 전용 — 의도적으로 ITEM_KINDS 제외,
-#    카드 쪽에서 명시 로드한다.
-CROP_KINDS: tuple[str, ...] = ("cultivation", "ncpms")
-ITEM_KINDS: tuple[str, ...] = ("garden", "monthtech", "general")
+#  - monthfd(보관·손질·영양)는 수확인증 카드 전용 — 의도적으로 KINDS 제외, 카드에서 명시 로드.
+#  - "_common".garden = 작물 공통 텃밭 가이드(챗봇이 작물 키와 병행 검색).
+CROP_KINDS: tuple[str, ...] = ("cultivation", "ncpms", "garden")
+ITEM_KINDS: tuple[str, ...] = ("monthtech", "general")
 KINDS: tuple[str, ...] = CROP_KINDS + ITEM_KINDS
 
 

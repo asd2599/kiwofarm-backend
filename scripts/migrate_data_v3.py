@@ -34,8 +34,14 @@ EMBED_DIR = ROOT / "data" / "embeddings"
 FARMINFO_DIR = ROOT / "data" / "farminfo"
 
 
+# 작물이 아니지만 보존해야 하는 예약 키 (작물 공통 텃밭 가이드 등)
+RESERVED_KEYS = {"_common"}
+
+
 def _slug_of(key: str) -> str | None:
     """파일 키(코드, 코드__품종, x_*, 이미 슬러그) → 슬러그 or None(=삭제 대상)."""
+    if key in RESERVED_KEYS:
+        return key
     if matrix.get_crop(key) is not None:
         return key
     base = key.split("__")[0]

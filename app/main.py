@@ -1,8 +1,10 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.v1 import (
     crops,
@@ -15,6 +17,7 @@ from app.api.v1 import (
     twin,
 )
 from app.config import settings
+from app.core.storage import UPLOAD_URL_PREFIX
 from app.db.session import init_db
 
 
@@ -34,6 +37,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 업로드 파일(메모·수확 사진) 정적 서빙 — core/storage.file_url() 과 경로 일치.
+_upload_root = Path(settings.upload_dir).resolve()
+_upload_root.mkdir(parents=True, exist_ok=True)
+app.mount(UPLOAD_URL_PREFIX, StaticFiles(directory=_upload_root), name="uploads")
 
 app.include_router(recommend.router, prefix="/api/v1")
 app.include_router(twin.router, prefix="/api/v1")

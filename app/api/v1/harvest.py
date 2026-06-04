@@ -8,9 +8,7 @@ GET  /harvest          인증 기록 목록 (도감·뱃지 집계용)
 from __future__ import annotations
 
 import logging
-import uuid
 from datetime import datetime
-from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
@@ -18,6 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.core import storage
 from app.core.harvest import card as card_mod
 from app.core.harvest import rules
 from app.core.harvest.verify import VerifyError, judge_photo
@@ -37,18 +36,6 @@ router = APIRouter(prefix="/harvest", tags=["harvest"])
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
-UPLOAD_DIR = Path(__file__).resolve().parents[3] / "data" / "uploads"
-ALLOWED_MIME = {"image/jpeg", "image/png", "image/webp", "image/heic"}
-MAX_BYTES = 10 * 1024 * 1024  # 10MB
-
-
-def _save_photo(photo: bytes, mime: str) -> str:
-    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-    ext = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/heic": "heic"}[mime]
-    name = f"{datetime.now():%Y%m%d}_{uuid.uuid4().hex[:12]}.{ext}"
-    (UPLOAD_DIR / name).write_bytes(photo)
-    return f"data/uploads/{name}"
-
 
 @router.post("/verify", response_model=HarvestVerifyResponse)
 async def verify_harvest(
@@ -61,11 +48,10 @@ async def verify_harvest(
     if crop is None:
         raise HTTPException(status_code=404, detail=f"작물 없음: {crop_slug}")
     mime = photo.content_type or ""
-    if mime not in ALLOWED_MIME:
-        raise HTTPException(status_code=415, detail=f"지원하지 않는 이미지 형식: {mime}")
     data = await photo.read()
-    if len(data) > MAX_BYTES:
-        raise HTTPException(status_code=413, detail="사진은 10MB 이하만 가능합니다")
+    await photo.seek(0)
+    # 형식·크기 검증 + 디스크 저장은 공용 스토리지 모듈에 위임 (/uploads 정적 서빙).
+    rel_path, _size = await storage.save_image(photo, subdir="harvest")
 
     # 1차 규칙(경고만) — EXIF + 재배 계획 연속성
     warnings: list[str] = []
@@ -82,12 +68,11 @@ async def verify_harvest(
     demo = settings.harvest_demo_mode
     verified = verdict.passed or demo
 
-    photo_path = _save_photo(data, mime)
     record = HarvestRecord(
         plan_id=plan_id,
         crop_slug=crop_slug,
         crop_name=crop["name"],
-        photo_path=photo_path,
+        photo_path=rel_path,  # 업로드 루트 기준 상대경로 (storage.file_url 로 URL 변환)
         verified=verified,
         confidence=verdict.confidence,
         verdict={**verdict.as_dict(), "warnings": warnings, "demo_mode": demo},

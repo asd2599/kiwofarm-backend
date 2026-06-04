@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     # 6/30 시연 등 데모 환경에서만 true.
     harvest_demo_mode: bool = False
 
+    # 사용자 업로드(메모·수확 사진) 로컬 저장 디렉터리 + 1파일 최대 크기(MB).
+    upload_dir: str = "./data/uploads"
+    max_upload_mb: int = 10
+
     @field_validator("database_url")
     @classmethod
     def _force_asyncpg(cls, v: str) -> str:
