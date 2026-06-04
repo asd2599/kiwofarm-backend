@@ -1,11 +1,13 @@
-"""주간 영농 코칭 한 줄 생성.
+"""주간 영농 코칭 멘트 생성 (작업별 한 문장).
 
-이번 주 할 일(작업 제목)을 보고 gpt-4o-mini 가 격려+실용 팁을 담은 한 문장을 만든다.
-OPENAI_API_KEY 가 없거나 호출 실패·작업 없음이면 규칙 기반 문장으로 폴백한다.
+이번 주 할 일(작업)마다 그 작물에 맞는 실용 조언 한 문장을 gpt-4o-mini 가 배치로 만든다.
+예: "딸기 파종 시 흙의 배수와 비옥도를 확인하고 육묘 관리에 신경 쓰세요."
+OPENAI_API_KEY 가 없거나 호출 실패면 규칙 기반 문장으로 폴백한다.
 """
 
 from __future__ import annotations
 
+import json
 import logging
 import re
 
@@ -18,8 +20,8 @@ log = logging.getLogger(__name__)
 _MODEL = "gpt-4o-mini"
 
 _SYS = (
-    "당신은 한국어 영농 코치입니다. 이번 주 할 일을 보고 "
-    "실용적인 팁을 담아 딱 한 문장(존댓말, 50자 내외)으로 담백하게 코칭하세요. "
+    "당신은 한국어 영농 코치입니다. 각 농작업에 대해 그 작물에 맞는 실용 조언을 "
+    "담백한 한 문장(존댓말, 40~60자)으로 작성합니다. "
     "이모지·이모티콘·특수문자 장식은 절대 쓰지 말고, 과장 없이 자연스럽게. "
     "새로운 작업이나 시기를 지어내지 마세요."
 )
@@ -43,35 +45,46 @@ def _clean(text: str) -> str:
     return re.sub(r"\s{2,}", " ", _EMOJI_RE.sub("", text)).strip(" -·")
 
 
-async def weekly_coaching(crop_name: str, region: str, task_titles: list[str]) -> str:
-    """이번 주 작업 제목들 → 코칭 한 줄."""
-    if not task_titles:
-        return "이번 주는 예정된 작업이 없어요. 작물 상태와 토양 수분을 가볍게 점검해 보세요."
-    if not settings.openai_api_key:
-        return f"이번 주는 '{task_titles[0]}'부터 차근차근 챙겨보세요."
+def _fallback(crop_name: str, title: str) -> str:
+    return f"{crop_name} {title} 시 기본 재배 관리에 신경 쓰세요."
 
-    client = AsyncOpenAI(api_key=settings.openai_api_key, timeout=10.0)
-    tasks_str = ", ".join(task_titles)
+
+async def weekly_task_messages(
+    crop_name: str, region: str, task_titles: list[str]
+) -> list[str]:
+    """이번 주 작업 제목들 → 작업별 코칭 멘트(입력 순서대로 1:1)."""
+    if not task_titles:
+        return []
+    fallback = [_fallback(crop_name, t) for t in task_titles]
+    if not settings.openai_api_key:
+        return fallback
+
+    client = AsyncOpenAI(api_key=settings.openai_api_key, timeout=12.0)
+    listing = "\n".join(f"{i + 1}. {t}" for i, t in enumerate(task_titles))
+    user = (
+        f"작물: {crop_name} ({region})\n"
+        f"이번 주 작업:\n{listing}\n\n"
+        "각 작업마다 그 작물에 맞는 실용 조언을 한 문장으로 만들어 작업 번호 순서대로 "
+        'messages 배열에 담아 JSON 으로만 답하세요. 예: '
+        '{"messages": ["딸기 파종 시 흙의 배수와 비옥도를 확인하고 육묘 관리에 신경 쓰세요."]}'
+    )
     try:
         resp = await client.chat.completions.create(
             model=_MODEL,
-            temperature=0.6,
-            max_tokens=120,
+            temperature=0.5,
+            max_tokens=700,
+            response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": _SYS},
-                {
-                    "role": "user",
-                    "content": (
-                        f"작물: {crop_name} ({region})\n"
-                        f"이번 주 할 일: {tasks_str}\n한 문장 코칭:"
-                    ),
-                },
+                {"role": "user", "content": user},
             ],
         )
-    except Exception as e:  # noqa: BLE001 - 코칭 실패해도 다이제스트는 제공
-        log.info("주간 코칭 LLM 실패: %s", e)
-        return f"이번 주는 '{task_titles[0]}'부터 차근차근 해보세요!"
+        data = json.loads(resp.choices[0].message.content or "{}")
+        msgs = data.get("messages")
+    except Exception as e:  # noqa: BLE001 - 멘트 생성 실패해도 다이제스트는 제공
+        log.info("주간 작업 멘트 LLM 실패: %s", e)
+        return fallback
 
-    raw = (resp.choices[0].message.content or "").strip()
-    line = _clean(raw.splitlines()[0]) if raw else ""
-    return line or f"이번 주는 '{task_titles[0]}'부터 챙겨보세요."
+    if not isinstance(msgs, list) or len(msgs) != len(task_titles):
+        return fallback
+    return [_clean(str(m)) or fallback[i] for i, m in enumerate(msgs)]

@@ -15,7 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.farmplan.coach import weekly_coaching
+from app.core.farmplan.coach import weekly_task_messages
 from app.core.farmplan.generator import _snap_to_visit_days, generate_plan
 from app.core.storage import delete_file, file_url, save_image
 from app.db.models.farm_plan import FarmPlan, FarmTask, MemoImage, TaskMemo
@@ -293,9 +293,10 @@ async def weekly_digest(
         Query(alias="date", description="기준 날짜(그 주). 미지정 시 오늘."),
     ] = None,
 ) -> WeeklyDigestOut:
-    """이번 주(월~일) 할 일 최대 3개(미완료) + LLM 코칭 한 줄.
+    """이번 주(월~일) 작업 전체 + 작업별 코칭 멘트.
 
-    ref 가 속한 주를 계산하고, 그 주에 시작하는 미완료 작업을 날짜순 3개까지 추린다.
+    ref 가 속한 주에 시작하는 작업을 날짜순으로 모으고(완료 포함), 각 작업에 그 작물
+    맞춤 멘트(알림 본문)를 LLM 으로 붙인다.
     """
     plan = await _load_plan(session, plan_id)
     base = ref or date.today()
@@ -305,20 +306,27 @@ async def weekly_digest(
     in_week: list[tuple[date, FarmTask]] = []
     for t in plan.tasks:
         d = plan.start_date + timedelta(days=t.day_offset)
-        if monday <= d <= sunday and t.status != "done":
+        if monday <= d <= sunday:
             in_week.append((d, t))
     in_week.sort(key=lambda x: (x[0], x[1].order))
-    top = in_week[:3]
 
-    coaching = await weekly_coaching(plan.crop_name, plan.region, [t.title for _, t in top])
+    messages = await weekly_task_messages(
+        plan.crop_name, plan.region, [t.title for _, t in in_week]
+    )
     return WeeklyDigestOut(
         weekStart=monday,
         weekEnd=sunday,
         tasks=[
-            WeeklyTaskOut(id=t.id, title=t.title, category=t.category, date=d, status=t.status)
-            for d, t in top
+            WeeklyTaskOut(
+                id=t.id,
+                title=t.title,
+                category=t.category,
+                date=d,
+                status=t.status,
+                message=messages[i],
+            )
+            for i, (d, t) in enumerate(in_week)
         ],
-        coaching=coaching,
     )
 
 

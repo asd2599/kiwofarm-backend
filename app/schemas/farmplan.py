@@ -118,13 +118,13 @@ class WeeklyTaskOut(BaseModel):
     category: TaskCategory
     date: date
     status: TaskStatus
+    message: str  # 그 작업 맞춤 코칭 멘트 한 문장(알림 본문)
 
 
 class WeeklyDigestOut(BaseModel):
     weekStart: date  # 월요일
     weekEnd: date  # 일요일
-    tasks: list[WeeklyTaskOut]  # 이번 주 할 일(미완료) 최대 3개
-    coaching: str  # LLM 코칭 한 줄
+    tasks: list[WeeklyTaskOut]  # 이번 주 작업 전체(작업별 멘트 포함)
 
 
 # ── 멀티 작물 통합 캘린더 ──────────────────────────────────────────────
