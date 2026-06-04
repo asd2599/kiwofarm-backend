@@ -111,6 +111,37 @@ class SettingsUpdate(BaseModel):
     trackProgress: bool
 
 
+# ── 주간 다이제스트 (이번 주 할 일 3가지 + 코칭 한 줄) ───────────────────
+class WeeklyTaskOut(BaseModel):
+    id: int
+    title: str
+    category: TaskCategory
+    date: date
+    status: TaskStatus
+    message: str  # 그 작업 맞춤 코칭 멘트 한 문장(알림 본문)
+
+
+class WeeklyDigestOut(BaseModel):
+    weekStart: date  # 월요일
+    weekEnd: date  # 일요일
+    tasks: list[WeeklyTaskOut]  # 이번 주 작업 전체(작업별 멘트 포함)
+
+
+# ── 위기 알림 (병해충 발생정보 + 기상 특보) ───────────────────────────
+class CrisisAlertOut(BaseModel):
+    type: str  # pest | weather
+    severity: str  # info | warn | danger
+    title: str
+    detail: str
+    source: str
+    link: str | None = None
+    date: str | None = None
+
+
+class AlertsOut(BaseModel):
+    alerts: list[CrisisAlertOut]
+
+
 # ── 멀티 작물 통합 캘린더 ──────────────────────────────────────────────
 class FarmPlanSummary(BaseModel):
     """통합 캘린더에서 작물(plan)을 선택하기 위한 요약."""

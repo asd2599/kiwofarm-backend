@@ -93,3 +93,28 @@ class PlantingRecommendResponse(BaseModel):
     zone: str
     recommendations: list[RecommendationItem]
     next_month_candidates: list[str]
+
+
+# ───────────────────────── 챗봇 (§5, 부록 D/E) ─────────────────────────
+
+
+class ChatMessage(BaseModel):
+    role: str  # user | assistant
+    content: str
+
+
+class ChatRequest(BaseModel):
+    messages: list[ChatMessage] = Field(..., description="대화 이력(최소 1개, 마지막은 user)")
+    # 경로 A: 추천 결과 화면에서 캐리하는 컨텍스트(user_input + recommendations)
+    context: dict | None = Field(None, description="{user_input, recommendations}")
+
+
+class ChatSource(BaseModel):
+    crop_id: str
+    name: str
+
+
+class ChatResponse(BaseModel):
+    answer: str
+    chips: list[str]  # 다음 추천 칩(부록 E)
+    sources: list[ChatSource]  # 답변 근거 작물
