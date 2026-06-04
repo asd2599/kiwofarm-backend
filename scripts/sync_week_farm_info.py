@@ -9,7 +9,7 @@ PDF 본문을 받아 텍스트(backend/data/weekfarm/text/{cntntsNo}.txt)로 추
     uv run python scripts/sync_week_farm_info.py --limit 24      # 최신 24건만
     uv run python scripts/sync_week_farm_info.py --pdf-text 12   # + 최신 12건 PDF 텍스트
 환경:
-    .env 의 NONGSARO_API_KEY2 (주간농사정보 신청 키) 사용.
+    .env 의 NONGSARO_API_KEY (주간농사정보 신청 키) 사용.
 """
 
 from __future__ import annotations

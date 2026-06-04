@@ -4,7 +4,16 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1 import crops, farmplan, recommend, sales, support, twin
+from app.api.v1 import (
+    crops,
+    farmplan,
+    harvest,
+    planting,
+    recommend,
+    sales,
+    support,
+    twin,
+)
 from app.config import settings
 from app.db.session import init_db
 
@@ -33,6 +42,7 @@ app.include_router(sales.router, prefix="/api/v1")
 app.include_router(support.router, prefix="/api/v1")
 app.include_router(farmplan.router, prefix="/api/v1")
 app.include_router(planting.router, prefix="/api/v1")
+app.include_router(harvest.router, prefix="/api/v1")
 
 
 @app.get("/health")

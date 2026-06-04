@@ -1,7 +1,7 @@
 """농사로 주간농사정보(weekFarmInfo) 클라이언트.
 
 서비스: http://api.nongsaro.go.kr/service/weekFarmInfo/weekFarmInfoList
-인증키: settings.nongsaro_api_key2 (cropEbook 키와 별개로 신청된 키).
+인증키: settings.nongsaro_api_key (cropEbook 키와 별개로 신청된 키).
 
 주간농사정보는 매주 발간되는 "주간농사정보 제N호" 회보의 메타데이터 + 파일
 다운로드 링크(hwpx/hwp/pdf)를 제공한다. cropEbook 의 PDF 다운로드는 막혀
@@ -124,10 +124,10 @@ async def fetch_page(
     client: httpx.AsyncClient | None = None,
 ) -> tuple[int, list[WeekFarmInfo]]:
     """주간농사정보 한 페이지. 반환: (전체 건수, 이 페이지 목록)."""
-    if not settings.nongsaro_api_key2:
-        raise WeekFarmError("NONGSARO_API_KEY2 미설정 (.env 확인)")
+    if not settings.nongsaro_api_key:
+        raise WeekFarmError("NONGSARO_API_KEY 미설정 (.env 확인)")
     params = {
-        "apiKey": settings.nongsaro_api_key2,
+        "apiKey": settings.nongsaro_api_key,
         "pageNo": str(page_no),
         "numOfRows": str(num_of_rows),
     }

@@ -26,12 +26,16 @@ log = logging.getLogger(__name__)
 EMBED_DIR = Path(__file__).resolve().parents[3] / "data" / "embeddings"
 
 # kind 구분과 키 단위:
-#  - CROP_KINDS: crop_key(item:kind) 단위. cultivation=농사로PDF/GPT 재배지식, ncpms=병해충.
-#  - ITEM_KINDS: item_code 단위(품종 공유). monthtech=이달의 농업기술(작물특화),
-#    weekfarm=주간농사정보(다작물 회보), general=농사로 미등장 작물의 GPT 표준 재배지식 폴백.
+#  - CROP_KINDS: crop_key 단위(v3 슬러그 표준). cultivation=농사로PDF/GPT 재배지식,
+#    ncpms=병해충.
+#  - ITEM_KINDS: 작물 슬러그 단위. garden=농사로 텃밭가꾸기(fildMnfct, v3 1순위),
+#    monthtech=이달의 농업기술(텃밭 관련성 선별본), general=GPT 표준 재배지식 폴백.
 #    출처별로 나눠 저장해 검색 시 가중치를 줄 수 있다.
+#  - weekfarm 은 2026-06-04 폐기(회보 통짜 복사라 작물간 중복·무관 내용 오염).
+#  - monthfd(보관·손질·영양)는 수확인증 카드 전용 — 의도적으로 ITEM_KINDS 제외,
+#    카드 쪽에서 명시 로드한다.
 CROP_KINDS: tuple[str, ...] = ("cultivation", "ncpms")
-ITEM_KINDS: tuple[str, ...] = ("monthtech", "weekfarm", "general")
+ITEM_KINDS: tuple[str, ...] = ("garden", "monthtech", "general")
 KINDS: tuple[str, ...] = CROP_KINDS + ITEM_KINDS
 
 

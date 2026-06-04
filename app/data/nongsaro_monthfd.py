@@ -1,7 +1,7 @@
 """농사로 이달의 음식(monthFd) 클라이언트.
 
 서비스: http://api.nongsaro.go.kr/service/monthFd/...
-인증키: settings.nongsaro_api_key3 (이달의음식/음식 공통코드 신청 키).
+인증키: settings.nongsaro_api_key (이달의음식/음식 공통코드 신청 키).
 
 수확인증 카드의 '관리(보관·손질)'와 '음식(섭취·영양·레시피)' 정보 원천.
 식재료(monthFdmt*)는 월별 큐레이션이라 같은 식재료가 여러 연·월에 반복
@@ -104,9 +104,9 @@ def _plain(s: str) -> str:
 async def _call(
     op: str, params: dict[str, str], *, client: httpx.AsyncClient
 ) -> ET.Element:
-    if not settings.nongsaro_api_key3:
-        raise MonthFdError("NONGSARO_API_KEY3 미설정 (.env 확인)")
-    q = {"apiKey": settings.nongsaro_api_key3, **params}
+    if not settings.nongsaro_api_key:
+        raise MonthFdError("NONGSARO_API_KEY 미설정 (.env 확인)")
+    q = {"apiKey": settings.nongsaro_api_key, **params}
     url = f"{BASE}/{op}"
     last: Exception | None = None
     for attempt in range(MAX_RETRIES):

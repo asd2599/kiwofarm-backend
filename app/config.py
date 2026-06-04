@@ -10,17 +10,19 @@ class Settings(BaseSettings):
 
     openai_api_key: str = ""
     data_go_kr_key: str = ""
-    nongsaro_api_key: str = ""  # 농사로 cropEbook((신)작목별 농업기술정보)용
-    # 농사로 주간농사정보/이달의 농업기술/월간농업기술정보 신청 키(cropEbook 키와 별개).
-    nongsaro_api_key2: str = ""
-    # 농사로 이달의음식(monthFd)/음식 공통코드(foodCommonCode) 신청 키.
-    nongsaro_api_key3: str = ""
+    # 농사로 통합 키 — 전 서비스(cropEbook·monthFd·fildMnfct·farmWorkingPlanNew 등)
+    # 단일 신청. 구 KEY2/KEY3 체계는 2026-06-04 폐기.
+    nongsaro_api_key: str = ""
     ncpms_api_key: str = ""  # 국가농작물병해충관리시스템(ncpms.rda.go.kr) Open API 키
     kamis_cert_key: str = ""
     kamis_cert_id: str = ""
     kma_api_key: str = ""
 
     cors_origins: str = "http://localhost:3000"
+
+    # 수확 인증 데모 모드: 멀티모달 판정과 무관하게 통과 처리(판정은 기록).
+    # 6/30 시연 등 데모 환경에서만 true.
+    harvest_demo_mode: bool = False
 
     @field_validator("database_url")
     @classmethod

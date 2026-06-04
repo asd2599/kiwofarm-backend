@@ -51,3 +51,6 @@ seed/kamis_history.csv
 *.db
 *.db-wal
 *.db-shm
+
+# 수확 인증 사용자 업로드 사진 (커밋 금지)
+data/uploads/
