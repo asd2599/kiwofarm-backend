@@ -111,6 +111,22 @@ class SettingsUpdate(BaseModel):
     trackProgress: bool
 
 
+# ── 주간 다이제스트 (이번 주 할 일 3가지 + 코칭 한 줄) ───────────────────
+class WeeklyTaskOut(BaseModel):
+    id: int
+    title: str
+    category: TaskCategory
+    date: date
+    status: TaskStatus
+
+
+class WeeklyDigestOut(BaseModel):
+    weekStart: date  # 월요일
+    weekEnd: date  # 일요일
+    tasks: list[WeeklyTaskOut]  # 이번 주 할 일(미완료) 최대 3개
+    coaching: str  # LLM 코칭 한 줄
+
+
 # ── 멀티 작물 통합 캘린더 ──────────────────────────────────────────────
 class FarmPlanSummary(BaseModel):
     """통합 캘린더에서 작물(plan)을 선택하기 위한 요약."""

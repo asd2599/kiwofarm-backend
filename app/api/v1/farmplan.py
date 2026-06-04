@@ -15,6 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.farmplan.coach import weekly_coaching
 from app.core.farmplan.generator import _snap_to_visit_days, generate_plan
 from app.core.storage import delete_file, file_url, save_image
 from app.db.models.farm_plan import FarmPlan, FarmTask, MemoImage, TaskMemo
@@ -36,6 +37,8 @@ from app.schemas.farmplan import (
     TaskDelayBatch,
     TaskMemoOut,
     TaskStatusUpdate,
+    WeeklyDigestOut,
+    WeeklyTaskOut,
 )
 
 log = logging.getLogger(__name__)
@@ -281,6 +284,44 @@ async def get_plan(
     return _plan_out(plan)
 
 
+@router.get("/{plan_id}/weekly", response_model=WeeklyDigestOut)
+async def weekly_digest(
+    plan_id: int,
+    session: SessionDep,
+    ref: Annotated[
+        date | None,
+        Query(alias="date", description="기준 날짜(그 주). 미지정 시 오늘."),
+    ] = None,
+) -> WeeklyDigestOut:
+    """이번 주(월~일) 할 일 최대 3개(미완료) + LLM 코칭 한 줄.
+
+    ref 가 속한 주를 계산하고, 그 주에 시작하는 미완료 작업을 날짜순 3개까지 추린다.
+    """
+    plan = await _load_plan(session, plan_id)
+    base = ref or date.today()
+    monday = base - timedelta(days=base.weekday())  # weekday: 월=0
+    sunday = monday + timedelta(days=6)
+
+    in_week: list[tuple[date, FarmTask]] = []
+    for t in plan.tasks:
+        d = plan.start_date + timedelta(days=t.day_offset)
+        if monday <= d <= sunday and t.status != "done":
+            in_week.append((d, t))
+    in_week.sort(key=lambda x: (x[0], x[1].order))
+    top = in_week[:3]
+
+    coaching = await weekly_coaching(plan.crop_name, plan.region, [t.title for _, t in top])
+    return WeeklyDigestOut(
+        weekStart=monday,
+        weekEnd=sunday,
+        tasks=[
+            WeeklyTaskOut(id=t.id, title=t.title, category=t.category, date=d, status=t.status)
+            for d, t in top
+        ],
+        coaching=coaching,
+    )
+
+
 @router.patch("/{plan_id}/settings", response_model=FarmPlanOut)
 async def update_settings(
     plan_id: int, payload: SettingsUpdate, session: SessionDep
@@ -303,11 +344,6 @@ async def delay_tasks_batch(
     그 이후(order 가 더 큰) 작업만 방문 요일에 맞춰 스냅한다.
     """
     plan = await _load_plan(session, plan_id)
-    if not plan.track_progress:
-        raise HTTPException(
-            status_code=409, detail="진행 추적이 꺼져 있습니다. 먼저 settings 로 켜세요."
-        )
-
     target_ids = set(payload.taskIds)
     targets = [t for t in plan.tasks if t.id in target_ids]
     if not targets:
@@ -350,11 +386,6 @@ async def update_task(
         raise HTTPException(status_code=422, detail="status 는 planned|done|delayed")
 
     plan = await _load_plan(session, plan_id)
-    if not plan.track_progress:
-        raise HTTPException(
-            status_code=409, detail="진행 추적이 꺼져 있습니다. 먼저 settings 로 켜세요."
-        )
-
     target = next((t for t in plan.tasks if t.id == task_id), None)
     if target is None:
         raise HTTPException(status_code=404, detail="해당 작업을 찾을 수 없습니다.")
