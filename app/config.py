@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     nongsaro_api_key: str = ""  # 농사로 cropEbook((신)작목별 농업기술정보)용
     # 농사로 주간농사정보/이달의 농업기술/월간농업기술정보 신청 키(cropEbook 키와 별개).
     nongsaro_api_key2: str = ""
+    # 농사로 이달의음식(monthFd)/음식 공통코드(foodCommonCode) 신청 키.
+    nongsaro_api_key3: str = ""
     ncpms_api_key: str = ""  # 국가농작물병해충관리시스템(ncpms.rda.go.kr) Open API 키
     kamis_cert_key: str = ""
     kamis_cert_id: str = ""
