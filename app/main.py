@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api.v1 import crops, farmplan, recommend, sales, shipping, support, twin
+from app.api.v1 import crops, farmplan, planting, recommend, sales, shipping, support, twin
 from app.config import settings
 from app.core.storage import UPLOAD_URL_PREFIX
 from app.db.session import init_db
@@ -36,6 +36,7 @@ app.include_router(crops.router, prefix="/api/v1")
 app.include_router(sales.router, prefix="/api/v1")
 app.include_router(support.router, prefix="/api/v1")
 app.include_router(farmplan.router, prefix="/api/v1")
+app.include_router(planting.router, prefix="/api/v1")
 
 # 메모 사진 등 사용자 업로드 파일 정적 서빙(/uploads/...). storage.file_url 과 짝.
 _upload_dir = Path(settings.upload_dir)

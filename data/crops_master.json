@@ -1,0 +1,1217 @@
+{
+ "version": "2026-06-04",
+ "schema": "Task 부록 A + nongsaro_sources(group/sj/cntntsNo 조인키)",
+ "counts": {
+  "total": 40,
+  "covered": 30,
+  "missing": 10
+ },
+ "crops": [
+  {
+   "id": "lettuce",
+   "name": "상추",
+   "category": "잎채소",
+   "difficulty": 1,
+   "environments": [
+    "베란다",
+    "옥상",
+    "노지",
+    "실내"
+   ],
+   "sunlight": "반음지가능",
+   "min_sun_hours": 3,
+   "space": "소",
+   "container_ok": true,
+   "days_to_harvest": [
+    30,
+    45
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "상추",
+     "cntntsNo": "30624"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30624"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "spinach",
+   "name": "시금치",
+   "category": "잎채소",
+   "difficulty": 1,
+   "environments": [
+    "베란다",
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "반음지가능",
+   "min_sun_hours": 3,
+   "space": "소",
+   "container_ok": true,
+   "days_to_harvest": [
+    40,
+    55
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "시금치",
+     "cntntsNo": "30628"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30628"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "bokchoy",
+   "name": "청경채",
+   "category": "잎채소",
+   "difficulty": 1,
+   "environments": [
+    "베란다",
+    "옥상",
+    "노지",
+    "실내"
+   ],
+   "sunlight": "반음지가능",
+   "min_sun_hours": 3,
+   "space": "소",
+   "container_ok": true,
+   "days_to_harvest": [
+    30,
+    45
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "청경채",
+     "cntntsNo": "30643"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30643"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "crown_daisy",
+   "name": "쑥갓",
+   "category": "잎채소",
+   "difficulty": 1,
+   "environments": [
+    "베란다",
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "반음지가능",
+   "min_sun_hours": 3,
+   "space": "소",
+   "container_ok": true,
+   "days_to_harvest": [
+    40,
+    50
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "쑥갓",
+     "cntntsNo": "30630"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30630"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "garlic_chives",
+   "name": "부추",
+   "category": "잎채소",
+   "difficulty": 1,
+   "environments": [
+    "베란다",
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "반음지가능",
+   "min_sun_hours": 3,
+   "space": "소",
+   "container_ok": true,
+   "days_to_harvest": [
+    60,
+    90
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "부추",
+     "cntntsNo": "30620"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30620"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "kale",
+   "name": "케일",
+   "category": "잎채소",
+   "difficulty": 1,
+   "environments": [
+    "베란다",
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 5,
+   "space": "중",
+   "container_ok": true,
+   "days_to_harvest": [
+    50,
+    70
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [],
+   "nongsaro_cntnts_no": [],
+   "source": "AI보강(검수필요)"
+  },
+  {
+   "id": "mustard_greens",
+   "name": "갓",
+   "category": "잎채소",
+   "difficulty": 1,
+   "environments": [
+    "베란다",
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "반음지가능",
+   "min_sun_hours": 3,
+   "space": "소",
+   "container_ok": true,
+   "days_to_harvest": [
+    40,
+    50
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "갓",
+     "cntntsNo": "30595"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30595"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "chard",
+   "name": "근대",
+   "category": "잎채소",
+   "difficulty": 1,
+   "environments": [
+    "베란다",
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "반음지가능",
+   "min_sun_hours": 3,
+   "space": "소",
+   "container_ok": true,
+   "days_to_harvest": [
+    50,
+    60
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "근대",
+     "cntntsNo": "30603"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30603"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "curled_mallow",
+   "name": "아욱",
+   "category": "잎채소",
+   "difficulty": 1,
+   "environments": [
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 4,
+   "space": "소",
+   "container_ok": true,
+   "days_to_harvest": [
+    40,
+    55
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "아욱",
+     "cntntsNo": "30631"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30631"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "chicory",
+   "name": "치커리",
+   "category": "잎채소",
+   "difficulty": 1,
+   "environments": [
+    "베란다",
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "반음지가능",
+   "min_sun_hours": 3,
+   "space": "소",
+   "container_ok": true,
+   "days_to_harvest": [
+    40,
+    55
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "치커리(쌈용, 잎치커리)",
+     "cntntsNo": "258609"
+    },
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "치커리(치콘,뿌리치커리)",
+     "cntntsNo": "30644"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "258609",
+    "30644"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "arugula",
+   "name": "루꼴라",
+   "category": "잎채소",
+   "difficulty": 1,
+   "environments": [
+    "베란다",
+    "옥상",
+    "노지",
+    "실내"
+   ],
+   "sunlight": "반음지가능",
+   "min_sun_hours": 3,
+   "space": "소",
+   "container_ok": true,
+   "days_to_harvest": [
+    30,
+    40
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [],
+   "nongsaro_cntnts_no": [],
+   "source": "AI보강(검수필요)"
+  },
+  {
+   "id": "baby_napa",
+   "name": "엇갈이배추",
+   "category": "잎채소",
+   "difficulty": 1,
+   "environments": [
+    "베란다",
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "반음지가능",
+   "min_sun_hours": 3,
+   "space": "소",
+   "container_ok": true,
+   "days_to_harvest": [
+    30,
+    45
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [],
+   "nongsaro_cntnts_no": [],
+   "source": "AI보강(검수필요)"
+  },
+  {
+   "id": "perilla",
+   "name": "깻잎",
+   "category": "잎채소",
+   "difficulty": 1,
+   "environments": [
+    "베란다",
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 4,
+   "space": "중",
+   "container_ok": true,
+   "days_to_harvest": [
+    50,
+    60
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [
+    {
+     "group": "밭농사",
+     "group_code": "210005",
+     "sj": "들깨(잎)",
+     "cntntsNo": "30607"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30607"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "cherry_tomato",
+   "name": "방울토마토",
+   "category": "열매채소",
+   "difficulty": 2,
+   "environments": [
+    "베란다",
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 6,
+   "space": "중",
+   "container_ok": true,
+   "days_to_harvest": [
+    70,
+    90
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "토마토,방울토마토",
+     "cntntsNo": "30646"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30646"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "tomato",
+   "name": "토마토",
+   "category": "열매채소",
+   "difficulty": 2,
+   "environments": [
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 6,
+   "space": "대",
+   "container_ok": true,
+   "days_to_harvest": [
+    80,
+    100
+   ],
+   "water_need": "많음",
+   "nongsaro_sources": [
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "토마토,방울토마토",
+     "cntntsNo": "30646"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30646"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "chili_pepper",
+   "name": "고추",
+   "category": "열매채소",
+   "difficulty": 2,
+   "environments": [
+    "베란다",
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 6,
+   "space": "중",
+   "container_ok": true,
+   "days_to_harvest": [
+    80,
+    100
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "고추(보통재배)",
+     "cntntsNo": "30600"
+    },
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "고추(촉성재배)",
+     "cntntsNo": "30601"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30600",
+    "30601"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "paprika",
+   "name": "파프리카",
+   "category": "열매채소",
+   "difficulty": 3,
+   "environments": [
+    "베란다",
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 6,
+   "space": "중",
+   "container_ok": true,
+   "days_to_harvest": [
+    90,
+    110
+   ],
+   "water_need": "많음",
+   "nongsaro_sources": [
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "파프리카",
+     "cntntsNo": "30649"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30649"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "eggplant",
+   "name": "가지",
+   "category": "열매채소",
+   "difficulty": 2,
+   "environments": [
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 6,
+   "space": "중",
+   "container_ok": true,
+   "days_to_harvest": [
+    80,
+    100
+   ],
+   "water_need": "많음",
+   "nongsaro_sources": [
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "가지",
+     "cntntsNo": "30770"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30770"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "cucumber",
+   "name": "오이",
+   "category": "열매채소",
+   "difficulty": 2,
+   "environments": [
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 6,
+   "space": "대",
+   "container_ok": true,
+   "days_to_harvest": [
+    50,
+    70
+   ],
+   "water_need": "많음",
+   "nongsaro_sources": [
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "오이",
+     "cntntsNo": "30636"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30636"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "korean_zucchini",
+   "name": "애호박",
+   "category": "열매채소",
+   "difficulty": 2,
+   "environments": [
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 6,
+   "space": "대",
+   "container_ok": true,
+   "days_to_harvest": [
+    50,
+    60
+   ],
+   "water_need": "많음",
+   "nongsaro_sources": [],
+   "nongsaro_cntnts_no": [],
+   "source": "AI보강(검수필요)"
+  },
+  {
+   "id": "pumpkin",
+   "name": "호박",
+   "category": "열매채소",
+   "difficulty": 2,
+   "environments": [
+    "노지"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 6,
+   "space": "대",
+   "container_ok": false,
+   "days_to_harvest": [
+    80,
+    100
+   ],
+   "water_need": "많음",
+   "nongsaro_sources": [
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "호박",
+     "cntntsNo": "30651"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30651"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "bitter_melon",
+   "name": "여주",
+   "category": "열매채소",
+   "difficulty": 2,
+   "environments": [
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 6,
+   "space": "대",
+   "container_ok": true,
+   "days_to_harvest": [
+    70,
+    90
+   ],
+   "water_need": "많음",
+   "nongsaro_sources": [],
+   "nongsaro_cntnts_no": [],
+   "source": "AI보강(검수필요)"
+  },
+  {
+   "id": "strawberry",
+   "name": "딸기",
+   "category": "열매채소",
+   "difficulty": 3,
+   "environments": [
+    "베란다",
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 5,
+   "space": "중",
+   "container_ok": true,
+   "days_to_harvest": [
+    180,
+    210
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "딸기(촉성재배)",
+     "cntntsNo": "30610"
+    },
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "딸기(사계성여름재배)",
+     "cntntsNo": "30609"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30610",
+    "30609"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "corn",
+   "name": "옥수수",
+   "category": "열매채소",
+   "difficulty": 2,
+   "environments": [
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 6,
+   "space": "대",
+   "container_ok": false,
+   "days_to_harvest": [
+    90,
+    110
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [
+    {
+     "group": "밭농사",
+     "group_code": "210005",
+     "sj": "옥수수",
+     "cntntsNo": "30709"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30709"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "pea",
+   "name": "완두",
+   "category": "열매채소",
+   "difficulty": 1,
+   "environments": [
+    "베란다",
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 5,
+   "space": "중",
+   "container_ok": true,
+   "days_to_harvest": [
+    60,
+    80
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [
+    {
+     "group": "밭농사",
+     "group_code": "210005",
+     "sj": "완두",
+     "cntntsNo": "30710"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30710"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "kidney_bean",
+   "name": "강낭콩",
+   "category": "열매채소",
+   "difficulty": 1,
+   "environments": [
+    "베란다",
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 5,
+   "space": "중",
+   "container_ok": true,
+   "days_to_harvest": [
+    50,
+    70
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [
+    {
+     "group": "밭농사",
+     "group_code": "210005",
+     "sj": "강낭콩",
+     "cntntsNo": "30700"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30700"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "radish",
+   "name": "무",
+   "category": "뿌리채소",
+   "difficulty": 1,
+   "environments": [
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 5,
+   "space": "중",
+   "container_ok": true,
+   "days_to_harvest": [
+    50,
+    70
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "무",
+     "cntntsNo": "30614"
+    },
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "무(고랭지재배)",
+     "cntntsNo": "30615"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30614",
+    "30615"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "altari_radish",
+   "name": "알타리무",
+   "category": "뿌리채소",
+   "difficulty": 1,
+   "environments": [
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 5,
+   "space": "소",
+   "container_ok": true,
+   "days_to_harvest": [
+    40,
+    50
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [],
+   "nongsaro_cntnts_no": [],
+   "source": "AI보강(검수필요)"
+  },
+  {
+   "id": "carrot",
+   "name": "당근",
+   "category": "뿌리채소",
+   "difficulty": 2,
+   "environments": [
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 5,
+   "space": "중",
+   "container_ok": true,
+   "days_to_harvest": [
+    90,
+    120
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "당근",
+     "cntntsNo": "30605"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30605"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "potato",
+   "name": "감자",
+   "category": "뿌리채소",
+   "difficulty": 1,
+   "environments": [
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 5,
+   "space": "대",
+   "container_ok": true,
+   "days_to_harvest": [
+    90,
+    110
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [
+    {
+     "group": "밭농사",
+     "group_code": "210005",
+     "sj": "감자",
+     "cntntsNo": "30699"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30699"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "sweet_potato",
+   "name": "고구마",
+   "category": "뿌리채소",
+   "difficulty": 1,
+   "environments": [
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 6,
+   "space": "대",
+   "container_ok": false,
+   "days_to_harvest": [
+    120,
+    150
+   ],
+   "water_need": "적음",
+   "nongsaro_sources": [
+    {
+     "group": "밭농사",
+     "group_code": "210005",
+     "sj": "고구마",
+     "cntntsNo": "30701"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30701"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "onion",
+   "name": "양파",
+   "category": "뿌리채소",
+   "difficulty": 2,
+   "environments": [
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 6,
+   "space": "중",
+   "container_ok": true,
+   "days_to_harvest": [
+    210,
+    240
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "양파",
+     "cntntsNo": "30633"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30633"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "garlic",
+   "name": "마늘",
+   "category": "뿌리채소",
+   "difficulty": 1,
+   "environments": [
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 5,
+   "space": "중",
+   "container_ok": true,
+   "days_to_harvest": [
+    220,
+    250
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "마늘",
+     "cntntsNo": "30611"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30611"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "spring_onion",
+   "name": "쪽파",
+   "category": "뿌리채소",
+   "difficulty": 1,
+   "environments": [
+    "베란다",
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "반음지가능",
+   "min_sun_hours": 3,
+   "space": "소",
+   "container_ok": true,
+   "days_to_harvest": [
+    50,
+    70
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "쪽파",
+     "cntntsNo": "30639"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30639"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "green_onion",
+   "name": "대파",
+   "category": "뿌리채소",
+   "difficulty": 1,
+   "environments": [
+    "베란다",
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 4,
+   "space": "중",
+   "container_ok": true,
+   "days_to_harvest": [
+    60,
+    90
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "파",
+     "cntntsNo": "30647"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30647"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "kohlrabi",
+   "name": "콜라비",
+   "category": "뿌리채소",
+   "difficulty": 1,
+   "environments": [
+    "베란다",
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 5,
+   "space": "중",
+   "container_ok": true,
+   "days_to_harvest": [
+    55,
+    70
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [],
+   "nongsaro_cntnts_no": [],
+   "source": "AI보강(검수필요)"
+  },
+  {
+   "id": "beet",
+   "name": "비트",
+   "category": "뿌리채소",
+   "difficulty": 1,
+   "environments": [
+    "옥상",
+    "노지"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 5,
+   "space": "중",
+   "container_ok": true,
+   "days_to_harvest": [
+    60,
+    80
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [
+    {
+     "group": "채소",
+     "group_code": "210001",
+     "sj": "비트",
+     "cntntsNo": "30623"
+    }
+   ],
+   "nongsaro_cntnts_no": [
+    "30623"
+   ],
+   "source": "농사로 농작업일정(farmWorkingPlanNew)"
+  },
+  {
+   "id": "basil",
+   "name": "바질",
+   "category": "허브",
+   "difficulty": 1,
+   "environments": [
+    "베란다",
+    "옥상",
+    "노지",
+    "실내"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 4,
+   "space": "소",
+   "container_ok": true,
+   "days_to_harvest": [
+    40,
+    60
+   ],
+   "water_need": "보통",
+   "nongsaro_sources": [],
+   "nongsaro_cntnts_no": [],
+   "source": "AI보강(검수필요)"
+  },
+  {
+   "id": "peppermint",
+   "name": "페퍼민트",
+   "category": "허브",
+   "difficulty": 1,
+   "environments": [
+    "베란다",
+    "옥상",
+    "노지",
+    "실내"
+   ],
+   "sunlight": "반음지가능",
+   "min_sun_hours": 3,
+   "space": "소",
+   "container_ok": true,
+   "days_to_harvest": [
+    50,
+    70
+   ],
+   "water_need": "많음",
+   "nongsaro_sources": [],
+   "nongsaro_cntnts_no": [],
+   "source": "AI보강(검수필요)"
+  },
+  {
+   "id": "rosemary",
+   "name": "로즈마리",
+   "category": "허브",
+   "difficulty": 2,
+   "environments": [
+    "베란다",
+    "옥상",
+    "실내"
+   ],
+   "sunlight": "양지",
+   "min_sun_hours": 5,
+   "space": "소",
+   "container_ok": true,
+   "days_to_harvest": [
+    80,
+    120
+   ],
+   "water_need": "적음",
+   "nongsaro_sources": [],
+   "nongsaro_cntnts_no": [],
+   "source": "AI보강(검수필요)"
+  }
+ ]
+}
