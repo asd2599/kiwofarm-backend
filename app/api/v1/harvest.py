@@ -21,6 +21,7 @@ from app.core.harvest import card as card_mod
 from app.core.harvest import rules
 from app.core.harvest.verify import VerifyError, judge_photo
 from app.core.planting import matrix
+from app.core.rewards.badges import achieved_ids, build_badges
 from app.db.models.harvest import HarvestRecord
 from app.db.session import get_session
 from app.schemas.harvest import (
@@ -29,6 +30,7 @@ from app.schemas.harvest import (
     HarvestVerifyResponse,
     VerdictOut,
 )
+from app.schemas.rewards import BadgeOut
 
 log = logging.getLogger(__name__)
 
@@ -68,6 +70,9 @@ async def verify_harvest(
     demo = settings.harvest_demo_mode
     verified = verdict.passed or demo
 
+    # 새 뱃지 연출용 — 기록 추가 전 달성 상태 스냅샷
+    before_badges = await achieved_ids(session) if verified else set()
+
     record = HarvestRecord(
         plan_id=plan_id,
         crop_slug=crop_slug,
@@ -84,9 +89,13 @@ async def verify_harvest(
     await session.refresh(record)
 
     card_data: HarvestCard | None = None
+    new_badges: list[dict] = []
     if verified:
         built = await card_mod.build_card(crop_slug)
         card_data = HarvestCard(**built) if built else None
+        # 기록 추가로 새로 달성된 뱃지 diff
+        after = await build_badges(session)
+        new_badges = [b for b in after if b["achieved"] and b["id"] not in before_badges]
         message = f"{crop['name']} 수확을 인정합니다! 🎉"
         if demo and not verdict.passed:
             message += " (데모 모드 통과)"
@@ -95,6 +104,7 @@ async def verify_harvest(
 
     return HarvestVerifyResponse(
         verified=verified,
+        newBadges=[BadgeOut(**b) for b in new_badges],
         demoMode=demo,
         recordId=record.id,
         verdict=VerdictOut(**verdict.as_dict()),

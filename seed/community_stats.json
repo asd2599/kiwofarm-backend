@@ -1,0 +1,534 @@
+{
+ "note": "합성 커뮤니티 통계 (실사용자 풀 확보 전 데모·비교용). build_community_stats.py 로 재생성.",
+ "all": {
+  "growers": 2159,
+  "weeklyRecords": {
+   "p25": 1,
+   "p50": 3,
+   "p75": 5,
+   "p90": 7
+  }
+ },
+ "crops": [
+  {
+   "slug": "lettuce",
+   "cropName": "상추",
+   "growers": 66,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.41,
+   "medianDaysToHarvest": 30
+  },
+  {
+   "slug": "spinach",
+   "cropName": "시금치",
+   "growers": 57,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.39,
+   "medianDaysToHarvest": 40
+  },
+  {
+   "slug": "bokchoy",
+   "cropName": "청경채",
+   "growers": 72,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.41,
+   "medianDaysToHarvest": 30
+  },
+  {
+   "slug": "crown_daisy",
+   "cropName": "쑥갓",
+   "growers": 59,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.42,
+   "medianDaysToHarvest": 40
+  },
+  {
+   "slug": "garlic_chives",
+   "cropName": "부추",
+   "growers": 67,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.44,
+   "medianDaysToHarvest": 60
+  },
+  {
+   "slug": "kale",
+   "cropName": "케일",
+   "growers": 66,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.39,
+   "medianDaysToHarvest": 50
+  },
+  {
+   "slug": "mustard_greens",
+   "cropName": "갓",
+   "growers": 68,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.41,
+   "medianDaysToHarvest": 40
+  },
+  {
+   "slug": "chard",
+   "cropName": "근대",
+   "growers": 63,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.42,
+   "medianDaysToHarvest": 50
+  },
+  {
+   "slug": "curled_mallow",
+   "cropName": "아욱",
+   "growers": 50,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.39,
+   "medianDaysToHarvest": 40
+  },
+  {
+   "slug": "chicory",
+   "cropName": "치커리",
+   "growers": 68,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.43,
+   "medianDaysToHarvest": 40
+  },
+  {
+   "slug": "arugula",
+   "cropName": "루꼴라",
+   "growers": 74,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.43,
+   "medianDaysToHarvest": 30
+  },
+  {
+   "slug": "baby_napa",
+   "cropName": "엇갈이배추",
+   "growers": 58,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.4,
+   "medianDaysToHarvest": 30
+  },
+  {
+   "slug": "perilla",
+   "cropName": "깻잎",
+   "growers": 60,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.42,
+   "medianDaysToHarvest": 50
+  },
+  {
+   "slug": "cherry_tomato",
+   "cropName": "방울토마토",
+   "growers": 52,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.34,
+   "medianDaysToHarvest": 70
+  },
+  {
+   "slug": "tomato",
+   "cropName": "토마토",
+   "growers": 44,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.35,
+   "medianDaysToHarvest": 80
+  },
+  {
+   "slug": "chili_pepper",
+   "cropName": "고추",
+   "growers": 55,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.34,
+   "medianDaysToHarvest": 80
+  },
+  {
+   "slug": "paprika",
+   "cropName": "파프리카",
+   "growers": 43,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.29,
+   "medianDaysToHarvest": 90
+  },
+  {
+   "slug": "eggplant",
+   "cropName": "가지",
+   "growers": 39,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.36,
+   "medianDaysToHarvest": 80
+  },
+  {
+   "slug": "cucumber",
+   "cropName": "오이",
+   "growers": 43,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.33,
+   "medianDaysToHarvest": 50
+  },
+  {
+   "slug": "korean_zucchini",
+   "cropName": "애호박",
+   "growers": 44,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.33,
+   "medianDaysToHarvest": 50
+  },
+  {
+   "slug": "pumpkin",
+   "cropName": "호박",
+   "growers": 39,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.35,
+   "medianDaysToHarvest": 80
+  },
+  {
+   "slug": "bitter_melon",
+   "cropName": "여주",
+   "growers": 44,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.36,
+   "medianDaysToHarvest": 70
+  },
+  {
+   "slug": "strawberry",
+   "cropName": "딸기",
+   "growers": 44,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.3,
+   "medianDaysToHarvest": 180
+  },
+  {
+   "slug": "corn",
+   "cropName": "옥수수",
+   "growers": 39,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.33,
+   "medianDaysToHarvest": 90
+  },
+  {
+   "slug": "pea",
+   "cropName": "완두",
+   "growers": 67,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.41,
+   "medianDaysToHarvest": 60
+  },
+  {
+   "slug": "kidney_bean",
+   "cropName": "강낭콩",
+   "growers": 57,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.43,
+   "medianDaysToHarvest": 50
+  },
+  {
+   "slug": "radish",
+   "cropName": "무",
+   "growers": 53,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.44,
+   "medianDaysToHarvest": 50
+  },
+  {
+   "slug": "altari_radish",
+   "cropName": "알타리무",
+   "growers": 44,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.41,
+   "medianDaysToHarvest": 40
+  },
+  {
+   "slug": "carrot",
+   "cropName": "당근",
+   "growers": 35,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.33,
+   "medianDaysToHarvest": 90
+  },
+  {
+   "slug": "potato",
+   "cropName": "감자",
+   "growers": 42,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.44,
+   "medianDaysToHarvest": 90
+  },
+  {
+   "slug": "sweet_potato",
+   "cropName": "고구마",
+   "growers": 52,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.4,
+   "medianDaysToHarvest": 120
+  },
+  {
+   "slug": "onion",
+   "cropName": "양파",
+   "growers": 35,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.34,
+   "medianDaysToHarvest": 210
+  },
+  {
+   "slug": "garlic",
+   "cropName": "마늘",
+   "growers": 44,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.42,
+   "medianDaysToHarvest": 220
+  },
+  {
+   "slug": "spring_onion",
+   "cropName": "쪽파",
+   "growers": 57,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.45,
+   "medianDaysToHarvest": 50
+  },
+  {
+   "slug": "green_onion",
+   "cropName": "대파",
+   "growers": 57,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.41,
+   "medianDaysToHarvest": 60
+  },
+  {
+   "slug": "kohlrabi",
+   "cropName": "콜라비",
+   "growers": 68,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.43,
+   "medianDaysToHarvest": 55
+  },
+  {
+   "slug": "beet",
+   "cropName": "비트",
+   "growers": 42,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.42,
+   "medianDaysToHarvest": 60
+  },
+  {
+   "slug": "basil",
+   "cropName": "바질",
+   "growers": 65,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.44,
+   "medianDaysToHarvest": 40
+  },
+  {
+   "slug": "peppermint",
+   "cropName": "페퍼민트",
+   "growers": 62,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.39,
+   "medianDaysToHarvest": 50
+  },
+  {
+   "slug": "rosemary",
+   "cropName": "로즈마리",
+   "growers": 65,
+   "weeklyRecords": {
+    "p25": 1,
+    "p50": 3,
+    "p75": 5,
+    "p90": 7
+   },
+   "completionRate": 0.33,
+   "medianDaysToHarvest": 80
+  }
+ ]
+}

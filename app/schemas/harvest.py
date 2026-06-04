@@ -6,6 +6,8 @@ from datetime import date, datetime
 
 from pydantic import BaseModel
 
+from app.schemas.rewards import BadgeOut
+
 
 class RecipeOut(BaseModel):
     name: str
@@ -47,6 +49,7 @@ class HarvestVerifyResponse(BaseModel):
     verdict: VerdictOut | None = None
     warnings: list[str] = []
     card: HarvestCard | None = None  # 통과 시에만
+    newBadges: list[BadgeOut] = []  # 이번 인증으로 새로 달성한 뱃지
     message: str = ""
 
 
