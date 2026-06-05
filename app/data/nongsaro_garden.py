@@ -211,6 +211,32 @@ async def fetch_garden_texts(crop_name: str, *, limit: int = 6) -> list[str]:
     return texts
 
 
+# ───────────── 재배 정보 화면용 (검색 + 상세) ─────────────
+
+
+async def search_articles(q: str, *, limit: int = 40) -> list[GardenArticleMeta]:
+    """제목에 검색어가 포함된 텃밭가꾸기 글 목록(전 분류코드)."""
+    q = q.strip()
+    if not q:
+        return []
+    items = await fetch_full_list()
+    return [it for it in items if q in it.title][:limit]
+
+
+async def fetch_detail(cntnts_no: str) -> GardenArticle | None:
+    """컨텐츠 번호로 텃밭가꾸기 상세(본문). 실패 시 None."""
+    cntnts_no = cntnts_no.strip()
+    if not cntnts_no:
+        return None
+    meta = GardenArticleMeta(cntnts_no=cntnts_no, title="", se_code="")
+    try:
+        async with httpx.AsyncClient() as client:
+            return await fetch_view(meta, client=client)
+    except GardenError as e:
+        log.info("텃밭가꾸기 상세 실패 no=%s reason=%s", cntnts_no, e)
+        return None
+
+
 __all__ = [
     "GardenError",
     "GardenArticleMeta",
@@ -220,6 +246,8 @@ __all__ = [
     "fetch_view",
     "fetch_full_list",
     "fetch_garden_texts",
+    "search_articles",
+    "fetch_detail",
     "MAX_BODY_CHARS",
     "MIN_BODY_CHARS",
 ]

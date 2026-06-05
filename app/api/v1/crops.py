@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException, Query
 
 from app.core.crops import summary as crop_summary
-from app.data import kamis_crops, nongsaro
+from app.data import kamis_crops, nongsaro, nongsaro_ebook
 from app.schemas.crops import (
+    CropCatalogOption,
     CropOption,
     CropSummary,
     CultivationGuide,
@@ -31,6 +32,18 @@ async def search_crops(
     limit: int = Query(10, ge=1, le=50),
 ) -> list[CropOption]:
     return [_to_option(r) for r in kamis_crops.search(q, limit=limit)]
+
+
+@router.get("/catalog", response_model=list[CropCatalogOption])
+async def search_crop_catalog(
+    q: str = Query(..., min_length=1, description="작목명 부분일치"),
+    limit: int = Query(30, ge=1, le=50),
+) -> list[CropCatalogOption]:
+    """작목별농업기술정보(cropEbook) 작목 카탈로그 검색. 캘린더 작물 선택용."""
+    items = await nongsaro_ebook.search_crop_catalog(q, limit=limit)
+    return [
+        CropCatalogOption(code=c.code, name=c.name, category=c.category) for c in items
+    ]
 
 
 @router.get("/{item_code}/{kind_code}/cultivation", response_model=CultivationGuide)
