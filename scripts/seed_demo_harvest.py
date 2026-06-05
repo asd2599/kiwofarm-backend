@@ -21,6 +21,7 @@ from sqlalchemy import delete
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from app.api.deps import DEMO_DEVICE_ID  # noqa: E402
 from app.db.models.harvest import HarvestRecord  # noqa: E402
 from app.db.session import async_session_factory, init_db  # noqa: E402
 
@@ -57,10 +58,11 @@ async def main() -> None:
         for slug, name, days_ago, fresh, qty in DEMO_ROWS:
             session.add(
                 HarvestRecord(
+                    device_id=DEMO_DEVICE_ID,  # 시연 계정(?device=demo) 소유
                     plan_id=None,
                     crop_slug=slug,
                     crop_name=name,
-                    photo_path=f"demo/{slug}.jpg",
+                    photo_path=None,
                     verified=True,
                     confidence=0.95,
                     verdict={

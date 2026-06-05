@@ -26,9 +26,9 @@ BADGE_DEFS: tuple[tuple[str, str, str, str, str, int], ...] = (
 )
 
 
-async def _stats(session: AsyncSession) -> dict[str, int]:
-    col = await build_collection(session)
-    stk = await build_streak(session)
+async def _stats(session: AsyncSession, device_id: str) -> dict[str, int]:
+    col = await build_collection(session, device_id)
+    stk = await build_streak(session, device_id)
     return {
         "totalHarvests": col["totalHarvests"],
         "collectedCrops": col["collectedCrops"],
@@ -55,10 +55,10 @@ def _evaluate(stats: dict[str, int]) -> list[dict[str, Any]]:
     return out
 
 
-async def build_badges(session: AsyncSession) -> list[dict[str, Any]]:
-    return _evaluate(await _stats(session))
+async def build_badges(session: AsyncSession, device_id: str) -> list[dict[str, Any]]:
+    return _evaluate(await _stats(session, device_id))
 
 
-async def achieved_ids(session: AsyncSession) -> set[str]:
+async def achieved_ids(session: AsyncSession, device_id: str) -> set[str]:
     """달성한 뱃지 id 집합 — 수확 인증 전후 diff 용."""
-    return {b["id"] for b in await build_badges(session) if b["achieved"]}
+    return {b["id"] for b in await build_badges(session, device_id) if b["achieved"]}

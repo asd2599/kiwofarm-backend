@@ -11,12 +11,15 @@ from app.core.planting import matrix
 from app.db.models.harvest import HarvestRecord
 
 
-async def build_collection(session: AsyncSession) -> dict[str, Any]:
+async def build_collection(session: AsyncSession, device_id: str) -> dict[str, Any]:
     """도감: 마스터 40종 전체를 돌려주되 수확한 작물에 기록을 채운다."""
     rows = (
         await session.execute(
             select(HarvestRecord)
-            .where(HarvestRecord.verified.is_(True))
+            .where(
+                HarvestRecord.verified.is_(True),
+                HarvestRecord.device_id == device_id,
+            )
             .order_by(HarvestRecord.harvested_at)
         )
     ).scalars().all()

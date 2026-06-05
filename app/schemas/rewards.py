@@ -59,8 +59,16 @@ class CompareOut(BaseModel):
     crop: CropCompareOut | None = None
 
 
+class PointsOut(BaseModel):
+    total: int
+    memoCount: int
+    photoCount: int
+    harvestCount: int
+
+
 class RewardsSummary(BaseModel):
     collection: CollectionOut
     badges: list[BadgeOut]
     streak: StreakOut
+    points: PointsOut
     compare: CompareOut | None = None

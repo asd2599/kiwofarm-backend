@@ -53,6 +53,33 @@ class HarvestVerifyResponse(BaseModel):
     message: str = ""
 
 
+class JournalVerifyIn(BaseModel):
+    planId: int
+
+
+class JournalVerdictOut(BaseModel):
+    crop_match: bool
+    growth_consistent: bool
+    has_harvest: bool
+    fake_suspect: bool
+    quantity: str
+    confidence: float
+    reason: str
+    summary: str
+
+
+class HarvestJournalResponse(BaseModel):
+    verified: bool
+    demoMode: bool = False
+    recordId: int | None = None
+    verdict: JournalVerdictOut | None = None
+    warnings: list[str] = []
+    card: HarvestCard | None = None  # 통과 시에만
+    newBadges: list[BadgeOut] = []  # 이번 인증으로 새로 달성한 뱃지
+    pointsTotal: int = 0  # 인증 반영 후 누적 점수
+    message: str = ""
+
+
 class HarvestRecordOut(BaseModel):
     id: int
     planId: int | None

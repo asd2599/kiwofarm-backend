@@ -42,11 +42,11 @@ def _weekly_message(active_days: int, top: int, q: dict[str, int]) -> tuple[bool
 
 
 async def build_compare(
-    session: AsyncSession, crop_slug: str | None = None
+    session: AsyncSession, device_id: str, crop_slug: str | None = None
 ) -> dict[str, Any]:
     today = date.today()
     week_ago = today - timedelta(days=6)
-    days = await _active_days(session)
+    days = await _active_days(session, device_id)
     weekly = sum(1 for d in days if week_ago <= d <= today)
 
     all_stats = community.overall()
@@ -70,6 +70,7 @@ async def build_compare(
                     .where(
                         HarvestRecord.crop_slug == crop_slug,
                         HarvestRecord.verified.is_(True),
+                        HarvestRecord.device_id == device_id,
                     )
                     .limit(1)
                 )

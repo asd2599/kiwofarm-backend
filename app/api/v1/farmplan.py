@@ -10,15 +10,17 @@ import logging
 from datetime import date, timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Response, UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, undefer
 
+from app.api.deps import DeviceDep
 from app.core.farmplan.alerts import build_alerts
 from app.core.farmplan.coach import weekly_task_messages
 from app.core.farmplan.generator import _snap_to_visit_days, generate_plan
-from app.core.storage import delete_file, file_url, save_image
+from app.core.rewards.points import total_points
+from app.core.storage import delete_file, file_url, read_image
 from app.db.models.farm_plan import FarmPlan, FarmTask, MemoImage, TaskMemo
 from app.db.session import async_session_factory, get_session
 from app.schemas.farmplan import (
@@ -33,6 +35,7 @@ from app.schemas.farmplan import (
     FarmPlanCreate,
     FarmPlanOut,
     FarmPlanSummary,
+    FarmPlanWithPointsOut,
     FarmTaskOut,
     MemoImageOut,
     MemoUpsert,
@@ -74,6 +77,13 @@ def _task_out(task: FarmTask, start: date) -> FarmTaskOut:
     )
 
 
+def _image_url(img: MemoImage) -> str:
+    """사진 URL — DB(bytea) 저장분은 서빙 API, 디스크 레거시는 /uploads 정적 경로."""
+    if img.file_path:
+        return file_url(img.file_path)
+    return f"/api/v1/plans/memo-images/{img.id}"
+
+
 def _memo_out(memo: TaskMemo) -> TaskMemoOut:
     return TaskMemoOut(
         id=memo.id,
@@ -82,7 +92,7 @@ def _memo_out(memo: TaskMemo) -> TaskMemoOut:
         images=[
             MemoImageOut(
                 id=img.id,
-                url=file_url(img.file_path),
+                url=_image_url(img),
                 originalName=img.original_name,
                 contentType=img.content_type,
                 size=img.size_bytes,
@@ -128,15 +138,16 @@ def _plan_summary(plan: FarmPlan) -> FarmPlanSummary:
 
 
 def _delete_memo_files(memo: TaskMemo) -> None:
-    """메모에 달린 사진 파일들을 디스크에서 제거(DB 행은 CASCADE 가 처리)."""
+    """디스크 레거시 사진 파일 제거(DB 행·bytea 는 CASCADE 가 처리)."""
     for img in memo.images:
-        delete_file(img.file_path)
+        if img.file_path:
+            delete_file(img.file_path)
 
 
-async def _load_plan(session: AsyncSession, plan_id: int) -> FarmPlan:
+async def _load_plan(session: AsyncSession, plan_id: int, device_id: str) -> FarmPlan:
     stmt = (
         select(FarmPlan)
-        .where(FarmPlan.id == plan_id)
+        .where(FarmPlan.id == plan_id, FarmPlan.device_id == device_id)
         .options(
             selectinload(FarmPlan.tasks),
             selectinload(FarmPlan.memos).selectinload(TaskMemo.images),
@@ -153,20 +164,20 @@ async def _load_plan(session: AsyncSession, plan_id: int) -> FarmPlan:
 
 @router.post("", response_model=FarmPlanOut)
 async def create_plan(
-    payload: FarmPlanCreate, session: SessionDep
+    payload: FarmPlanCreate, session: SessionDep, device: DeviceDep
 ) -> FarmPlanOut:
     """시작일·작목·지역·면적으로 RAG 기반 농사계획 생성.
 
     첫 호출은 농사로 PDF 다운 → 임베딩 → RAG → GPT 로 길어진다(30~90초).
     """
-    plan = await generate_plan(session, payload)
-    plan = await _load_plan(session, plan.id)
+    plan = await generate_plan(session, payload, device)
+    plan = await _load_plan(session, plan.id, device)
     return _plan_out(plan)
 
 
 @router.post("/batch", response_model=FarmPlanBatchOut)
 async def create_plans_batch(
-    payload: FarmPlanBatchCreate, session: SessionDep
+    payload: FarmPlanBatchCreate, session: SessionDep, device: DeviceDep
 ) -> FarmPlanBatchOut:
     """여러 작물 계획을 한 번에 생성(작물당 RAG+GPT, 최대 4개 동시 처리).
 
@@ -180,7 +191,7 @@ async def create_plans_batch(
             try:
                 # 동시 실행 안전을 위해 작물마다 별도 세션 사용(AsyncSession 은 공유 불가).
                 async with async_session_factory() as s:
-                    plan = await generate_plan(s, p)
+                    plan = await generate_plan(s, p, device)
                     return idx, plan.id, None
             except Exception as e:  # noqa: BLE001 - 개별 실패가 전체 배치를 막지 않도록
                 log.exception("배치 계획 생성 실패 idx=%s crop=%s", idx, p.cropName)
@@ -194,7 +205,7 @@ async def create_plans_batch(
     failed: list[BatchFailure] = []
     for idx, plan_id, err in sorted(results):
         if plan_id is not None:
-            plan = await _load_plan(session, plan_id)
+            plan = await _load_plan(session, plan_id, device)
             created.append(_plan_out(plan))
         else:
             failed.append(
@@ -206,10 +217,13 @@ async def create_plans_batch(
 
 
 @router.get("", response_model=list[FarmPlanSummary])
-async def list_plans(session: SessionDep) -> list[FarmPlanSummary]:
-    """모든 농사계획 요약 목록. 통합 캘린더에서 볼 작물을 고르는 데 쓴다."""
+async def list_plans(session: SessionDep, device: DeviceDep) -> list[FarmPlanSummary]:
+    """내(디바이스) 농사계획 요약 목록. 통합 캘린더에서 볼 작물을 고르는 데 쓴다."""
     stmt = (
-        select(FarmPlan).options(selectinload(FarmPlan.tasks)).order_by(FarmPlan.start_date)
+        select(FarmPlan)
+        .where(FarmPlan.device_id == device)
+        .options(selectinload(FarmPlan.tasks))
+        .order_by(FarmPlan.start_date)
     )
     plans = (await session.scalars(stmt)).all()
     return [_plan_summary(p) for p in plans]
@@ -217,7 +231,7 @@ async def list_plans(session: SessionDep) -> list[FarmPlanSummary]:
 
 @router.get("/calendar", response_model=CalendarOut)
 async def calendar(
-    session: SessionDep,
+    session: SessionDep, device: DeviceDep,
     planIds: Annotated[
         str | None,
         Query(description="콤마 구분 plan ID(예: 1,2,3). 미지정 시 전체 작물."),
@@ -236,9 +250,13 @@ async def calendar(
                 status_code=422, detail="planIds 는 콤마로 구분된 정수여야 합니다."
             ) from None
 
-    stmt = select(FarmPlan).options(
-        selectinload(FarmPlan.tasks),
-        selectinload(FarmPlan.memos).selectinload(TaskMemo.images),
+    stmt = (
+        select(FarmPlan)
+        .where(FarmPlan.device_id == device)
+        .options(
+            selectinload(FarmPlan.tasks),
+            selectinload(FarmPlan.memos).selectinload(TaskMemo.images),
+        )
     )
     if ids:
         stmt = stmt.where(FarmPlan.id.in_(ids))
@@ -279,18 +297,38 @@ async def calendar(
     )
 
 
+@router.get("/memo-images/{image_id}")
+async def get_memo_image(image_id: int, session: SessionDep) -> Response:
+    """메모 사진 바이트 서빙(DB bytea 저장분). 사진은 불변이라 장기 캐시.
+
+    <img src> 요청은 X-Device-Id 헤더를 못 보내므로 디바이스 검사 없음.
+    """
+    img = await session.scalar(
+        select(MemoImage)
+        .where(MemoImage.id == image_id)
+        .options(undefer(MemoImage.data))
+    )
+    if img is None or img.data is None:
+        raise HTTPException(status_code=404, detail="해당 사진을 찾을 수 없습니다.")
+    return Response(
+        content=img.data,
+        media_type=img.content_type or "image/jpeg",
+        headers={"Cache-Control": "public, max-age=31536000, immutable"},
+    )
+
+
 @router.get("/{plan_id}", response_model=FarmPlanOut)
 async def get_plan(
-    plan_id: int, session: SessionDep
+    plan_id: int, session: SessionDep, device: DeviceDep
 ) -> FarmPlanOut:
-    plan = await _load_plan(session, plan_id)
+    plan = await _load_plan(session, plan_id, device)
     return _plan_out(plan)
 
 
 @router.get("/{plan_id}/weekly", response_model=WeeklyDigestOut)
 async def weekly_digest(
     plan_id: int,
-    session: SessionDep,
+    session: SessionDep, device: DeviceDep,
     ref: Annotated[
         date | None,
         Query(alias="date", description="기준 날짜(그 주). 미지정 시 오늘."),
@@ -301,7 +339,7 @@ async def weekly_digest(
     ref 가 속한 주에 시작하는 작업을 날짜순으로 모으고(완료 포함), 각 작업에 그 작물
     맞춤 멘트(알림 본문)를 LLM 으로 붙인다.
     """
-    plan = await _load_plan(session, plan_id)
+    plan = await _load_plan(session, plan_id, device)
     base = ref or date.today()
     monday = base - timedelta(days=base.weekday())  # weekday: 월=0
     sunday = monday + timedelta(days=6)
@@ -336,13 +374,13 @@ async def weekly_digest(
 @router.get("/{plan_id}/alerts", response_model=AlertsOut)
 async def plan_alerts(
     plan_id: int,
-    session: SessionDep,
+    session: SessionDep, device: DeviceDep,
     ref: Annotated[
         date | None, Query(alias="date", description="기준 날짜. 미지정 시 오늘.")
     ] = None,
 ) -> AlertsOut:
     """위기 알림 — 병해충 발생정보(+ 향후 기상특보). 작물 계획의 지역 기준."""
-    plan = await _load_plan(session, plan_id)
+    plan = await _load_plan(session, plan_id, device)
     alerts = await build_alerts(
         plan.crop_name, plan.region, plan.province, ref or date.today()
     )
@@ -351,26 +389,26 @@ async def plan_alerts(
 
 @router.patch("/{plan_id}/settings", response_model=FarmPlanOut)
 async def update_settings(
-    plan_id: int, payload: SettingsUpdate, session: SessionDep
+    plan_id: int, payload: SettingsUpdate, session: SessionDep, device: DeviceDep
 ) -> FarmPlanOut:
     """완료/지연 표시(진행 추적) on/off."""
-    plan = await _load_plan(session, plan_id)
+    plan = await _load_plan(session, plan_id, device)
     plan.track_progress = payload.trackProgress
     await session.commit()
-    plan = await _load_plan(session, plan_id)
+    plan = await _load_plan(session, plan_id, device)
     return _plan_out(plan)
 
 
 @router.patch("/{plan_id}/tasks/delay-batch", response_model=FarmPlanOut)
 async def delay_tasks_batch(
-    plan_id: int, payload: TaskDelayBatch, session: SessionDep
+    plan_id: int, payload: TaskDelayBatch, session: SessionDep, device: DeviceDep
 ) -> FarmPlanOut:
     """같은 날짜의 여러 작업을 한 번에 같은 일수만큼 지연.
 
     선택한 작업들(보통 같은 날짜)은 입력한 일수만큼 그대로 이동하고,
     그 이후(order 가 더 큰) 작업만 방문 요일에 맞춰 스냅한다.
     """
-    plan = await _load_plan(session, plan_id)
+    plan = await _load_plan(session, plan_id, device)
     target_ids = set(payload.taskIds)
     targets = [t for t in plan.tasks if t.id in target_ids]
     if not targets:
@@ -394,7 +432,7 @@ async def delay_tasks_batch(
         t.actual_date = plan.start_date + timedelta(days=t.day_offset)
 
     await session.commit()
-    plan = await _load_plan(session, plan_id)
+    plan = await _load_plan(session, plan_id, device)
     return _plan_out(plan)
 
 
@@ -403,7 +441,7 @@ async def update_task(
     plan_id: int,
     task_id: int,
     payload: TaskStatusUpdate,
-    session: SessionDep,
+    session: SessionDep, device: DeviceDep,
 ) -> FarmPlanOut:
     """작업 완료/지연 표시. 진행추적 ON + 지연이면 이후 작업 일정을 자동 시프트.
 
@@ -412,7 +450,7 @@ async def update_task(
     if payload.status not in _VALID_STATUS:
         raise HTTPException(status_code=422, detail="status 는 planned|done|delayed")
 
-    plan = await _load_plan(session, plan_id)
+    plan = await _load_plan(session, plan_id, device)
     target = next((t for t in plan.tasks if t.id == task_id), None)
     if target is None:
         raise HTTPException(status_code=404, detail="해당 작업을 찾을 수 없습니다.")
@@ -440,16 +478,17 @@ async def update_task(
         target.actual_date = None
 
     await session.commit()
-    plan = await _load_plan(session, plan_id)
+    plan = await _load_plan(session, plan_id, device)
     return _plan_out(plan)
 
 
-@router.put("/{plan_id}/memos", response_model=FarmPlanOut)
+@router.put("/{plan_id}/memos", response_model=FarmPlanWithPointsOut)
 async def upsert_memo(
-    plan_id: int, payload: MemoUpsert, session: SessionDep
-) -> FarmPlanOut:
-    """날짜별 메모 저장/수정. 내용이 비면 해당 날짜 메모 삭제."""
-    plan = await _load_plan(session, plan_id)
+    plan_id: int, payload: MemoUpsert, session: SessionDep, device: DeviceDep
+) -> FarmPlanWithPointsOut:
+    """날짜별 메모 저장/수정. 내용이 비면 해당 날짜 메모 삭제. 새 기록은 점수 적립."""
+    plan = await _load_plan(session, plan_id, device)
+    points_before = await total_points(session, device)
 
     existing = next((m for m in plan.memos if m.memo_date == payload.memoDate), None)
     content = payload.content.strip()
@@ -465,19 +504,25 @@ async def upsert_memo(
         session.add(TaskMemo(plan_id=plan_id, memo_date=payload.memoDate, content=content))
 
     await session.commit()
-    plan = await _load_plan(session, plan_id)
-    return _plan_out(plan)
+    points_total = await total_points(session, device)
+    plan = await _load_plan(session, plan_id, device)
+    return FarmPlanWithPointsOut(
+        **_plan_out(plan).model_dump(),
+        pointsEarned=max(0, points_total - points_before),
+        pointsTotal=points_total,
+    )
 
 
-@router.post("/{plan_id}/memos/{memo_date}/images", response_model=FarmPlanOut)
+@router.post("/{plan_id}/memos/{memo_date}/images", response_model=FarmPlanWithPointsOut)
 async def upload_memo_images(
     plan_id: int,
     memo_date: date,
-    session: SessionDep,
+    session: SessionDep, device: DeviceDep,
     files: Annotated[list[UploadFile], File(description="첨부할 이미지(여러 장 가능)")],
-) -> FarmPlanOut:
-    """해당 날짜 메모에 사진을 첨부(여러 장 가능). 메모가 없으면 자동 생성한다."""
-    plan = await _load_plan(session, plan_id)
+) -> FarmPlanWithPointsOut:
+    """해당 날짜 메모에 사진 첨부(여러 장 가능). 메모가 없으면 자동 생성. 점수 적립."""
+    plan = await _load_plan(session, plan_id, device)
+    points_before = await total_points(session, device)
 
     memo = next((m for m in plan.memos if m.memo_date == memo_date), None)
     if memo is None:
@@ -486,28 +531,33 @@ async def upload_memo_images(
         await session.flush()  # memo.id 확보
 
     for f in files:
-        rel, size = await save_image(f, subdir="memo")
+        data = await read_image(f)  # 형식·크기 검증 후 바이트 — DB(bytea)에 저장
         session.add(
             MemoImage(
                 memo_id=memo.id,
-                file_path=rel,
+                data=data,
                 original_name=f.filename,
                 content_type=f.content_type,
-                size_bytes=size,
+                size_bytes=len(data),
             )
         )
 
     await session.commit()
-    plan = await _load_plan(session, plan_id)
-    return _plan_out(plan)
+    points_total = await total_points(session, device)
+    plan = await _load_plan(session, plan_id, device)
+    return FarmPlanWithPointsOut(
+        **_plan_out(plan).model_dump(),
+        pointsEarned=max(0, points_total - points_before),
+        pointsTotal=points_total,
+    )
 
 
 @router.delete("/{plan_id}/memos/images/{image_id}", response_model=FarmPlanOut)
 async def delete_memo_image(
-    plan_id: int, image_id: int, session: SessionDep
+    plan_id: int, image_id: int, session: SessionDep, device: DeviceDep
 ) -> FarmPlanOut:
     """메모 사진 1장 삭제(파일 + DB 행). 사진 삭제로 메모가 비어도 메모는 유지한다."""
-    plan = await _load_plan(session, plan_id)
+    plan = await _load_plan(session, plan_id, device)
 
     target = next(
         (img for m in plan.memos for img in m.images if img.id == image_id), None
@@ -515,22 +565,23 @@ async def delete_memo_image(
     if target is None:
         raise HTTPException(status_code=404, detail="해당 사진을 찾을 수 없습니다.")
 
-    delete_file(target.file_path)
+    if target.file_path:
+        delete_file(target.file_path)
     await session.delete(target)
     await session.commit()
-    plan = await _load_plan(session, plan_id)
+    plan = await _load_plan(session, plan_id, device)
     return _plan_out(plan)
 
 
 @router.delete("/{plan_id}/memos/{memo_date}", response_model=FarmPlanOut)
 async def delete_memo(
-    plan_id: int, memo_date: date, session: SessionDep
+    plan_id: int, memo_date: date, session: SessionDep, device: DeviceDep
 ) -> FarmPlanOut:
-    plan = await _load_plan(session, plan_id)
+    plan = await _load_plan(session, plan_id, device)
     existing = next((m for m in plan.memos if m.memo_date == memo_date), None)
     if existing is not None:
         _delete_memo_files(existing)  # 디스크 파일 정리(DB 행은 CASCADE)
         await session.delete(existing)
         await session.commit()
-        plan = await _load_plan(session, plan_id)
+        plan = await _load_plan(session, plan_id, device)
     return _plan_out(plan)

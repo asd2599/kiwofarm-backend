@@ -12,14 +12,24 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models.farm_plan import TaskMemo
+from app.db.models.farm_plan import FarmPlan, TaskMemo
 from app.db.models.harvest import HarvestRecord
 
 
-async def _active_days(session: AsyncSession) -> set[date]:
-    memo_days = (await session.execute(select(TaskMemo.memo_date))).scalars().all()
+async def _active_days(session: AsyncSession, device_id: str) -> set[date]:
+    memo_days = (
+        await session.execute(
+            select(TaskMemo.memo_date)
+            .join(FarmPlan, TaskMemo.plan_id == FarmPlan.id)
+            .where(FarmPlan.device_id == device_id)
+        )
+    ).scalars().all()
     harvest_days = (
-        await session.execute(select(HarvestRecord.harvested_at))
+        await session.execute(
+            select(HarvestRecord.harvested_at).where(
+                HarvestRecord.device_id == device_id
+            )
+        )
     ).scalars().all()
     return set(memo_days) | set(harvest_days)
 
@@ -43,8 +53,8 @@ def _streaks(days: set[date], today: date) -> tuple[int, int]:
     return current, best
 
 
-async def build_streak(session: AsyncSession) -> dict[str, Any]:
-    days = await _active_days(session)
+async def build_streak(session: AsyncSession, device_id: str) -> dict[str, Any]:
+    days = await _active_days(session, device_id)
     today = date.today()
     current, best = _streaks(days, today)
     return {
