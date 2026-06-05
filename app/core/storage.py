@@ -33,15 +33,13 @@ def _upload_root() -> Path:
     return root
 
 
-async def save_image(file: UploadFile, subdir: str = "memo") -> tuple[str, int]:
-    """이미지 업로드를 디스크에 저장하고 ``(상대경로, 바이트수)`` 를 반환.
+async def read_image(file: UploadFile) -> bytes:
+    """이미지 업로드를 검증(형식·크기)하고 바이트를 반환 — DB(bytea) 저장용.
 
-    상대경로는 업로드 루트 기준이며 그대로 DB(``MemoImage.file_path``)에 저장한다.
     형식·크기 검증에 실패하면 HTTPException 을 던진다.
     """
     ctype = (file.content_type or "").lower()
-    ext = _ALLOWED_CONTENT_TYPES.get(ctype)
-    if ext is None:
+    if ctype not in _ALLOWED_CONTENT_TYPES:
         raise HTTPException(
             status_code=415,
             detail=f"지원하지 않는 이미지 형식입니다: {file.content_type or 'unknown'}",
@@ -55,7 +53,17 @@ async def save_image(file: UploadFile, subdir: str = "memo") -> tuple[str, int]:
         raise HTTPException(
             status_code=413, detail=f"파일이 너무 큽니다(최대 {settings.max_upload_mb}MB)."
         )
+    return data
 
+
+async def save_image(file: UploadFile, subdir: str = "memo") -> tuple[str, int]:
+    """이미지 업로드를 디스크에 저장하고 ``(상대경로, 바이트수)`` 를 반환.
+
+    상대경로는 업로드 루트 기준이며 그대로 DB에 저장한다(수확 사진 등).
+    형식·크기 검증에 실패하면 HTTPException 을 던진다.
+    """
+    data = await read_image(file)
+    ext = _ALLOWED_CONTENT_TYPES[(file.content_type or "").lower()]
     rel = f"{subdir}/{uuid.uuid4().hex}{ext}"
     dest = _upload_root() / rel
     dest.parent.mkdir(parents=True, exist_ok=True)

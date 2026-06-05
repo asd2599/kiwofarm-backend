@@ -1,6 +1,7 @@
 """수확 인증 API — 사진 검증·수확카드·인증 기록.
 
 POST /harvest/verify   사진 업로드 → 규칙+멀티모달 검증 → 기록 저장 → 카드 반환
+POST /harvest/verify-journal   캘린더 일지(메모·사진 누적) 분석 → 인증 → 도감 등록
 GET  /harvest/card/{crop_slug}   카드 데이터만 (검증 없이)
 GET  /harvest          인증 기록 목록 (도감·뱃지 집계용)
 """
@@ -14,21 +15,31 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
+from app.api.deps import DeviceDep
 from app.config import settings
 from app.core import storage
 from app.core.harvest import card as card_mod
 from app.core.harvest import rules
+from app.core.harvest.journal import JournalEntry, judge_journal
 from app.core.harvest.verify import VerifyError, judge_photo
 from app.core.planting import matrix
+from app.core.rewards.badges import achieved_ids, build_badges
+from app.core.rewards.points import total_points
+from app.db.models.farm_plan import FarmPlan, MemoImage, TaskMemo
 from app.db.models.harvest import HarvestRecord
 from app.db.session import get_session
 from app.schemas.harvest import (
     HarvestCard,
+    HarvestJournalResponse,
     HarvestRecordOut,
     HarvestVerifyResponse,
+    JournalVerdictOut,
+    JournalVerifyIn,
     VerdictOut,
 )
+from app.schemas.rewards import BadgeOut
 
 log = logging.getLogger(__name__)
 
@@ -40,6 +51,7 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 @router.post("/verify", response_model=HarvestVerifyResponse)
 async def verify_harvest(
     session: SessionDep,
+    device: DeviceDep,
     photo: UploadFile = File(...),
     crop_slug: str = Form(...),
     plan_id: int | None = Form(None),
@@ -68,7 +80,11 @@ async def verify_harvest(
     demo = settings.harvest_demo_mode
     verified = verdict.passed or demo
 
+    # 새 뱃지 연출용 — 기록 추가 전 달성 상태 스냅샷
+    before_badges = await achieved_ids(session, device) if verified else set()
+
     record = HarvestRecord(
+        device_id=device,
         plan_id=plan_id,
         crop_slug=crop_slug,
         crop_name=crop["name"],
@@ -84,9 +100,13 @@ async def verify_harvest(
     await session.refresh(record)
 
     card_data: HarvestCard | None = None
+    new_badges: list[dict] = []
     if verified:
         built = await card_mod.build_card(crop_slug)
         card_data = HarvestCard(**built) if built else None
+        # 기록 추가로 새로 달성된 뱃지 diff
+        after = await build_badges(session, device)
+        new_badges = [b for b in after if b["achieved"] and b["id"] not in before_badges]
         message = f"{crop['name']} 수확을 인정합니다! 🎉"
         if demo and not verdict.passed:
             message += " (데모 모드 통과)"
@@ -95,11 +115,127 @@ async def verify_harvest(
 
     return HarvestVerifyResponse(
         verified=verified,
+        newBadges=[BadgeOut(**b) for b in new_badges],
         demoMode=demo,
         recordId=record.id,
         verdict=VerdictOut(**verdict.as_dict()),
         warnings=warnings,
         card=card_data,
+        message=message,
+    )
+
+
+@router.post("/verify-journal", response_model=HarvestJournalResponse)
+async def verify_harvest_journal(
+    payload: JournalVerifyIn, session: SessionDep, device: DeviceDep
+) -> HarvestJournalResponse:
+    """'수확했어요' — 캘린더에 쌓인 메모·사진 일지를 분석해 수확을 인증한다.
+
+    통과하면 harvest_record 에 저장돼 도감·뱃지·점수에 즉시 반영된다.
+    사진이 1장도 없으면 인증할 수 없다(422).
+    """
+    plan = await session.scalar(
+        select(FarmPlan)
+        .where(FarmPlan.id == payload.planId, FarmPlan.device_id == device)
+        .options(
+            selectinload(FarmPlan.memos)
+            .selectinload(TaskMemo.images)
+            .undefer(MemoImage.data)
+        )
+    )
+    if plan is None:
+        raise HTTPException(status_code=404, detail="해당 농사계획을 찾을 수 없습니다.")
+
+    slug = rules.plan_slug(plan)
+    crop = matrix.get_crop(slug) if slug else None
+    if crop is None:
+        raise HTTPException(
+            status_code=422,
+            detail=f"{plan.crop_name} 은(는) 도감 인증 대상 작물(40종)이 아닙니다.",
+        )
+
+    entries = [
+        JournalEntry(
+            memo_date=m.memo_date,
+            content=m.content,
+            photos=[
+                (img.data, img.content_type or "image/jpeg")
+                for img in m.images
+                if img.data is not None
+            ],
+        )
+        for m in plan.memos
+    ]
+    image_ids = [img.id for m in plan.memos for img in m.images if img.data is not None]
+    if not image_ids:
+        raise HTTPException(
+            status_code=422,
+            detail="인증할 사진이 없습니다. 기르는 동안 캘린더에 사진을 남겨주세요.",
+        )
+
+    # 1차 규칙(경고만) — 생육 기간 연속성
+    warnings = (await rules.check_continuity(session, plan.id, slug)).warnings
+
+    # 2차 멀티모달 일지 판정
+    try:
+        verdict = await judge_journal(crop["name"], plan.start_date, entries)
+    except VerifyError as e:
+        log.warning("멀티모달 일지 판정 불가: %s", e)
+        raise HTTPException(status_code=503, detail="AI 검증을 지금 사용할 수 없습니다") from e
+
+    demo = settings.harvest_demo_mode
+    verified = verdict.passed or demo
+
+    # 새 뱃지 연출용 — 기록 추가 전 달성 상태 스냅샷
+    before_badges = await achieved_ids(session, device) if verified else set()
+
+    record = HarvestRecord(
+        device_id=device,
+        plan_id=plan.id,
+        crop_slug=slug,
+        crop_name=crop["name"],
+        photo_path=None,  # 일지 인증 — 원본은 memo_image, verdict.image_ids 참조
+        verified=verified,
+        confidence=verdict.confidence,
+        verdict={
+            **verdict.as_dict(),
+            "source": "journal",
+            "image_ids": image_ids,
+            "memo_days": len(entries),
+            "warnings": warnings,
+            "demo_mode": demo,
+        },
+        reason=verdict.reason,
+        harvested_at=datetime.now().date(),
+    )
+    session.add(record)
+    await session.commit()
+    await session.refresh(record)
+
+    card_data: HarvestCard | None = None
+    new_badges: list[dict] = []
+    if verified:
+        built = await card_mod.build_card(slug)
+        card_data = HarvestCard(**built) if built else None
+        after = await build_badges(session, device)
+        new_badges = [b for b in after if b["achieved"] and b["id"] not in before_badges]
+        message = f"{crop['name']} 수확을 인정합니다! 도감에 등록했어요 🎉"
+        if demo and not verdict.passed:
+            message += " (데모 모드 통과)"
+    else:
+        message = verdict.reason or (
+            "일지 기록으로 수확이 확인되지 않았어요. 수확물 사진을 남기고 다시 시도해 주세요."
+        )
+
+    return HarvestJournalResponse(
+        verified=verified,
+        demoMode=demo,
+        recordId=record.id,
+        verdict=JournalVerdictOut(**verdict.as_dict()),
+        warnings=warnings,
+        card=card_data,
+        newBadges=[BadgeOut(**b) for b in new_badges],
+        pointsTotal=await total_points(session, device),
         message=message,
     )
 
@@ -114,9 +250,16 @@ async def get_card(crop_slug: str) -> HarvestCard:
 
 @router.get("", response_model=list[HarvestRecordOut])
 async def list_records(
-    session: SessionDep, plan_id: int | None = None, verified_only: bool = True
+    session: SessionDep,
+    device: DeviceDep,
+    plan_id: int | None = None,
+    verified_only: bool = True,
 ) -> list[HarvestRecordOut]:
-    q = select(HarvestRecord).order_by(HarvestRecord.created_at.desc())
+    q = (
+        select(HarvestRecord)
+        .where(HarvestRecord.device_id == device)
+        .order_by(HarvestRecord.created_at.desc())
+    )
     if plan_id is not None:
         q = q.where(HarvestRecord.plan_id == plan_id)
     if verified_only:

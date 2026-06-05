@@ -4,8 +4,8 @@ primary_region = "nrt"
 [build]
 
 [deploy]
-  # DB(AWS RDS) 준비 및 DATABASE_URL secret 등록 후 아래 주석을 해제할 것.
-  # release_command = "alembic upgrade head"
+  # DATABASE_URL secret(Supabase 세션 풀러 :5432) 기준으로 배포마다 마이그레이션 자동 적용.
+  release_command = "alembic upgrade head"
 
 [http_service]
   internal_port = 8000

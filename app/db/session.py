@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from pathlib import Path
+from uuid import uuid4
 
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import (
@@ -30,7 +31,15 @@ if _is_sqlite:
 else:
     # connect_args timeout: DB가 죽어 있을 때 60s+ 매달리지 않고 ~10s 안에
     # 명확히 실패시켜 (라우트가 500+CORS 헤더로 응답) "CORS 에러" 둔갑을 막는다.
-    connect_args = {"timeout": 10}
+    #
+    # Supabase 트랜잭션 풀러(pgbouncer/supavisor, :6543)는 연결 간 named prepared
+    # statement 를 공유하지 못한다 → asyncpg 캐시를 끄고 이름을 매번 유니크하게
+    # 만들어 "prepared statement already exists / does not exist" 오류를 막는다.
+    connect_args = {
+        "timeout": 10,
+        "statement_cache_size": 0,
+        "prepared_statement_name_func": lambda: f"__asyncpg_{uuid4()}__",
+    }
 
 engine = create_async_engine(
     settings.database_url,

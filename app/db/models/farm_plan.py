@@ -16,6 +16,7 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     Integer,
+    LargeBinary,
     String,
     Text,
     UniqueConstraint,
@@ -30,6 +31,10 @@ class FarmPlan(Base):
     __tablename__ = "farm_plan"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    # 익명 디바이스 ID(X-Device-Id 헤더) — 계정 도입 전 사용자 구분. 'demo'=시연 계정.
+    device_id: Mapped[str] = mapped_column(
+        String(64), nullable=False, server_default="demo", index=True
+    )
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     crop_item_code: Mapped[str] = mapped_column(String(64), nullable=False)
     crop_kind_code: Mapped[str] = mapped_column(String(64), nullable=False)
@@ -123,10 +128,10 @@ class TaskMemo(Base):
 
 
 class MemoImage(Base):
-    """메모 사진 첨부 — 마이그레이션 20260604_0004(memo_image) 와 1:1 매핑.
+    """메모 사진 첨부 — 마이그레이션 20260604_0004 + 20260605_0006 과 1:1 매핑.
 
-    file_path 는 업로드 루트(settings.upload_dir) 기준 상대경로.
-    URL 변환은 core/storage.file_url() 사용.
+    사진 원본은 data(bytea) 에 저장한다(서버 재배포에도 유지). file_path 는
+    디스크 저장 시절(/uploads) 레거시 행 전용 — 신규 업로드에서는 NULL.
     """
 
     __tablename__ = "memo_image"
@@ -135,7 +140,9 @@ class MemoImage(Base):
     memo_id: Mapped[int] = mapped_column(
         ForeignKey("task_memo.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    file_path: Mapped[str] = mapped_column(String(512), nullable=False)
+    file_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    # deferred: 캘린더/계획 조회 때 사진 바이트까지 끌어오지 않도록 지연 로딩.
+    data: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True, deferred=True)
     original_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     content_type: Mapped[str | None] = mapped_column(String(64), nullable=True)
     size_bytes: Mapped[int] = mapped_column(
