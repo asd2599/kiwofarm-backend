@@ -13,6 +13,14 @@ class CropOption(BaseModel):
     label: str
 
 
+class CropCatalogOption(BaseModel):
+    """작목별농업기술정보(cropEbook) 소분류 = 작목. 캘린더 작물 검색 결과."""
+
+    code: str  # subCategoryCode
+    name: str  # subCategoryNm (작목명)
+    category: str  # mainCategoryNm (대분류명)
+
+
 class EbookIndex(BaseModel):
     """농업기술길잡이 e-book 의 한 목차 항목."""
 

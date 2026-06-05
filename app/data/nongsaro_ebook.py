@@ -16,7 +16,9 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from collections.abc import Mapping
+from dataclasses import dataclass
 from xml.etree import ElementTree as ET
 
 import httpx
@@ -175,11 +177,99 @@ async def crop_index_list(
     )
 
 
+# ─────────────────── 작목 카탈로그 (대→중→소 순회, 캐시) ───────────────────
+
+
+@dataclass(frozen=True)
+class CropCatalogItem:
+    code: str  # subCategoryCode (작목 코드)
+    name: str  # subCategoryNm (작목명)
+    category: str  # mainCategoryNm (대분류명)
+
+
+_CATALOG_TTL = 3600.0
+_catalog_cache: tuple[float, list[CropCatalogItem]] | None = None
+_CONCURRENCY = 8
+
+
+async def fetch_crop_catalog() -> list[CropCatalogItem]:
+    """전 작목(소분류) 목록을 대→중→소 순회로 모아 반환. 1시간 메모리 캐시.
+
+    작목별농업기술정보(cropEbook) 카테고리 트리의 소분류 = 작목. 캘린더 작물 검색의
+    소스로 쓴다(KAMIS 불필요). 중·소분류 호출은 동시성 제한으로 병렬 처리.
+    """
+    global _catalog_cache
+    if _catalog_cache is not None and (time.monotonic() - _catalog_cache[0]) < _CATALOG_TTL:
+        return _catalog_cache[1]
+
+    sem = asyncio.Semaphore(_CONCURRENCY)
+    async with httpx.AsyncClient() as client:
+        mains = await main_category_list(client=client)
+        main_name = {
+            m.get("mainCategoryCode", ""): m.get("mainCategoryNm", "") for m in mains
+        }
+
+        async def _middles(mcode: str) -> tuple[str, list[dict[str, str]]]:
+            async with sem:
+                return mcode, await middle_category_list(mcode, client=client)
+
+        mid_lists = await asyncio.gather(
+            *(_middles(c) for c in main_name if c), return_exceptions=True
+        )
+        # (mainCode, middleCode) 쌍
+        pairs: list[tuple[str, str]] = []
+        for r in mid_lists:
+            if isinstance(r, BaseException):
+                continue
+            mcode, middles = r
+            for md in middles:
+                mid = md.get("middleCategoryCode")
+                if mid:
+                    pairs.append((mcode, mid))
+
+        async def _subs(mcode: str, mid: str) -> tuple[str, list[dict[str, str]]]:
+            async with sem:
+                return mcode, await sub_category_list(mid, client=client)
+
+        sub_lists = await asyncio.gather(
+            *(_subs(mc, mid) for mc, mid in pairs), return_exceptions=True
+        )
+
+    seen: set[str] = set()
+    out: list[CropCatalogItem] = []
+    for r in sub_lists:
+        if isinstance(r, BaseException):
+            continue
+        mcode, subs = r
+        for s in subs:
+            code = s.get("subCategoryCode")
+            name = s.get("subCategoryNm", "")
+            if not code or code in seen:
+                continue
+            seen.add(code)
+            out.append(CropCatalogItem(code=code, name=name, category=main_name.get(mcode, "")))
+    out.sort(key=lambda c: c.name)
+    _catalog_cache = (time.monotonic(), out)
+    return out
+
+
+async def search_crop_catalog(q: str, *, limit: int = 30) -> list[CropCatalogItem]:
+    """작목명에 검색어가 포함된 작목 목록."""
+    q = q.strip()
+    if not q:
+        return []
+    items = await fetch_crop_catalog()
+    return [c for c in items if q in c.name][:limit]
+
+
 __all__ = [
     "NongsaroApiError",
+    "CropCatalogItem",
     "main_category_list",
     "middle_category_list",
     "sub_category_list",
     "ebook_list",
     "crop_index_list",
+    "fetch_crop_catalog",
+    "search_crop_catalog",
 ]

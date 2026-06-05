@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from app.api.v1 import (
     crops,
     farmplan,
+    garden,
     harvest,
     planting,
     recommend,
@@ -51,6 +52,7 @@ app.include_router(support.router, prefix="/api/v1")
 app.include_router(farmplan.router, prefix="/api/v1")
 app.include_router(planting.router, prefix="/api/v1")
 app.include_router(harvest.router, prefix="/api/v1")
+app.include_router(garden.router, prefix="/api/v1")
 
 
 @app.get("/health")
