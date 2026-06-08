@@ -10,8 +10,15 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query
 
+from app.core.crops.summary import SummaryError
+from app.core.garden_summary import summarize_garden
 from app.data import nongsaro_garden as garden
-from app.schemas.garden import GardenDetailOut, GardenItemOut
+from app.schemas.garden import (
+    GardenDetailOut,
+    GardenItemOut,
+    GardenSourceOut,
+    GardenSummaryOut,
+)
 
 router = APIRouter(prefix="/garden", tags=["garden"])
 
@@ -31,6 +38,28 @@ async def search_garden(
         )
         for it in items
     ]
+
+
+@router.get("/summary", response_model=GardenSummaryOut)
+async def garden_summary(
+    q: Annotated[str, Query(min_length=1, description="작물명/키워드")],
+) -> GardenSummaryOut:
+    """텃밭가꾸기 본문을 GPT로 요약한 재배 핵심 정리 + 근거 원문 목록."""
+    crop = q.strip()
+    try:
+        headline, points, mode = await summarize_garden(crop)
+    except SummaryError as e:
+        raise HTTPException(status_code=503, detail=f"요약 생성 실패: {e}") from e
+    sources = await garden.search_articles(crop, limit=6)
+    return GardenSummaryOut(
+        crop=crop,
+        headline=headline,
+        keyPoints=points,
+        sources=[
+            GardenSourceOut(cntntsNo=s.cntnts_no, title=s.title) for s in sources
+        ],
+        mode=mode,
+    )
 
 
 @router.get("/{cntnts_no}", response_model=GardenDetailOut)
