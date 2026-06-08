@@ -31,7 +31,12 @@ def _get_client() -> AsyncOpenAI | None:
     if not settings.openai_api_key:
         return None
     if _client is None:
-        _client = AsyncOpenAI(api_key=settings.openai_api_key, timeout=_TIMEOUT_S)
+        # max_retries=0: 재시도 시 _TIMEOUT_S 가 3배(타임아웃×3)로 누적돼 추천
+        # 응답이 30초+로 늘어나 프론트(10s) 타임아웃을 넘긴다. AI 설명은 부가
+        # 정보일 뿐이므로 한 번 시도 후 실패하면 즉시 fallback(설명 생략)한다.
+        _client = AsyncOpenAI(
+            api_key=settings.openai_api_key, timeout=_TIMEOUT_S, max_retries=0
+        )
     return _client
 
 

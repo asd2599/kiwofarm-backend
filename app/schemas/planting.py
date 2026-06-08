@@ -95,6 +95,12 @@ class PlantingRecommendResponse(BaseModel):
     next_month_candidates: list[str]
 
 
+class PlantingExplainResponse(BaseModel):
+    """비동기 AI 설명 응답. crop_id → 설명. LLM 실패 시 해당 키 생략(빈 맵 가능)."""
+
+    explains: dict[str, AiExplain] = Field(default_factory=dict)
+
+
 # ───────────────────────── 챗봇 (§5, 부록 D/E) ─────────────────────────
 
 

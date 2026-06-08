@@ -14,6 +14,7 @@ from app.schemas.planting import (
     ChatResponse,
     CropDetail,
     CropSummary,
+    PlantingExplainResponse,
     PlantingInput,
     PlantingRecommendResponse,
 )
@@ -71,14 +72,25 @@ async def get_crop_detail(crop_id: str) -> CropDetail:
 
 @router.post("/recommend", response_model=PlantingRecommendResponse)
 async def post_recommend(payload: PlantingInput) -> PlantingRecommendResponse:
-    """사용자 입력 → 결정적 스코어 추천(top N) + gpt-4o-mini 설명.
+    """사용자 입력 → 결정적 스코어 추천(top N). 즉시 반환.
 
-    추천 산정은 결정적 코드(재현성), AI 는 선택된 작물의 매트릭스 근거를 받아
-    설명만 생성(키 없거나 실패 시 ai_explain 생략, 추천은 그대로 동작).
+    AI 설명(gpt-4o-mini)은 응답을 지연시키지 않도록 분리했다. 프론트가 이 추천을
+    먼저 렌더한 뒤 /recommend/explain 을 호출해 설명을 비동기로 채운다.
+    """
+    return recommend(payload)
+
+
+@router.post("/recommend/explain", response_model=PlantingExplainResponse)
+async def post_recommend_explain(payload: PlantingInput) -> PlantingExplainResponse:
+    """동일 입력의 추천을 결정적으로 재현 → 작물별 AI 설명만 생성해 반환.
+
+    추천 산정이 결정적이라 /recommend 와 같은 작물 집합이 나온다. 키 없거나 LLM
+    실패 시 빈 맵(설명 없이 추천만 표시). 프론트는 도착하는 대로 카드에 채운다.
     """
     result = recommend(payload)
     items = await attach_ai_explain(result.recommendations, payload, result.month)
-    return result.model_copy(update={"recommendations": items})
+    explains = {it.crop_id: it.ai_explain for it in items if it.ai_explain is not None}
+    return PlantingExplainResponse(explains=explains)
 
 
 @router.post("/chat", response_model=ChatResponse)
