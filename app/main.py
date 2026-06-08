@@ -13,8 +13,7 @@ from app.api.v1 import (
     harvest,
     planting,
     recommend,
-    sales,
-    support,
+    rewards,
     twin,
 )
 from app.config import settings
@@ -47,11 +46,10 @@ app.mount(UPLOAD_URL_PREFIX, StaticFiles(directory=_upload_root), name="uploads"
 app.include_router(recommend.router, prefix="/api/v1")
 app.include_router(twin.router, prefix="/api/v1")
 app.include_router(crops.router, prefix="/api/v1")
-app.include_router(sales.router, prefix="/api/v1")
-app.include_router(support.router, prefix="/api/v1")
 app.include_router(farmplan.router, prefix="/api/v1")
 app.include_router(planting.router, prefix="/api/v1")
 app.include_router(harvest.router, prefix="/api/v1")
+app.include_router(rewards.router, prefix="/api/v1")
 app.include_router(garden.router, prefix="/api/v1")
 
 

@@ -30,12 +30,18 @@ class HarvestRecord(Base):
     __tablename__ = "harvest_record"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    # 익명 디바이스 ID — farm_plan.device_id 와 동일 체계. 'demo'=시연 계정.
+    device_id: Mapped[str] = mapped_column(
+        String(64), nullable=False, server_default="demo", index=True
+    )
     plan_id: Mapped[int | None] = mapped_column(
         ForeignKey("farm_plan.id", ondelete="SET NULL"), nullable=True
     )
     crop_slug: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     crop_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    photo_path: Mapped[str] = mapped_column(String(512), nullable=False)
+    # 단일 사진 인증의 업로드 경로. 일지(메모·사진 누적) 기반 인증은 NULL —
+    # 원본 사진은 memo_image 에 있고 verdict.image_ids 로 참조한다.
+    photo_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
     verified: Mapped[bool] = mapped_column(Boolean, nullable=False)
     confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
     verdict: Mapped[dict | None] = mapped_column(JSON, nullable=True)  # AI 판정 원문

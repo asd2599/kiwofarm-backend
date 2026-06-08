@@ -287,7 +287,9 @@ def _snap_to_visit_days(
                 break
 
 
-async def generate_plan(session: AsyncSession, payload: FarmPlanCreate) -> FarmPlan:
+async def generate_plan(
+    session: AsyncSession, payload: FarmPlanCreate, device_id: str
+) -> FarmPlan:
     """RAG+GPT 로 계획 생성 후 영속화. 실패 시 표준 fallback 으로라도 계획을 만든다."""
     ckey = crop_key(payload.itemCode, payload.kindCode)
 
@@ -322,6 +324,7 @@ async def generate_plan(session: AsyncSession, payload: FarmPlanCreate) -> FarmP
         t.order = i
 
     plan = FarmPlan(
+        device_id=device_id,
         start_date=payload.startDate,
         crop_item_code=payload.itemCode,
         crop_kind_code=payload.kindCode,

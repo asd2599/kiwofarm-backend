@@ -91,6 +91,13 @@ class FarmPlanOut(BaseModel):
     memos: list[TaskMemoOut]
 
 
+class FarmPlanWithPointsOut(FarmPlanOut):
+    """메모 저장·사진 업로드 응답 — 이번 저장으로 얻은 점수('+N점' 연출용)."""
+
+    pointsEarned: int = 0
+    pointsTotal: int = 0
+
+
 class BatchFailure(BaseModel):
     index: int  # 입력 plans 배열에서의 위치
     cropName: str

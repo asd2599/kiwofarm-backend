@@ -62,12 +62,19 @@ def check_exif(photo_bytes: bytes) -> RuleResult:
     return r
 
 
-def _plan_slug(plan: FarmPlan) -> str | None:
-    """farm_plan 의 작물 코드(레거시 KAMIS 또는 슬러그) → 슬러그."""
+def plan_slug(plan: FarmPlan) -> str | None:
+    """farm_plan 의 작물 코드(레거시 KAMIS 또는 슬러그) → 슬러그.
+
+    코드 매핑이 없으면 한글 작물명으로 마스터를 찾는다(별칭 포함).
+    """
     code = plan.crop_item_code
     if crop_ids.is_slug(code):
         return code
-    return crop_ids.slug_for(code)
+    mapped = crop_ids.slug_for(code)
+    if mapped:
+        return mapped
+    by_name = crop_ids.find_by_name(plan.crop_name)
+    return by_name["id"] if by_name else None
 
 
 async def check_continuity(
@@ -84,7 +91,7 @@ async def check_continuity(
     if plan is None:
         r.warnings.append(f"재배 계획 #{plan_id}을 찾을 수 없습니다")
         return r
-    if _plan_slug(plan) != crop_slug:
+    if plan_slug(plan) != crop_slug:
         r.warnings.append(
             f"재배 계획의 작물({plan.crop_name})과 인증 작물이 다릅니다"
         )
