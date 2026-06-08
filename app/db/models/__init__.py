@@ -16,8 +16,10 @@ from app.db.models.crop_master import (
 )
 from app.db.models.farm_plan import FarmPlan, FarmTask, MemoImage, TaskMemo
 from app.db.models.harvest import HarvestRecord
+from app.db.models.user import AppUser
 
 __all__ = [
+    "AppUser",
     "CropMainCategory",
     "CropMiddleCategory",
     "CropSubCategory",

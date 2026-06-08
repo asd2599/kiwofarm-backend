@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.api.v1 import (
+    auth,
     crops,
     farmplan,
     garden,
@@ -43,6 +44,7 @@ _upload_root = Path(settings.upload_dir).resolve()
 _upload_root.mkdir(parents=True, exist_ok=True)
 app.mount(UPLOAD_URL_PREFIX, StaticFiles(directory=_upload_root), name="uploads")
 
+app.include_router(auth.router, prefix="/api/v1")
 app.include_router(recommend.router, prefix="/api/v1")
 app.include_router(twin.router, prefix="/api/v1")
 app.include_router(crops.router, prefix="/api/v1")
