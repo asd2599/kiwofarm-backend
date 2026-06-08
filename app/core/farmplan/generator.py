@@ -65,18 +65,57 @@ async def _gather_context(ckey: str) -> str:
     return "\n\n".join(blocks)
 
 
+def _conditions_block(payload: FarmPlanCreate) -> str:
+    """추천받기에서 넘어온 재배 조건을 프롬프트용 텍스트로. 없으면 빈 문자열."""
+    c = payload.growConditions
+    if c is None:
+        return ""
+    lines: list[str] = []
+    if c.place:
+        lines.append(f"재배 장소: {c.place}")
+    if c.facility:
+        lines.append(f"보유 시설: {', '.join(c.facility)}")
+    if c.sunHours:
+        lines.append(f"일조 시간: {c.sunHours}")
+    if c.direction:
+        lines.append(f"방향: {c.direction}")
+    if c.experience:
+        lines.append(f"영농 경험: {c.experience}")
+    if not lines:
+        return ""
+    return "재배자 조건:\n" + "\n".join(f"- {x}" for x in lines) + "\n\n"
+
+
 def _build_prompt(payload: FarmPlanCreate, context: str) -> str:
-    region = f"{payload.province or ''} {payload.region}".strip()
+    # region 은 보통 "시·도 시·군·구" 전체를 담는다. province 가 이미 포함돼 있으면 중복 접두 방지.
+    region = payload.region.strip()
+    prov = (payload.province or "").strip()
+    if prov and not region.startswith(prov):
+        region = f"{prov} {region}".strip()
+    if not region:
+        region = prov
+    conditions = _conditions_block(payload)
+    cond_guide = (
+        "재배자 조건(장소·시설·일조·경험 등)을 반드시 반영하세요. "
+        "시설(비닐터널·미니온실)이 있으면 노지보다 이르거나 늦은 작기도 가능하고, "
+        "베란다·옥상·화분 등 소규모면 면적에 맞춰 작업 강도를 낮추며, "
+        "일조가 부족하면(<3h) 그에 맞는 관리·작목 주의를, "
+        "영농 경험이 '처음'이면 더 쉬운 표현과 기본 작업 위주로 구성하세요. "
+        if conditions
+        else ""
+    )
     return (
         f"작목: {payload.cropName}\n"
         f"재배 시작일: {payload.startDate.isoformat()}\n"
         f"지역: {region}\n"
         f"농지 면적: {payload.area} {payload.areaUnit}\n\n"
+        f"{conditions}"
         f"--- 농업기술 참고자료 (농사로 기반) ---\n{context or '(참고자료 없음)'}\n--- 끝 ---\n\n"
         "위 자료를 바탕으로 시작일부터 한 작기(보통 1년 이내)의 농사 일정을 만드세요. "
         "각 작업은 시작일로부터의 day_offset(0=시작일 당일)과 "
         "duration_days(작업 지속 일수)로 표현합니다. "
         "지역 기후와 면적을 고려해 현실적인 시기를 잡고, 병해충 예방 작업을 반드시 포함하세요. "
+        f"{cond_guide}"
         "일정은 수확까지만 다루고, 수확 후 저장·선별·유통 같은 작업은 넣지 마세요. "
         "출력은 JSON 객체 하나만. 형식: "
         '{"tasks": [{"title": "작업명(30자 이내)", "detail": "구체 방법 80자 이내", '
