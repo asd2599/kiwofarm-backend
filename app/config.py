@@ -20,6 +20,9 @@ class Settings(BaseSettings):
 
     cors_origins: str = "http://localhost:3000"
 
+    # 자체 인증(JWT HS256) 서명 시크릿 — 운영(fly)에서는 AUTH_SECRET 으로 교체할 것.
+    auth_secret: str = "kiwofarm-beta-secret-change-in-prod"
+
     # 수확 인증 데모 모드: 멀티모달 판정과 무관하게 통과 처리(판정은 기록).
     # 6/30 시연 등 데모 환경에서만 true.
     harvest_demo_mode: bool = False

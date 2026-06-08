@@ -26,6 +26,7 @@ dependencies = [
     "aiosqlite>=0.22.1",
     "xmltodict>=1.0.4",
     "python-multipart>=0.0.30",
+    "pyjwt[crypto]>=2.8",
 ]
 
 [dependency-groups]
