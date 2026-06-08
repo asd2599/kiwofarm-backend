@@ -2,7 +2,10 @@
 
 단일 사진 판정(verify.judge_photo)과 달리, 계획에 쌓인 날짜별 메모 텍스트와
 시간순 사진들을 한 번에 보여주고 '실제로 길러서 수확했는가'를 판정한다.
-관대 정책 동일: crop_match && has_harvest && !fake_suspect 면 통과.
+
+엄격 정책: 작물 일치 + 생육 흐름 자연스러움 + 관리 연속성(방치 아님) + 수확 정황 +
+위조 의심 없음을 모두 만족해야 통과. 파종 직후 장기 무기록·띄엄띄엄 기록(사실상
+고사 가능성), 수확 증거 없는 수확 주장은 통과시키지 않는다.
 """
 
 from __future__ import annotations
@@ -21,21 +24,31 @@ log = logging.getLogger(__name__)
 MAX_PHOTOS = 8
 
 SYSTEM = """\
-당신은 도시 텃밭 수확 인증 심사관입니다. 사용자가 작물을 기르며 캘린더에
-남긴 재배 일지(날짜별 메모)와 시간순 사진들을 보고, 지정 작물을 실제로
-길러서 수확까지 했는지 판정합니다. JSON 으로만 답합니다.
+당신은 도시 텃밭 수확 인증을 까다롭게 심사하는 심사관입니다. 사용자가 작물을
+기르며 캘린더에 남긴 재배 일지(날짜별 메모)와 시간순 사진을 보고, 지정 작물을
+'직접 길러서 실제로 수확까지' 했는지 판정합니다. 거짓 인증을 막는 것이 누락보다
+중요합니다 — 근거가 불충분하거나 의심스러우면 통과시키지 마세요. JSON 으로만 답합니다.
 
-판정 기준:
+판정 기준(각 boolean, 근거 없으면 false):
 - crop_match: 사진 속 작물이 지정 작물과 일치하는가
-- growth_consistent: 사진들이 같은 작물의 생육 과정(시간 흐름)으로 자연스러운가
-- has_harvest: 수확 정황이 있는가 (수확물을 손에 들거나 담은 사진,
-  메모의 수확 언급 포함. 아직 기르는 중이기만 하면 false)
-- fake_suspect: 모니터/인쇄물 재촬영, 스톡사진, 서로 무관한 사진 짜깁기 등
-  직접 재배가 아닌 정황이 보이면 true
+- growth_consistent: 사진들이 같은 개체의 파종→생육→수확 흐름으로 자연스럽게
+  이어지는가. 생육 단계가 통째로 비거나, 서로 다른 작물·장소가 섞이면 false
+- care_consistent: 일지 기록 간격이 작물을 실제로 돌본 수준인가. 파종 직후
+  장기간(예: 2주 이상) 무기록이거나, 관리 흔적 없이 띄엄띄엄한 기록뿐이면
+  방치로 보아 false (그 사이 시들거나 죽었을 가능성이 높음). 아래에 제공하는
+  '경과일·기대 수확일·기록 공백' 수치를 핵심 근거로 삼으세요
+- has_harvest: 실제 수확 정황이 분명한가. 수확물을 손에 들거나 담은 사진, 또는
+  메모의 명확한 수확 기록이 있어야 true. 아직 기르는 중이거나 수확 증거가
+  없는데 수확을 주장하면 false
+- fake_suspect: 모니터/인쇄물 재촬영, 스톡사진, 무관한 사진 짜깁기 등 직접
+  재배가 아닌 정황이 보이면 true
 - quantity: 눈으로 추정한 수확량 (예: "상추 약 10장", "방울토마토 한 줌")
 - confidence: 전체 판정 확신도 0.0~1.0
-- reason: 사용자에게 보여줄 한 문장 (친근한 존댓말)
-- summary: 재배 여정 한두 문장 요약 (도감 기록용, 존댓말)"""
+- reason: 사용자에게 보여줄 한 문장 (친근한 존댓말). 통과 못 하면 무엇이
+  부족한지(예: 관리 공백·수확 증거 부족) 구체적으로 알려주세요
+- summary: 재배 여정 한두 문장 요약 (도감 기록용, 존댓말)
+
+주의: 기대 수확일보다 한참 이른 수확 주장, 큰 무기록 공백은 강한 거짓 신호입니다."""
 
 
 @dataclass(frozen=True)
@@ -51,6 +64,7 @@ class JournalEntry:
 class JournalVerdict:
     crop_match: bool
     growth_consistent: bool
+    care_consistent: bool
     has_harvest: bool
     fake_suspect: bool
     quantity: str
@@ -60,10 +74,37 @@ class JournalVerdict:
 
     @property
     def passed(self) -> bool:
-        return self.crop_match and self.has_harvest and not self.fake_suspect
+        # 작물 일치 + 생육 흐름 자연 + 관리 연속(방치 아님) + 수확 정황 + 위조 의심 없음.
+        return (
+            self.crop_match
+            and self.growth_consistent
+            and self.care_consistent
+            and self.has_harvest
+            and not self.fake_suspect
+        )
 
     def as_dict(self) -> dict:
         return asdict(self)
+
+
+def _cadence_facts(start_date: date, entries: list[JournalEntry]) -> str:
+    """기록 간격을 객관 수치로 요약 — LLM 의 care_consistent 판단 근거.
+
+    실제 기록(메모 텍스트 또는 사진이 있는 날)만 센다. 파종일(start_date)에서
+    첫 기록까지의 공백과 기록 사이 최장 공백이 방치 판단의 핵심.
+    """
+    dated = sorted({e.memo_date for e in entries if e.content.strip() or e.photos})
+    if not dated:
+        return "기록 없음(메모·사진 0일)"
+    points = [start_date, *dated]
+    gaps = [(points[i + 1] - points[i]).days for i in range(len(points) - 1)]
+    max_gap = max(gaps) if gaps else 0
+    initial_gap = (dated[0] - start_date).days
+    span = (dated[-1] - start_date).days
+    return (
+        f"기록일수 {len(dated)}일 · 파종~마지막기록 {span}일 · "
+        f"파종 후 첫 기록까지 {initial_gap}일 · 기록 사이 최장 무기록 공백 {max_gap}일"
+    )
 
 
 def _pick_photos(
@@ -86,6 +127,7 @@ async def judge_journal(
     crop_name: str,
     start_date: date,
     entries: list[JournalEntry],
+    days_to_harvest: list[int] | None = None,
 ) -> JournalVerdict:
     """일지 전체 → 판정. 사진이 1장도 없거나 호출 실패 시 VerifyError."""
     photos: list[tuple[date, bytes, str]] = [
@@ -102,18 +144,27 @@ async def judge_journal(
         + (f" [사진 {len(e.photos)}장]" if e.photos else "")
         for e in sorted(entries, key=lambda e: e.memo_date)
     )
+    cadence = _cadence_facts(start_date, entries)
+    if days_to_harvest:
+        lo = days_to_harvest[0]
+        hi = days_to_harvest[-1]
+        expected = f"{lo}~{hi}일" if lo != hi else f"{lo}일"
+    else:
+        expected = "정보 없음"
     content: list[dict] = [
         {
             "type": "text",
             "text": (
                 f"지정 작물: {crop_name}\n"
                 f"재배 시작일: {start_date.isoformat()}\n"
+                f"이 작물의 일반적 수확 소요: {expected}\n"
+                f"기록 간격 분석: {cadence}\n"
                 f"재배 일지:\n{timeline}\n\n"
                 f"아래는 일지 사진 {len(picked)}장(시간순, 전체 {len(photos)}장 중)"
-                "입니다. 일지와 사진을 종합해 판정해 JSON 으로 답하세요. 형식: "
-                '{"crop_match": bool, "growth_consistent": bool, "has_harvest": bool, '
-                '"fake_suspect": bool, "quantity": str, "confidence": 0.0-1.0, '
-                '"reason": str, "summary": str}'
+                "입니다. 일지·기록 간격·사진을 종합해 판정해 JSON 으로 답하세요. 형식: "
+                '{"crop_match": bool, "growth_consistent": bool, "care_consistent": bool, '
+                '"has_harvest": bool, "fake_suspect": bool, "quantity": str, '
+                '"confidence": 0.0-1.0, "reason": str, "summary": str}'
             ),
         }
     ]
@@ -148,6 +199,7 @@ async def judge_journal(
     return JournalVerdict(
         crop_match=bool(data.get("crop_match", False)),
         growth_consistent=bool(data.get("growth_consistent", False)),
+        care_consistent=bool(data.get("care_consistent", False)),
         has_harvest=bool(data.get("has_harvest", False)),
         fake_suspect=bool(data.get("fake_suspect", False)),
         quantity=str(data.get("quantity", "")),
