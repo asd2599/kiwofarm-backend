@@ -10,6 +10,16 @@ TaskCategory = str  # seeding|growing|fertilize|water|pest|harvest|etc
 TaskStatus = str  # planned|done|delayed
 
 
+class GrowConditions(BaseModel):
+    """추천받기(작목 추천) 위저드 입력 조건. 일정 생성 시 GPT가 함께 고려."""
+
+    place: str | None = None  # 재배 장소 (베란다·옥상·노지·실내)
+    sunHours: str | None = None  # 일조 시간 (<3h·3~5h·>5h)
+    experience: str | None = None  # 영농 경험 (처음·1~2년·3년+)
+    facility: list[str] | None = None  # 시설 (화분·플랜터·비닐터널·미니온실)
+    direction: str | None = None  # 방향 (남향·동향·서향·북향)
+
+
 class FarmPlanCreate(BaseModel):
     """프론트 캘린더 설정 폼 입력."""
 
@@ -24,6 +34,8 @@ class FarmPlanCreate(BaseModel):
     # 방문 주기(주 1회 등)와 방문 요일(0=일~6=토). 주말농장 등 방문 기반 일정.
     visitFrequency: str | None = None
     visitDays: list[int] | None = None
+    # 추천받기에서 넘어온 재배 조건(선택). 생성 시 프롬프트에 반영.
+    growConditions: GrowConditions | None = None
 
 
 class FarmPlanBatchCreate(BaseModel):

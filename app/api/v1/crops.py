@@ -46,6 +46,72 @@ async def search_crop_catalog(
     ]
 
 
+async def _build_ebooks(sub_code: str) -> list[EbookEntry]:
+    """subCategory 코드 → 농업기술길잡이 e-book 목록(+목차·EBOOK URL)."""
+    ebook_entries = await nongsaro.fetch_ebook_list(sub_code)
+    ebooks: list[EbookEntry] = []
+    for e in ebook_entries:
+        try:
+            idx_entries = await nongsaro.fetch_crop_index_list(e.ebook_code, e.file_no)
+        except nongsaro.NongsaroError:
+            # 목차 실패해도 책 자체는 표시
+            idx_entries = []
+        ebook_url = next((i.ebook_url for i in idx_entries if i.ebook_url), None)
+        ebook_mobile_url = next(
+            (i.ebook_mobile_url for i in idx_entries if i.ebook_mobile_url), None
+        )
+        indices = [
+            EbookIndex(
+                name=i.name,
+                page=i.page,
+                base_page=i.base_page,
+                level=i.level,
+                order=i.order,
+            )
+            for i in idx_entries
+        ]
+        ebooks.append(
+            EbookEntry(
+                ebook_code=e.ebook_code,
+                ebook_name=e.ebook_name,
+                file_no=e.file_no,
+                file_url=e.file_url,
+                orginl_file_nm=e.orginl_file_nm,
+                thumbnail_code=e.thumbnail_code,
+                thumbnail_name=e.thumbnail_name,
+                std_item_code=e.std_item_code,
+                std_item_name=e.std_item_name,
+                ebook_url=ebook_url,
+                ebook_mobile_url=ebook_mobile_url,
+                indices=indices,
+            )
+        )
+    return ebooks
+
+
+@router.get("/catalog/{sub_category_code}/ebooks", response_model=CultivationGuide)
+async def get_catalog_ebooks(
+    sub_category_code: str,
+    cropName: str = Query("", description="표시용 작목명(선택)"),
+) -> CultivationGuide:
+    """작목 코드(subCategoryCode) → 농업기술길잡이 e-book 목록.
+
+    재배정보 화면에서 텃밭가꾸기와 함께 작목별농업기술정보를 연결하기 위한 엔드포인트.
+    """
+    try:
+        ebooks = await _build_ebooks(sub_category_code)
+    except nongsaro.NongsaroError as e:
+        raise HTTPException(status_code=503, detail=f"농사로 길잡이 목록 실패: {e}") from e
+    return CultivationGuide(
+        item_code=sub_category_code,
+        kind_code="0",
+        crop_name=cropName or sub_category_code,
+        sub_category_name=cropName or None,
+        ebooks=ebooks,
+        source="농사로 cropEbook / 작목별농업기술정보",
+    )
+
+
 @router.get("/{item_code}/{kind_code}/cultivation", response_model=CultivationGuide)
 async def get_cultivation(item_code: str, kind_code: str) -> CultivationGuide:
     """KAMIS 코드 → 농사로 (신)작목별농업기술정보 (cropEbook 서비스).
@@ -80,48 +146,9 @@ async def get_cultivation(item_code: str, kind_code: str) -> CultivationGuide:
         )
 
     try:
-        ebook_entries = await nongsaro.fetch_ebook_list(match.sub_code)
+        ebooks = await _build_ebooks(match.sub_code)
     except nongsaro.NongsaroError as e:
         raise HTTPException(status_code=503, detail=f"농사로 길잡이 목록 실패: {e}") from e
-
-    ebooks: list[EbookEntry] = []
-    for e in ebook_entries:
-        try:
-            idx_entries = await nongsaro.fetch_crop_index_list(e.ebook_code, e.file_no)
-        except nongsaro.NongsaroError:
-            # 목차 실패해도 책 자체는 표시
-            idx_entries = []
-
-        ebook_url = next((i.ebook_url for i in idx_entries if i.ebook_url), None)
-        ebook_mobile_url = next(
-            (i.ebook_mobile_url for i in idx_entries if i.ebook_mobile_url), None
-        )
-        indices = [
-            EbookIndex(
-                name=i.name,
-                page=i.page,
-                base_page=i.base_page,
-                level=i.level,
-                order=i.order,
-            )
-            for i in idx_entries
-        ]
-        ebooks.append(
-            EbookEntry(
-                ebook_code=e.ebook_code,
-                ebook_name=e.ebook_name,
-                file_no=e.file_no,
-                file_url=e.file_url,
-                orginl_file_nm=e.orginl_file_nm,
-                thumbnail_code=e.thumbnail_code,
-                thumbnail_name=e.thumbnail_name,
-                std_item_code=e.std_item_code,
-                std_item_name=e.std_item_name,
-                ebook_url=ebook_url,
-                ebook_mobile_url=ebook_mobile_url,
-                indices=indices,
-            )
-        )
 
     return CultivationGuide(
         item_code=item_code,
