@@ -176,9 +176,11 @@ async def verify_harvest_journal(
     # 1차 규칙(경고만) — 생육 기간 연속성
     warnings = (await rules.check_continuity(session, plan.id, slug)).warnings
 
-    # 2차 멀티모달 일지 판정
+    # 2차 멀티모달 일지 판정 — 기대 수확 소요일을 함께 넘겨 관리 연속성·조기수확 판단.
     try:
-        verdict = await judge_journal(crop["name"], plan.start_date, entries)
+        verdict = await judge_journal(
+            crop["name"], plan.start_date, entries, crop.get("days_to_harvest")
+        )
     except VerifyError as e:
         log.warning("멀티모달 일지 판정 불가: %s", e)
         raise HTTPException(status_code=503, detail="AI 검증을 지금 사용할 수 없습니다") from e

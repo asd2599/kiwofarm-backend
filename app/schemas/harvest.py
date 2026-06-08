@@ -60,6 +60,7 @@ class JournalVerifyIn(BaseModel):
 class JournalVerdictOut(BaseModel):
     crop_match: bool
     growth_consistent: bool
+    care_consistent: bool
     has_harvest: bool
     fake_suspect: bool
     quantity: str
