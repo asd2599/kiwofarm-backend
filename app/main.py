@@ -1,3 +1,5 @@
+import asyncio
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -19,13 +21,30 @@ from app.api.v1 import (
 )
 from app.config import settings
 from app.core.storage import UPLOAD_URL_PREFIX
+from app.data import nongsaro_ebook
 from app.db.session import init_db
+
+logger = logging.getLogger(__name__)
+
+
+async def _warm_crop_catalog() -> None:
+    """작목 카탈로그(농사로 트리 순회 ~6s)를 백그라운드로 미리 채워 첫 검색을 빠르게.
+
+    외부 API 실패해도 무시 — 캐시는 그대로 비고, 첫 실제 검색이 다시 시도한다.
+    """
+    try:
+        items = await nongsaro_ebook.fetch_crop_catalog()
+        logger.info("작목 카탈로그 워밍 완료: %d종", len(items))
+    except Exception as e:  # noqa: BLE001 - 부팅을 막지 않도록 광범위 캐치
+        logger.warning("작목 카탈로그 워밍 실패(첫 검색 시 재시도): %s", e)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # 로컬 SQLite 테이블 생성(없을 때만). 임베딩은 DB 밖(로컬 파일 스토어)에 있다.
     await init_db()
+    # 부팅을 막지 않도록 워밍은 백그라운드 태스크로.
+    asyncio.create_task(_warm_crop_catalog())
     yield
 
 

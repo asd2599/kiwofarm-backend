@@ -190,6 +190,15 @@ class CropCatalogItem:
 _CATALOG_TTL = 3600.0
 _catalog_cache: tuple[float, list[CropCatalogItem]] | None = None
 _CONCURRENCY = 8
+# 콜드 캐시일 때 동시에 들어온 요청들이 각자 트리를 순회(thundering herd)하지 않도록
+# 단일화. 한 코루틴만 외부 API를 순회하고 나머지는 그 결과를 공유한다.
+_catalog_lock = asyncio.Lock()
+
+
+def _cached_catalog() -> list[CropCatalogItem] | None:
+    if _catalog_cache is not None and (time.monotonic() - _catalog_cache[0]) < _CATALOG_TTL:
+        return _catalog_cache[1]
+    return None
 
 
 async def fetch_crop_catalog() -> list[CropCatalogItem]:
@@ -199,9 +208,21 @@ async def fetch_crop_catalog() -> list[CropCatalogItem]:
     소스로 쓴다(KAMIS 불필요). 중·소분류 호출은 동시성 제한으로 병렬 처리.
     """
     global _catalog_cache
-    if _catalog_cache is not None and (time.monotonic() - _catalog_cache[0]) < _CATALOG_TTL:
-        return _catalog_cache[1]
+    cached = _cached_catalog()
+    if cached is not None:
+        return cached
 
+    async with _catalog_lock:
+        # 락 대기 중 다른 코루틴이 이미 캐시를 채웠으면 그대로 반환(중복 순회 방지).
+        cached = _cached_catalog()
+        if cached is not None:
+            return cached
+
+        return await _build_catalog()
+
+
+async def _build_catalog() -> list[CropCatalogItem]:
+    global _catalog_cache
     sem = asyncio.Semaphore(_CONCURRENCY)
     async with httpx.AsyncClient() as client:
         mains = await main_category_list(client=client)
