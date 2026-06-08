@@ -585,3 +585,16 @@ async def delete_memo(
         await session.commit()
         plan = await _load_plan(session, plan_id, device)
     return _plan_out(plan)
+
+
+@router.delete("/{plan_id}", status_code=204)
+async def delete_plan(
+    plan_id: int, session: SessionDep, device: DeviceDep
+) -> Response:
+    """농사 계획 삭제. 작업·메모·사진은 cascade, 디스크 메모 사진은 직접 정리."""
+    plan = await _load_plan(session, plan_id, device)
+    for m in plan.memos:
+        _delete_memo_files(m)
+    await session.delete(plan)
+    await session.commit()
+    return Response(status_code=204)
