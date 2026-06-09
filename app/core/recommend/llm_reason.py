@@ -55,8 +55,9 @@ def _build_prompt(
         )
         ask = "귀농 정착 관점(수익성·재배 난이도·지역 기후 적합성)에서"
     else:
+        visits = len(input_.visitDays) if input_.visitDays else 1
         ctx = (
-            f"주말농장 모드. 지역: {region} {input_.region}, 방문빈도: {input_.visitFrequency or '주1회'}, "
+            f"주말농장 모드. 지역: {region} {input_.region}, 주당 방문 {visits}회, "
             f"예상 수확량 약 {item.expectedYieldKg}kg, 직거래 단가 {item.expectedDirectPriceWon}원/kg, "
             f"적합도 {item.matchScore}%."
         )

@@ -256,9 +256,13 @@ def _score(crop: CropProfile, clim: RegionClimate, input_: OnboardingInput) -> f
         # 주말농장: 소규모·단년·관리 용이 우선
         value = crop.yield_kg * crop.direct_price_won / 10_000.0
         s += value * 0.8
-        s += (3 - crop.difficulty) * 3.0
+        # 방문 예정 요일 수 = 주당 관리 가능 빈도. 많을수록 손이 가는(난이도 높은)
+        # 작목까지 감당 가능. 방문이 난이도를 못 따라가면 부족분 1일당 감점.
+        visits = len(input_.visitDays) if input_.visitDays else 1
+        care_gap = max(0, crop.difficulty - visits)
+        s += 6.0 - care_gap * 5.0
         if crop.needs_facility:
-            s -= 4.0
+            s -= 4.0 if visits >= 3 else 9.0
 
     return s
 
@@ -297,9 +301,10 @@ def _reason(crop: CropProfile, clim: RegionClimate, prov: str, input_: Onboardin
         if crop.temp_lo <= clim.annual_temp <= crop.temp_hi
         else "기온 차이가 있어 시기 조절이 필요하지만"
     )
+    visits = len(input_.visitDays) if input_.visitDays else 1
     return (
         f"{region}(연평균 {clim.annual_temp:.1f}℃)에서 {crop.name}은 {fit}, "
-        f"{crop.blurb} 작목이라 주말 방문 관리에 적합합니다."
+        f"{crop.blurb} 작목이라 주 {visits}회 방문 관리에 적합합니다."
     )
 
 
