@@ -24,12 +24,14 @@ class FarmPlanCreate(BaseModel):
     """프론트 캘린더 설정 폼 입력."""
 
     startDate: date
+    name: str | None = None  # 텃밭 고유 이름(선택). 없으면 "{작물} 텃밭"으로 표시.
     itemCode: str
     kindCode: str
     cropName: str
     region: str
     province: str | None = None
-    area: float = Field(gt=0)
+    # 텃밭은 화분만 쓰는 경우가 많아 면적은 선택. 미입력이면 None(소규모로 처리).
+    area: float | None = Field(default=None, gt=0)
     areaUnit: AreaUnit
     # 방문 주기(주 1회 등)와 방문 요일(0=일~6=토). 주말농장 등 방문 기반 일정.
     visitFrequency: str | None = None
@@ -77,6 +79,7 @@ class TaskMemoOut(BaseModel):
 class FarmPlanOut(BaseModel):
     id: int
     startDate: date
+    name: str | None = None
     cropItemCode: str
     cropKindCode: str
     cropName: str
@@ -127,7 +130,9 @@ class MemoUpsert(BaseModel):
 
 
 class SettingsUpdate(BaseModel):
-    trackProgress: bool
+    # 둘 다 선택 — 제공된 필드만 갱신(완료 추적 토글 / 텃밭 이름 변경에 공용).
+    trackProgress: bool | None = None
+    name: str | None = None
 
 
 # ── 주간 다이제스트 (이번 주 할 일 3가지 + 코칭 한 줄) ───────────────────
@@ -166,6 +171,7 @@ class FarmPlanSummary(BaseModel):
     """통합 캘린더에서 작물(plan)을 선택하기 위한 요약."""
 
     id: int
+    name: str | None = None
     cropName: str
     cropItemCode: str
     cropKindCode: str

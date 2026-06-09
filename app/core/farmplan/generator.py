@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from datetime import date, timedelta
@@ -51,14 +52,19 @@ _VALID_CATEGORIES = {
 
 
 async def _gather_context(ckey: str) -> str:
-    """facet 별 청크를 회수해 라벨링된 컨텍스트 블록으로 합성."""
+    """facet 별 청크를 회수해 라벨링된 컨텍스트 블록으로 합성.
+
+    7개 facet 쿼리를 단일 배치 임베딩(retrieve_many)으로 묶어 왕복을 7회→1회로 줄인다.
+    """
+    try:
+        results = await rag_retrieve.retrieve_many(
+            ckey, [query for _, query in _FACETS], k=4
+        )
+    except Exception as e:  # noqa: BLE001 - 컨텍스트 회수 실패해도 fallback 계획은 제공
+        log.info("retrieve_many 실패 reason=%s", e)
+        return ""
     blocks: list[str] = []
-    for label, query in _FACETS:
-        try:
-            chunks = await rag_retrieve.retrieve(ckey, query, k=4)
-        except Exception as e:  # noqa: BLE001
-            log.info("retrieve 실패 facet=%s reason=%s", label, e)
-            chunks = []
+    for (label, _query), chunks in zip(_FACETS, results):
         if chunks:
             joined = "\n".join(f"- {c}" for c in chunks)
             blocks.append(f"## {label}\n{joined}")
@@ -95,6 +101,12 @@ def _build_prompt(payload: FarmPlanCreate, context: str) -> str:
     if not region:
         region = prov
     conditions = _conditions_block(payload)
+    # 면적 미입력(화분·소규모) 이면 면적 줄 대신 소규모 안내를 넣는다.
+    area_line = (
+        f"농지 면적: {payload.area} {payload.areaUnit}"
+        if payload.area
+        else "재배 규모: 화분·소규모(면적 미지정)"
+    )
     cond_guide = (
         "재배자 조건(장소·시설·일조·경험 등)을 반드시 반영하세요. "
         "시설(비닐터널·미니온실)이 있으면 노지보다 이르거나 늦은 작기도 가능하고, "
@@ -108,7 +120,7 @@ def _build_prompt(payload: FarmPlanCreate, context: str) -> str:
         f"작목: {payload.cropName}\n"
         f"재배 시작일: {payload.startDate.isoformat()}\n"
         f"지역: {region}\n"
-        f"농지 면적: {payload.area} {payload.areaUnit}\n\n"
+        f"{area_line}\n\n"
         f"{conditions}"
         f"--- 농업기술 참고자료 (농사로 기반) ---\n{context or '(참고자료 없음)'}\n--- 끝 ---\n\n"
         "위 자료를 바탕으로 시작일부터 한 작기(보통 1년 이내)의 농사 일정을 만드세요. "
@@ -135,6 +147,7 @@ async def _gpt_tasks(payload: FarmPlanCreate, context: str) -> list[dict]:
             model=_MODEL,
             response_format={"type": "json_object"},
             temperature=0.3,
+            max_tokens=2000,  # tasks 8~16개 JSON 상한 — 응답 길이·지연 예측 가능
             messages=[
                 {
                     "role": "system",
@@ -300,16 +313,18 @@ async def generate_plan(
             payload.cropName,
             group_name=None,
         )
-        context = await _gather_context(ckey)
     except Exception as e:  # noqa: BLE001 - 인제스트 실패해도 fallback 계획은 제공
-        log.info("인제스트/컨텍스트 실패 → fallback crop=%s reason=%s", payload.cropName, e)
-        context = ""
+        log.info("인제스트 실패 → fallback crop=%s reason=%s", payload.cropName, e)
 
-    # 공통 지식 허브(knowledge)의 월별 작업 컨텍스트를 보강 주입.
-    # 추천·캘린더가 같은 허브를 공유하도록 하는 진입점이며, 실패 시 빈 문자열.
-    calendar_ctx = await knowledge.get_calendar_tasks(
-        payload.itemCode, payload.kindCode, payload.cropName
+    # facet 컨텍스트와 지식 허브의 월별 작업 컨텍스트를 동시에 회수(임베딩 왕복 겹침).
+    # 둘 다 자체적으로 예외를 흡수해 빈 문자열로 수렴하므로 gather 가 실패하지 않는다.
+    context, calendar_ctx = await asyncio.gather(
+        _gather_context(ckey),
+        knowledge.get_calendar_tasks(
+            payload.itemCode, payload.kindCode, payload.cropName
+        ),
     )
+
     if calendar_ctx:
         block = f"## 월별 표준 작업 (지식 허브)\n{calendar_ctx}"
         context = f"{context}\n\n{block}" if context else block
@@ -326,12 +341,13 @@ async def generate_plan(
     plan = FarmPlan(
         device_id=device_id,
         start_date=payload.startDate,
+        name=(payload.name or "").strip()[:255] or None,
         crop_item_code=payload.itemCode,
         crop_kind_code=payload.kindCode,
         crop_name=payload.cropName,
         region=payload.region,
         province=payload.province,
-        area=payload.area,
+        area=payload.area or 0.0,  # 0 = 면적 미지정(화분·소규모)
         area_unit=payload.areaUnit,
         visit_frequency=payload.visitFrequency,
         visit_days=payload.visitDays,

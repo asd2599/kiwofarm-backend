@@ -106,6 +106,7 @@ def _plan_out(plan: FarmPlan) -> FarmPlanOut:
     return FarmPlanOut(
         id=plan.id,
         startDate=plan.start_date,
+        name=plan.name,
         cropItemCode=plan.crop_item_code,
         cropKindCode=plan.crop_kind_code,
         cropName=plan.crop_name,
@@ -124,6 +125,7 @@ def _plan_out(plan: FarmPlan) -> FarmPlanOut:
 def _plan_summary(plan: FarmPlan) -> FarmPlanSummary:
     return FarmPlanSummary(
         id=plan.id,
+        name=plan.name,
         cropName=plan.crop_name,
         cropItemCode=plan.crop_item_code,
         cropKindCode=plan.crop_kind_code,
@@ -393,9 +395,12 @@ async def plan_alerts(
 async def update_settings(
     plan_id: int, payload: SettingsUpdate, session: SessionDep, device: DeviceDep
 ) -> FarmPlanOut:
-    """완료/지연 표시(진행 추적) on/off."""
+    """계획 설정 — 완료/지연 표시(진행 추적) on/off + 텃밭 이름 변경. 제공된 필드만 갱신."""
     plan = await _load_plan(session, plan_id, device)
-    plan.track_progress = payload.trackProgress
+    if payload.trackProgress is not None:
+        plan.track_progress = payload.trackProgress
+    if payload.name is not None:
+        plan.name = payload.name.strip()[:255] or None
     await session.commit()
     plan = await _load_plan(session, plan_id, device)
     return _plan_out(plan)

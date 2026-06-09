@@ -12,6 +12,8 @@ from app.schemas.rewards import BadgeOut
 
 class RecipeOut(BaseModel):
     name: str
+    materials: str = ""  # 재료 (농사로 「이달의음식」 또는 AI 생성)
+    cooking: str = ""  # 조리 단계
     nutrients: dict[str, str] = {}
 
 

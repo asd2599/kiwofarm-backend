@@ -24,6 +24,7 @@ log = logging.getLogger(__name__)
 MONTHFD_PATH = Path(__file__).resolve().parents[3] / "data" / "monthfd" / "by_crop.json"
 _GEN_MODEL = "gpt-4o-mini"
 MAX_SECTION = 700  # 카드 섹션 길이 상한(문장 경계 트림)
+RECIPE_MAX = 2000  # 레시피 재료·조리법은 전체를 보여주되 과도한 길이만 방지
 MAX_RECIPES = 3
 
 _ai_cache: dict[str, dict[str, Any]] = {}
@@ -98,8 +99,8 @@ def deep_links(crop_name: str) -> list[dict[str, str]]:
     ]
 
 
-async def _generate_card_text(crop_name: str) -> dict[str, str]:
-    """monthfd 미보유 작물의 보관·섭취·영양 텍스트 생성 (메모리 캐시)."""
+async def _generate_card_text(crop_name: str) -> dict[str, Any]:
+    """monthfd 미보유 작물의 보관·섭취·영양 + 추천 레시피(재료·조리법) 생성 (메모리 캐시)."""
     if crop_name in _ai_cache:
         return _ai_cache[crop_name]
     if not settings.openai_api_key:
@@ -113,23 +114,44 @@ async def _generate_card_text(crop_name: str) -> dict[str, str]:
             {
                 "role": "system",
                 "content": (
-                    "당신은 식재료 전문가입니다. 갓 수확한 텃밭 작물의 활용 정보를 "
-                    "초보자 눈높이 한국어로, 각 항목 3~5문장으로 작성합니다. JSON 으로만 답합니다."
+                    "당신은 식재료·요리 전문가입니다. 갓 수확한 텃밭 작물의 활용 정보와 "
+                    "간단한 집밥 레시피를 초보자 눈높이 한국어로 작성합니다. JSON 으로만 답합니다."
                 ),
             },
             {
                 "role": "user",
                 "content": (
                     f"작물: {crop_name}\n"
-                    '형식: {"storage": "보관방법과 손질법", '
-                    '"eating": "맛있게 먹는 방법", "nutrition": "주요 영양성분과 효능"}'
+                    '형식: {"storage": "보관방법과 손질법(3~5문장)", '
+                    '"eating": "맛있게 먹는 방법(3~5문장)", '
+                    '"nutrition": "주요 영양성분과 효능(3~5문장)", '
+                    '"recipes": [{"name": "요리명", '
+                    '"materials": "주재료·부재료 목록", '
+                    '"cooking": "조리 단계를 1. 2. 3. 형식으로 5단계 이내"}]}. '
+                    f"recipes 는 {crop_name} 를 주재료로 한 집밥 요리 2~3개."
                 ),
             },
         ],
     )
     try:
         data = json.loads(resp.choices[0].message.content or "{}")
-        out = {k: str(data.get(k, "")) for k in ("storage", "eating", "nutrition")}
+        out: dict[str, Any] = {
+            k: str(data.get(k, "")) for k in ("storage", "eating", "nutrition")
+        }
+        raw = data.get("recipes") if isinstance(data, dict) else None
+        recipes: list[dict[str, Any]] = []
+        if isinstance(raw, list):
+            for r in raw[:MAX_RECIPES]:
+                if isinstance(r, dict) and r.get("name"):
+                    recipes.append(
+                        {
+                            "name": str(r.get("name", "")),
+                            "materials": _trim(str(r.get("materials", "")), RECIPE_MAX),
+                            "cooking": _trim(str(r.get("cooking", "")), RECIPE_MAX),
+                            "nutrients": {},
+                        }
+                    )
+        out["recipes"] = recipes
     except json.JSONDecodeError:
         out = {}
     _ai_cache[crop_name] = out
@@ -149,6 +171,9 @@ async def build_card(crop_slug: str) -> dict[str, Any] | None:
         recipes = [
             {
                 "name": r.get("name", ""),
+                # 농사로 「이달의음식」 원본 재료·조리법(작물에 이미 매칭됨).
+                "materials": _trim(r.get("materials", ""), RECIPE_MAX),
+                "cooking": _trim(r.get("cooking", ""), RECIPE_MAX),
                 "nutrients": {
                     k: r["nutrients"][k]
                     for k in ("에너지(kcal)", "탄수화물(g)", "단백질(g)")
@@ -184,6 +209,6 @@ async def build_card(crop_slug: str) -> dict[str, Any] | None:
         "eating": _trim(gen.get("eating", "")),
         "nutrition": _trim(gen.get("nutrition", "")),
         "seasonMonths": [],
-        "recipes": [],
+        "recipes": gen.get("recipes", []),
         "links": deep_links(name),
     }

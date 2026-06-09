@@ -82,4 +82,30 @@ def find_by_name(name: str) -> dict[str, Any] | None:
     return _name_index().get(name.replace(" ", "").strip())
 
 
-__all__ = ["KAMIS_TO_SLUG", "NAME_ALIAS", "slug_for", "is_slug", "find_by_name"]
+def search(query: str, limit: int = 30) -> list[dict[str, Any]]:
+    """40종 마스터를 한글명(별칭 포함) 부분일치로 검색. 캘린더 작물 선택용.
+
+    농사로 전체 카탈로그가 아니라 도감·수확 인증 대상 40종만 노출해 일관성을 보장한다.
+    """
+    qn = query.replace(" ", "").strip()
+    if not qn:
+        return []
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for key, crop in _name_index().items():
+        if qn in key and crop["id"] not in seen:
+            out.append(crop)
+            seen.add(crop["id"])
+            if len(out) >= limit:
+                break
+    return out
+
+
+__all__ = [
+    "KAMIS_TO_SLUG",
+    "NAME_ALIAS",
+    "slug_for",
+    "is_slug",
+    "find_by_name",
+    "search",
+]

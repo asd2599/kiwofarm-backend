@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query
 
 from app.core.crops import summary as crop_summary
-from app.data import kamis_crops, nongsaro, nongsaro_ebook
+from app.data import crop_ids, kamis_crops, nongsaro, nongsaro_ebook
 from app.schemas.crops import (
     CropCatalogOption,
     CropOption,
@@ -34,12 +34,30 @@ async def search_crops(
     return [_to_option(r) for r in kamis_crops.search(q, limit=limit)]
 
 
+@router.get("/master", response_model=list[CropCatalogOption])
+async def search_crop_master(
+    q: str = Query(..., min_length=1, description="작물명 부분일치(한글·별칭)"),
+    limit: int = Query(30, ge=1, le=50),
+) -> list[CropCatalogOption]:
+    """40종 마스터(crops_master) 작물 검색. 캘린더 작물 선택용.
+
+    code 는 슬러그(예: lettuce)라 계획 생성·수확 인증이 도감 40종과 그대로 일치한다.
+    """
+    return [
+        CropCatalogOption(code=c["id"], name=c["name"], category=c.get("category", ""))
+        for c in crop_ids.search(q, limit=limit)
+    ]
+
+
 @router.get("/catalog", response_model=list[CropCatalogOption])
 async def search_crop_catalog(
     q: str = Query(..., min_length=1, description="작목명 부분일치"),
     limit: int = Query(30, ge=1, le=50),
 ) -> list[CropCatalogOption]:
-    """작목별농업기술정보(cropEbook) 작목 카탈로그 검색. 캘린더 작물 선택용."""
+    """작목별농업기술정보(cropEbook) 작목 카탈로그 검색(농사로 전체).
+
+    참고용 — 캘린더 작물 선택은 40종 마스터(/crops/master)를 쓴다.
+    """
     items = await nongsaro_ebook.search_crop_catalog(q, limit=limit)
     return [
         CropCatalogOption(code=c.code, name=c.name, category=c.category) for c in items
