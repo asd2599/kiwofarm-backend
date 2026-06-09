@@ -36,6 +36,8 @@ class FarmPlan(Base):
         String(64), nullable=False, server_default="demo", index=True
     )
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
+    # 사용자가 붙인 텃밭 고유 이름(선택). 없으면 프론트가 "{작물} 텃밭"으로 표시.
+    name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     crop_item_code: Mapped[str] = mapped_column(String(64), nullable=False)
     crop_kind_code: Mapped[str] = mapped_column(String(64), nullable=False)
     crop_name: Mapped[str] = mapped_column(String(255), nullable=False)

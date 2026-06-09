@@ -12,6 +12,7 @@ DB 세션이 필요 없다.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from openai import AsyncOpenAI
@@ -187,15 +188,24 @@ async def ensure_crop_ingested(
     - NONGSARO_API_KEY 가 있고 텃밭가꾸기(garden) 청크가 아직 없으면 추가 적재(텃밭 작물에 한함).
     """
     ckey = crop_key(item_code, kind_code)
-    added = 0
 
+    # 누락된 kind만 동시에 적재(서로 다른 파일이라 쓰기 충돌 없음). 첫 요청에서만
+    # 실행되며, 재배지식·병해충·텃밭 인제스트의 네트워크+임베딩 지연을 겹친다.
+    jobs = []
     if not store.exists(ckey, CULTIVATION_KIND):
-        added += await _ingest_cultivation(ckey, crop_name, group_name)
-
+        jobs.append(_ingest_cultivation(ckey, crop_name, group_name))
     if settings.ncpms_api_key and not store.exists(ckey, NCPMS_SOURCE):
-        added += await _ingest_ncpms_pests(ckey, crop_name)
-
+        jobs.append(_ingest_ncpms_pests(ckey, crop_name))
     if settings.nongsaro_api_key and not store.exists(ckey, GARDEN_SOURCE):
-        added += await _ingest_garden(ckey, crop_name)
+        jobs.append(_ingest_garden(ckey, crop_name))
+    if not jobs:
+        return 0
 
+    results = await asyncio.gather(*jobs, return_exceptions=True)
+    added = 0
+    for r in results:
+        if isinstance(r, Exception):
+            log.info("인제스트 작업 실패(다른 kind는 계속): %s", r)
+            continue
+        added += r
     return added

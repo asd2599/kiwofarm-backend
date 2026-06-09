@@ -10,7 +10,7 @@ from __future__ import annotations
 import numpy as np
 
 from app.core.rag import store
-from app.core.rag.embeddings import embed_query
+from app.core.rag.embeddings import embed_query, embed_texts
 
 
 def _unit(v: np.ndarray) -> np.ndarray:
@@ -31,6 +31,34 @@ async def retrieve(crop_key: str, query: str, k: int = 6) -> list[str]:
     top = np.argpartition(-sims, k - 1)[:k]
     top = top[np.argsort(-sims[top])]
     return [chunks[i] for i in top]
+
+
+async def retrieve_many(
+    crop_key: str, queries: list[str], k: int = 6
+) -> list[list[str]]:
+    """여러 query를 한 번의 임베딩 호출로 묶어 각 query의 top-k 청크를 반환.
+
+    facet 다수(예: 계획 생성의 7개)일 때 query당 개별 embed_query(왕복 N회) 대신
+    embed_texts 배치 1회로 줄인다. store 로드·정규화도 1회만 수행한다.
+    결과는 queries 입력 순서와 1:1 대응(데이터 없으면 각각 빈 리스트).
+    """
+    if not queries:
+        return []
+    chunks, vectors = store.load_all(crop_key)
+    if not chunks:
+        return [[] for _ in queries]
+
+    qvecs = await embed_texts(queries)  # 단일 배치 호출, 입력 순서 보존
+    v_norm = vectors / (np.linalg.norm(vectors, axis=1, keepdims=True) + 1e-8)
+    kk = min(k, len(chunks))
+    out: list[list[str]] = []
+    for qv in qvecs:
+        q = _unit(np.asarray(qv, dtype=np.float32))
+        sims = v_norm @ q
+        top = np.argpartition(-sims, kk - 1)[:kk]
+        top = top[np.argsort(-sims[top])]
+        out.append([chunks[i] for i in top])
+    return out
 
 
 async def retrieve_boosted(

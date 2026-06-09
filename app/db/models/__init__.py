@@ -7,6 +7,13 @@
 
 from __future__ import annotations
 
+from app.db.models.community import (
+    CommunityPost,
+    PostComment,
+    PostImage,
+    PostLike,
+    PostShareRequest,
+)
 from app.db.models.crop_master import (
     CropEbook,
     CropEbookIndex,
@@ -30,4 +37,9 @@ __all__ = [
     "TaskMemo",
     "MemoImage",
     "HarvestRecord",
+    "CommunityPost",
+    "PostImage",
+    "PostComment",
+    "PostLike",
+    "PostShareRequest",
 ]

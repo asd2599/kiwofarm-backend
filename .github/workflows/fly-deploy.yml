@@ -1,0 +1,22 @@
+name: Deploy to Fly.io
+
+# main 브랜치 push 시 fly.io 자동 배포.
+# fly.toml 의 release_command(alembic upgrade head)가 배포마다 마이그레이션을 적용한다.
+# 필요한 GitHub Actions Secret: FLY_API_TOKEN (flyctl tokens create deploy -a kiwofarm-backend)
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # 수동 실행도 허용
+
+jobs:
+  deploy:
+    name: Deploy backend
+    runs-on: ubuntu-latest
+    concurrency: deploy-kiwofarm-backend # 동시 배포 충돌 방지
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

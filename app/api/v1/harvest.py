@@ -30,7 +30,10 @@ from app.core.rewards.points import total_points
 from app.db.models.farm_plan import FarmPlan, MemoImage, TaskMemo
 from app.db.models.harvest import HarvestRecord
 from app.db.session import get_session
+from app.api.v1.farmplan import _image_url
+from app.schemas.farmplan import MemoImageOut, TaskMemoOut
 from app.schemas.harvest import (
+    CropJournalOut,
     HarvestCard,
     HarvestJournalResponse,
     HarvestRecordOut,
@@ -248,6 +251,60 @@ async def get_card(crop_slug: str) -> HarvestCard:
     if built is None:
         raise HTTPException(status_code=404, detail=f"작물 없음: {crop_slug}")
     return HarvestCard(**built)
+
+
+@router.get("/crop-journal/{crop_slug}", response_model=CropJournalOut)
+async def get_crop_journal(
+    crop_slug: str, session: SessionDep, device: DeviceDep
+) -> CropJournalOut:
+    """도감 '내 기록' 탭 — 이 작물을 키우며 남긴 메모·사진을 최신순으로 모은다.
+
+    한 작물을 여러 번(여러 plan) 키웠다면 전부 합친다. 사진 bytea 는 서빙 API
+    로 위임하므로 여기선 로드하지 않는다(메타·URL 만).
+    """
+    crop = matrix.get_crop(crop_slug)
+    plans = (
+        await session.scalars(
+            select(FarmPlan)
+            .where(FarmPlan.device_id == device)
+            .options(selectinload(FarmPlan.memos).selectinload(TaskMemo.images))
+        )
+    ).all()
+
+    memos: list[TaskMemoOut] = []
+    photo_count = 0
+    for plan in plans:
+        if rules.plan_slug(plan) != crop_slug:
+            continue
+        for memo in plan.memos:
+            images = [
+                MemoImageOut(
+                    id=img.id,
+                    url=_image_url(img),
+                    originalName=img.original_name,
+                    contentType=img.content_type,
+                    size=img.size_bytes,
+                )
+                for img in memo.images
+            ]
+            photo_count += len(images)
+            memos.append(
+                TaskMemoOut(
+                    id=memo.id,
+                    memoDate=memo.memo_date,
+                    content=memo.content,
+                    images=images,
+                )
+            )
+
+    memos.sort(key=lambda m: m.memoDate, reverse=True)
+    return CropJournalOut(
+        cropSlug=crop_slug,
+        cropName=crop["name"] if crop else crop_slug,
+        totalMemos=len(memos),
+        totalPhotos=photo_count,
+        memos=memos,
+    )
 
 
 @router.get("", response_model=list[HarvestRecordOut])
