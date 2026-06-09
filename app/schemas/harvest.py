@@ -6,6 +6,7 @@ from datetime import date, datetime
 
 from pydantic import BaseModel
 
+from app.schemas.farmplan import TaskMemoOut
 from app.schemas.rewards import BadgeOut
 
 
@@ -23,6 +24,8 @@ class HarvestCard(BaseModel):
     cropSlug: str
     cropName: str
     category: str = ""
+    difficulty: int | None = None
+    daysToHarvest: list[int] | None = None  # [최소, 최대] 일
     source: str  # "nongsaro:monthFd" | "ai"
     storage: str = ""
     eating: str = ""
@@ -90,3 +93,13 @@ class HarvestRecordOut(BaseModel):
     confidence: float | None
     harvestedAt: date
     createdAt: datetime
+
+
+class CropJournalOut(BaseModel):
+    """도감 카드 '내 기록' 탭 — 해당 작물을 키우며 남긴 메모·사진."""
+
+    cropSlug: str
+    cropName: str
+    totalMemos: int
+    totalPhotos: int
+    memos: list[TaskMemoOut] = []  # memo_date 내림차순
