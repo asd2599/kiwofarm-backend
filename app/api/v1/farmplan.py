@@ -336,8 +336,9 @@ async def weekly_digest(
 ) -> WeeklyDigestOut:
     """이번 주(월~일) 작업 전체 + 작업별 코칭 멘트.
 
-    ref 가 속한 주에 시작하는 작업을 날짜순으로 모으고(완료 포함), 각 작업에 그 작물
-    맞춤 멘트(알림 본문)를 LLM 으로 붙인다.
+    ref 가 속한 주(월~일)와 기간이 겹치는 작업을 날짜순으로 모으고(완료 포함), 각 작업에
+    그 작물 맞춤 멘트(알림 본문)를 LLM 으로 붙인다. 여러날에 걸친 작업은 시작 주가 아니어도
+    기간이 겹치는 모든 주에 포함된다.
     """
     plan = await _load_plan(session, plan_id, device)
     base = ref or date.today()
@@ -346,9 +347,10 @@ async def weekly_digest(
 
     in_week: list[tuple[date, FarmTask]] = []
     for t in plan.tasks:
-        d = plan.start_date + timedelta(days=t.day_offset)
-        if monday <= d <= sunday:
-            in_week.append((d, t))
+        start = plan.start_date + timedelta(days=t.day_offset)
+        end = start + timedelta(days=max(0, t.duration_days - 1))
+        if start <= sunday and end >= monday:  # 기간이 이 주와 겹침
+            in_week.append((start, t))
     in_week.sort(key=lambda x: (x[0], x[1].order))
 
     messages = await weekly_task_messages(

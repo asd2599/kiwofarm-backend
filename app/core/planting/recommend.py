@@ -32,6 +32,16 @@ def _next(month: int) -> int:
     return month % 12 + 1
 
 
+def _month_of(date_str: str | None) -> int | None:
+    """'YYYY-MM-DD' → 월(1~12). 비었거나 형식 오류면 None."""
+    if not date_str:
+        return None
+    try:
+        return datetime.strptime(date_str[:10], "%Y-%m-%d").month
+    except ValueError:
+        return None
+
+
 def _sun_match(user_hours: int, crop_min: int) -> int:
     """0~20. 충분하면 만점, 부족하면 시간당 -7 감점."""
     diff = user_hours - crop_min
@@ -99,7 +109,8 @@ def _to_actions(entries: list[dict[str, Any]]) -> list[CalendarAction]:
 def recommend(inp: PlantingInput, now_month: int | None = None) -> PlantingRecommendResponse:
     zone = region.zone_of(inp.sigungu)
     base_month = now_month or _now_month()
-    month = _next(base_month) if inp.start == "next_month" else base_month
+    # 시작 날짜를 직접 고르면 그 달 기준으로 추천. 비우면 오늘 기준.
+    month = _month_of(inp.startDate) or base_month
     nxt = _next(month)
     user_hours = SUN_HOURS_VALUE.get(inp.sun_hours, 4)
 
