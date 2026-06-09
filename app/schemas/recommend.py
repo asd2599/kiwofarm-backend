@@ -5,7 +5,6 @@ from pydantic import BaseModel, Field
 Mode = Literal["returning", "weekend"]
 AreaUnit = Literal["pyeong", "sqm", "hectare"]
 FacilityType = Literal["open_field", "vinyl_house", "smart_farm"]
-VisitFrequency = Literal["weekly_1", "weekly_2", "biweekly", "monthly"]
 CropPhase = Literal["rest", "seeding", "growing", "harvest"]
 CropColor = Literal["red", "orange", "indigo"]
 
@@ -22,7 +21,8 @@ class OnboardingInput(BaseModel):
     preferredCrops: list[str] = Field(default_factory=list)
     budgetManwon: int | None = Field(default=None, ge=0)
     facility: FacilityType | None = None
-    visitFrequency: VisitFrequency | None = None
+    # weekend 전용 — 방문 예정 요일(0=일 ~ 6=토). 주당 방문 횟수가 관리 가능 빈도.
+    visitDays: list[int] | None = None
 
 
 class CalendarMonth(BaseModel):

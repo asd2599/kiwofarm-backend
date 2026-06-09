@@ -73,7 +73,7 @@ async def attach_ai_explain(
             "방향": inp.direction,
             "일조": inp.sun_hours,
             "경험": inp.experience,
-            "관리빈도": inp.frequency,
+            "관리빈도": f"주 {len(inp.visitDays)}회 방문" if inp.visitDays else None,
             "현재월": month,
         },
         "recommendations": [_crop_context(it, month) for it in items],

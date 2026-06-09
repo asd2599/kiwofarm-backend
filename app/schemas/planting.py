@@ -9,7 +9,6 @@ from pydantic import BaseModel, Field
 Place = str  # 베란다 | 옥상 | 노지 | 실내
 SunHours = str  # <3h | 3~5h | >5h
 Experience = str  # 처음 | 1~2년 | 3년+
-StartWhen = str  # now | next_month
 
 
 class PlantingInput(BaseModel):
@@ -22,8 +21,8 @@ class PlantingInput(BaseModel):
     # 선택
     direction: str | None = Field(None, description="남향 | 동향 | 서향 | 북향")
     area_m2: float | None = Field(None, description="면적(㎡)")
-    frequency: str | None = Field(None, description="매일 | 주2~3회 | 주말만")
-    start: StartWhen = Field("now", description="now | next_month")
+    visitDays: list[int] | None = Field(None, description="방문 예정 요일(0=일 ~ 6=토)")
+    startDate: str | None = Field(None, description="재배 시작 날짜(YYYY-MM-DD). 비우면 오늘 기준")
     facility: list[str] = Field(
         default_factory=list, description="화분 | 플랜터 | 비닐터널 | 미니온실"
     )
