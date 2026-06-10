@@ -48,14 +48,25 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
 def _journal_missing(
-    verdict, entries: list[JournalEntry], crop_name: str, photo_count: int
+    verdict,
+    entries: list[JournalEntry],
+    crop_name: str,
+    photo_count: int,
+    tasks: list[dict] | None = None,
 ) -> list[str]:
     """실패한 판정 기준별로 '무엇을 더 하면 되는지' 구체 안내를 만든다.
 
-    합격 여부는 LLM 종합 판단이라 '정확히 N개 더'를 보장할 수는 없으므로,
-    부족한 항목과 현재 수치(사진 장수·기록 일수)를 함께 알려 다음 행동을 돕는다.
+    메모·사진 + 캘린더 카드 완료를 종합해, 부족한 항목과 현재 수치(사진 장수·기록
+    일수·작업 완료 현황)를 함께 알려 다음 행동을 논리적으로 돕는다.
+    합격 여부는 LLM 종합 판단이라 '정확히 N개 더'를 보장하지는 않는다.
     """
     recorded_days = sum(1 for e in entries if e.content.strip() or e.photos)
+    tasks = tasks or []
+    done_n = sum(1 for t in tasks if t.get("done"))
+    total_n = len(tasks)
+    harvest_pending = any(
+        t.get("category") == "harvest" and not t.get("done") for t in tasks
+    )
     tips: list[str] = []
     if not verdict.crop_match:
         tips.append(
@@ -68,11 +79,19 @@ def _journal_missing(
             f"{photo_count}장 — 생육 단계가 보이게 3장 이상 남겨주세요."
         )
     if not verdict.care_consistent:
-        tips.append(
-            f"🗓 꾸준한 기록이 부족해요(현재 기록 {recorded_days}일). 며칠 간격으로 "
-            "메모·사진을 더 남겨 관리한 흔적을 보여주세요."
+        msg = (
+            f"🗓 꾸준한 관리 근거가 부족해요(현재 기록 {recorded_days}일"
+            + (f", 완료한 작업 {done_n}/{total_n}건" if total_n else "")
+            + "). 며칠 간격으로 메모·사진을 남기고, 실제 한 작업은 캘린더 카드의 "
+            "'완료'로 표시해 주세요."
         )
+        tips.append(msg)
     if not verdict.has_harvest:
+        if harvest_pending:
+            tips.append(
+                "🌾 '수확' 작업이 아직 카드에서 완료되지 않았어요. 수확했다면 "
+                "캘린더에서 해당 작업의 '완료'를 눌러주세요."
+            )
         tips.append(
             "🧺 수확 정황이 분명하지 않아요. 수확물을 담거나 손에 든 사진을 "
             "1장 이상 올려주세요."
@@ -100,7 +119,8 @@ async def verify_harvest_journal(
         .options(
             selectinload(FarmPlan.memos)
             .selectinload(TaskMemo.images)
-            .undefer(MemoImage.data)
+            .undefer(MemoImage.data),
+            selectinload(FarmPlan.tasks),
         )
     )
     if plan is None:
@@ -155,15 +175,25 @@ async def verify_harvest_journal(
             detail="인증할 사진이 없습니다. 기르는 동안 캘린더에 사진을 남겨주세요.",
         )
 
+    # 캘린더 카드 완료 현황 — 메모·사진과 함께 종합 분석 근거로 넘긴다.
+    task_list = [
+        {"title": t.title, "category": t.category, "done": t.status == "done"}
+        for t in plan.tasks
+    ]
+
     # 1차 규칙(경고만) — 생육 기간 연속성
     warnings = (
         await rules.check_continuity(session, plan.id, slug, device)
     ).warnings
 
-    # 2차 멀티모달 일지 판정 — 기대 수확 소요일을 함께 넘겨 관리 연속성·조기수확 판단.
+    # 2차 멀티모달 일지 판정 — 일지(메모·사진) + 작업 완료를 종합해 판정.
     try:
         verdict = await judge_journal(
-            crop["name"], plan.start_date, entries, crop.get("days_to_harvest")
+            crop["name"],
+            plan.start_date,
+            entries,
+            crop.get("days_to_harvest"),
+            tasks=task_list,
         )
     except VerifyError as e:
         log.warning("멀티모달 일지 판정 불가: %s", e)
@@ -188,6 +218,8 @@ async def verify_harvest_journal(
             "source": "journal",
             "image_ids": image_ids,
             "memo_days": len(entries),
+            "tasks_done": sum(1 for t in task_list if t["done"]),
+            "tasks_total": len(task_list),
             "warnings": warnings,
             "demo_mode": demo,
         },
@@ -216,7 +248,9 @@ async def verify_harvest_journal(
     missing = (
         []
         if verified
-        else _journal_missing(verdict, entries, crop["name"], len(image_ids))
+        else _journal_missing(
+            verdict, entries, crop["name"], len(image_ids), task_list
+        )
     )
 
     # 데모로 통과(실제 판정은 실패)면 부정적 요약·수확량이 성공 모달과 모순되므로 비운다.

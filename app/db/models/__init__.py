@@ -13,7 +13,9 @@ from app.db.models.community import (
     PostImage,
     PostLike,
     PostShareRequest,
+    ShareBid,
 )
+from app.db.models.point import PointLedger
 from app.db.models.crop_master import (
     CropEbook,
     CropEbookIndex,
@@ -42,4 +44,6 @@ __all__ = [
     "PostComment",
     "PostLike",
     "PostShareRequest",
+    "ShareBid",
+    "PointLedger",
 ]

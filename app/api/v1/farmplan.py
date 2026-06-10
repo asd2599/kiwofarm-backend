@@ -456,9 +456,10 @@ async def update_task(
     payload: TaskStatusUpdate,
     session: SessionDep, device: DeviceDep,
 ) -> FarmPlanOut:
-    """작업 완료/지연 표시. 진행추적 ON + 지연이면 이후 작업 일정을 자동 시프트.
+    """작업 완료(done)/지연(delayed)/되돌리기(planned) 표시.
 
-    진행추적 OFF 면 상태 변경 자체를 막아(409) 정적 계획을 보존한다.
+    지연이면 대상 작업 + 이후 작업의 일정을 delayDays 만큼 자동 시프트한다.
+    (track_progress 값과 무관하게 상태 변경을 허용한다 — 캘린더 카드의 완료/지연 버튼.)
     """
     if payload.status not in _VALID_STATUS:
         raise HTTPException(status_code=422, detail="status 는 planned|done|delayed")

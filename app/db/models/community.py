@@ -13,6 +13,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from sqlalchemy import (
+    Boolean,
     DateTime,
     ForeignKey,
     Integer,
@@ -45,9 +46,19 @@ class CommunityPost(Base):
     )
     title: Mapped[str | None] = mapped_column(String(255), nullable=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    # 나눔 진행 상태 — 'open'=신청 가능, 'closed'=마감
+    # 나눔 진행 상태 — 'open'=경매 진행, 'closed'=마감/정산됨
     share_status: Mapped[str] = mapped_column(
         String(16), nullable=False, server_default="open"
+    )
+    # 나눔 경매 — 마감시각/정산여부/낙찰자 device. show 글은 모두 null/false.
+    auction_deadline: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    auction_settled: Mapped[bool] = mapped_column(
+        Boolean, server_default="false", default=False, nullable=False
+    )
+    auction_winner_device: Mapped[str | None] = mapped_column(
+        String(64), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
@@ -76,6 +87,11 @@ class CommunityPost(Base):
         back_populates="post",
         cascade="all, delete-orphan",
         order_by="PostShareRequest.id",
+    )
+    bids: Mapped[list[ShareBid]] = relationship(
+        back_populates="post",
+        cascade="all, delete-orphan",
+        order_by="ShareBid.amount.desc()",
     )
 
 
@@ -159,3 +175,22 @@ class PostShareRequest(Base):
     )
 
     post: Mapped[CommunityPost] = relationship(back_populates="share_requests")
+
+
+class ShareBid(Base):
+    """나눔 경매 입찰 — 나눔글(post_type='share')에 활동포인트로 입찰."""
+
+    __tablename__ = "share_bid"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    post_id: Mapped[int] = mapped_column(
+        ForeignKey("community_post.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    bidder_device: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    bidder_name: Mapped[str] = mapped_column(String(40), nullable=False)
+    amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    post: Mapped[CommunityPost] = relationship(back_populates="bids")
