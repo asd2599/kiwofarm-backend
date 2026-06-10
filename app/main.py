@@ -16,9 +16,7 @@ from app.api.v1 import (
     garden,
     harvest,
     planting,
-    recommend,
     rewards,
-    twin,
 )
 from app.config import settings
 from app.core.storage import UPLOAD_URL_PREFIX
@@ -42,19 +40,26 @@ async def _warm_crop_catalog() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    # 로컬 SQLite 테이블 생성(없을 때만). 임베딩은 DB 밖(로컬 파일 스토어)에 있다.
-    await init_db()
-    # 부팅을 막지 않도록 워밍은 백그라운드 태스크로.
-    asyncio.create_task(_warm_crop_catalog())
+    # 로컬 SQLite 만 create_all 로 테이블 생성. 운영(Postgres)은 alembic 이 스키마를
+    # 관리하므로 create_all 을 돌리면 alembic_version 미스탬프 등 footgun 이 된다.
+    if settings.database_url.startswith("sqlite"):
+        await init_db()
+    # 부팅을 막지 않도록 워밍은 백그라운드 태스크로. 참조를 보관해 GC 로 중도
+    # 취소되지 않게 한다(asyncio.create_task 권장 패턴).
+    app.state.warm_task = asyncio.create_task(_warm_crop_catalog())
     yield
 
 
 app = FastAPI(title="KiwoFarm API", version="0.1.0", lifespan=lifespan)
 
+# allow_credentials=True 와 와일드카드("*") origin 은 브라우저가 함께 못 쓴다
+# (credentialed 요청이 조용히 실패). CORS_ORIGINS 에 "*" 가 섞이면 credentials 를
+# 자동으로 끈다 — 명시 origin 목록일 때만 쿠키/인증 헤더 허용.
+_cors_origins = settings.cors_origins_list
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
-    allow_credentials=True,
+    allow_origins=_cors_origins,
+    allow_credentials="*" not in _cors_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -65,8 +70,6 @@ _upload_root.mkdir(parents=True, exist_ok=True)
 app.mount(UPLOAD_URL_PREFIX, StaticFiles(directory=_upload_root), name="uploads")
 
 app.include_router(auth.router, prefix="/api/v1")
-app.include_router(recommend.router, prefix="/api/v1")
-app.include_router(twin.router, prefix="/api/v1")
 app.include_router(crops.router, prefix="/api/v1")
 app.include_router(farmplan.router, prefix="/api/v1")
 app.include_router(planting.router, prefix="/api/v1")

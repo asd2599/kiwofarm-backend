@@ -16,6 +16,7 @@ from PIL import ExifTags, Image
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.clock import kst_now, kst_today
 from app.core.planting import matrix
 from app.data import crop_ids
 from app.db.models.farm_plan import FarmPlan
@@ -49,7 +50,8 @@ def check_exif(photo_bytes: bytes) -> RuleResult:
             r.warnings.append("사진에 촬영 시각 정보가 없습니다")
             return r
         r.taken_at = datetime.strptime(str(raw)[:19], "%Y:%m:%d %H:%M:%S")
-        now = datetime.now()
+        # EXIF 촬영시각은 카메라 로컬(한국 사용자=KST, naive)이므로 KST naive 와 비교.
+        now = kst_now()
         if r.taken_at > now + timedelta(hours=1):
             r.warnings.append("촬영 시각이 미래로 기록되어 있습니다")
         elif now - r.taken_at > timedelta(days=MAX_PHOTO_AGE_DAYS):
@@ -78,15 +80,23 @@ def plan_slug(plan: FarmPlan) -> str | None:
 
 
 async def check_continuity(
-    session: AsyncSession, plan_id: int | None, crop_slug: str
+    session: AsyncSession, plan_id: int | None, crop_slug: str, device_id: str
 ) -> RuleResult:
-    """재배 계획 연속성: 같은 작물 계획이 있고 생육 기간이 충분히 지났는지."""
+    """재배 계획 연속성: 같은 작물 계획이 있고 생육 기간이 충분히 지났는지.
+
+    plan_id 는 반드시 호출자(device_id) 소유 계획이어야 한다 — 남의 계획 id 를
+    넣어 작물명을 엿보거나 기록을 교차 연결하는 것을 막는다.
+    """
     r = RuleResult()
     if plan_id is None:
         r.warnings.append("연결된 재배 계획이 없습니다 (계획 없이 인증)")
         return r
     plan = (
-        await session.execute(select(FarmPlan).where(FarmPlan.id == plan_id))
+        await session.execute(
+            select(FarmPlan).where(
+                FarmPlan.id == plan_id, FarmPlan.device_id == device_id
+            )
+        )
     ).scalar_one_or_none()
     if plan is None:
         r.warnings.append(f"재배 계획 #{plan_id}을 찾을 수 없습니다")
@@ -98,7 +108,7 @@ async def check_continuity(
         return r
     r.plan_matched = True
     crop = matrix.get_crop(crop_slug)
-    days = (datetime.now().date() - plan.start_date).days
+    days = (kst_today() - plan.start_date).days
     dth = (crop or {}).get("days_to_harvest") or []
     if dth:
         min_days = int(dth[0] * GROWTH_TOLERANCE)

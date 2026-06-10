@@ -12,6 +12,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.clock import kst_today
 from app.db.models.farm_plan import FarmPlan, TaskMemo
 from app.db.models.harvest import HarvestRecord
 
@@ -27,7 +28,8 @@ async def _active_days(session: AsyncSession, device_id: str) -> set[date]:
     harvest_days = (
         await session.execute(
             select(HarvestRecord.harvested_at).where(
-                HarvestRecord.device_id == device_id
+                HarvestRecord.device_id == device_id,
+                HarvestRecord.verified.is_(True),
             )
         )
     ).scalars().all()
@@ -55,7 +57,7 @@ def _streaks(days: set[date], today: date) -> tuple[int, int]:
 
 async def build_streak(session: AsyncSession, device_id: str) -> dict[str, Any]:
     days = await _active_days(session, device_id)
-    today = date.today()
+    today = kst_today()
     current, best = _streaks(days, today)
     return {
         "current": current,
