@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     JSON,
@@ -25,6 +26,9 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+if TYPE_CHECKING:
+    from app.db.models.harvest import HarvestRecord
 
 
 class FarmPlan(Base):
@@ -69,6 +73,11 @@ class FarmPlan(Base):
         back_populates="plan",
         cascade="all, delete-orphan",
         order_by="TaskMemo.memo_date",
+    )
+    # 이 계획에 귀속된 수확 인증 기록(읽기 전용 — plan_id FK 는 SET NULL).
+    # 완료 판정(verified 기록 존재 여부)에 쓴다.
+    harvest_records: Mapped[list["HarvestRecord"]] = relationship(
+        "HarvestRecord", viewonly=True
     )
 
 

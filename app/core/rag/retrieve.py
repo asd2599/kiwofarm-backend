@@ -17,6 +17,43 @@ def _unit(v: np.ndarray) -> np.ndarray:
     return v / (np.linalg.norm(v) + 1e-8)
 
 
+# 전역 인덱스 캐시 — (청크, 정규화 벡터행렬, 청크별 kind). 임베딩은 런타임 불변 → 1회 로드.
+_GLOBAL: tuple[list[str], np.ndarray, list[str]] | None = None
+
+
+def _global_index() -> tuple[list[str], np.ndarray, list[str]]:
+    global _GLOBAL
+    if _GLOBAL is None:
+        chunks, vectors, _keys, kinds = store.load_global()
+        if len(chunks) == 0:
+            _GLOBAL = ([], np.empty((0, 0), dtype=np.float32), [])
+        else:
+            v_norm = vectors / (np.linalg.norm(vectors, axis=1, keepdims=True) + 1e-8)
+            _GLOBAL = (chunks, v_norm.astype(np.float32), kinds)
+    return _GLOBAL
+
+
+async def retrieve_global(
+    query: str, k: int = 8, with_meta: bool = False
+) -> list[str] | list[tuple[str, str]]:
+    """전 작물 임베딩에서 query 와 가장 유사한 청크 상위 k개.
+
+    특정 작물이 잡히지 않은 일반 질문에, 우리가 가진 모든 작물 지식으로 답하기 위함.
+    with_meta=True 면 (청크, kind) 튜플 목록을 반환(출처 표기용).
+    """
+    chunks, v_norm, kinds = _global_index()
+    if not chunks:
+        return []
+    q = _unit(np.asarray(await embed_query(query), dtype=np.float32))
+    sims = v_norm @ q
+    k = min(k, len(chunks))
+    top = np.argpartition(-sims, k - 1)[:k]
+    top = top[np.argsort(-sims[top])]
+    if with_meta:
+        return [(chunks[i], kinds[i]) for i in top]
+    return [chunks[i] for i in top]
+
+
 async def retrieve(crop_key: str, query: str, k: int = 6) -> list[str]:
     """query 와 코사인 유사도가 높은 청크 본문 상위 k개(전 kind 동일 가중)."""
     chunks, vectors = store.load_all(crop_key)
@@ -66,11 +103,13 @@ async def retrieve_boosted(
     query: str,
     k: int = 6,
     boost: dict[str, float] | None = None,
-) -> list[str]:
+    with_meta: bool = False,
+) -> list[str] | list[tuple[str, str]]:
     """kind 별 가중치를 더해 검색. boost={'monthtech':0.08} 면 그 kind 점수에 +0.08.
 
     이달의 농업기술(monthtech, 작물특화) 을 주간 회보(weekfarm, 다작물)보다 우선시키는
     추천 컨텍스트용. 데이터 없으면 빈 리스트.
+    with_meta=True 면 (청크, kind) 튜플 목록을 반환(출처 표기용).
     """
     boost = boost or {}
     groups = store.load_grouped(crop_key)
@@ -78,12 +117,15 @@ async def retrieve_boosted(
         return []
 
     q = _unit(np.asarray(await embed_query(query), dtype=np.float32))
-    scored: list[tuple[float, str]] = []
+    scored: list[tuple[float, str, str]] = []
     for kind, chunks, vecs in groups:
         v_norm = vecs / (np.linalg.norm(vecs, axis=1, keepdims=True) + 1e-8)
         sims = v_norm @ q
         b = boost.get(kind, 0.0)
-        scored.extend((float(sims[i]) + b, c) for i, c in enumerate(chunks))
+        scored.extend((float(sims[i]) + b, c, kind) for i, c in enumerate(chunks))
 
     scored.sort(key=lambda x: -x[0])
-    return [c for _, c in scored[:k]]
+    top = scored[:k]
+    if with_meta:
+        return [(c, kind) for _, c, kind in top]
+    return [c for _, c, _ in top]

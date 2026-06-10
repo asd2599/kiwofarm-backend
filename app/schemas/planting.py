@@ -123,3 +123,4 @@ class ChatResponse(BaseModel):
     answer: str
     chips: list[str]  # 다음 추천 칩(부록 E)
     sources: list[ChatSource]  # 답변 근거 작물
+    dataSources: list[str] = []  # 답변 근거 농사로 데이터셋(출처 표기)
