@@ -83,6 +83,7 @@ class FarmPlanOut(BaseModel):
     cropItemCode: str
     cropKindCode: str
     cropName: str
+    cropSlug: str | None = None  # 도감 slug(40종) — 도감 딥링크/매칭용.
     region: str
     province: str | None = None
     area: float
@@ -90,6 +91,8 @@ class FarmPlanOut(BaseModel):
     visitFrequency: str | None = None
     visitDays: list[int] | None = None
     trackProgress: bool
+    # 검증된 수확 인증 기록이 하나라도 있으면 true → 캘린더에서 '완료'로 분류.
+    harvested: bool = False
     tasks: list[FarmTaskOut]
     memos: list[TaskMemoOut]
 

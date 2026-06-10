@@ -100,6 +100,44 @@ def load_grouped(crop_key: str) -> list[tuple[str, list[str], np.ndarray]]:
     return out
 
 
+def load_global() -> tuple[list[str], np.ndarray, list[str], list[str]]:
+    """모든 작물의 임베딩을 하나로 합쳐 (청크, 벡터행렬, 청크별 crop_key, 청크별 kind) 반환.
+
+    챗봇이 특정 작물이 잡히지 않은 질문에 전 작물 지식으로 답하는 전역 검색용.
+    KINDS(챗봇 대상 kind)만 모으므로 카드 전용 monthfd 등은 제외된다. 손상 파일은 건너뜀.
+    규모가 작아(전체 수천 청크) 메모리에 올려도 무방 — 호출자가 캐시한다.
+    """
+    chunks_all: list[str] = []
+    mats: list[np.ndarray] = []
+    keys: list[str] = []
+    kinds_all: list[str] = []
+    if not EMBED_DIR.exists():
+        return [], np.empty((0, 0), dtype=np.float32), [], []
+    for kind in KINDS:
+        suffix = f".{kind}.npy"
+        for vp in sorted(EMBED_DIR.glob(f"*{suffix}")):
+            key = vp.name[: -len(suffix)]
+            mp = EMBED_DIR / f"{key}.{kind}.json"
+            if not mp.exists():
+                continue
+            try:
+                vecs = np.load(vp)
+                meta = json.loads(mp.read_text(encoding="utf-8"))
+            except (OSError, ValueError, json.JSONDecodeError) as e:
+                log.warning("global embed load 실패 %s: %s", vp.name, e)
+                continue
+            chunks = meta.get("chunks") or []
+            if len(chunks) != len(vecs):
+                continue
+            chunks_all.extend(chunks)
+            mats.append(vecs)
+            keys.extend([key] * len(chunks))
+            kinds_all.extend([kind] * len(chunks))
+    if not mats:
+        return [], np.empty((0, 0), dtype=np.float32), [], []
+    return chunks_all, np.vstack(mats), keys, kinds_all
+
+
 def load_all(crop_key: str) -> tuple[list[str], np.ndarray]:
     """작물의 모든 kind 청크를 합쳐 (청크 리스트, 벡터 행렬) 반환. 없으면 ([], (0,0))."""
     groups = load_grouped(crop_key)

@@ -84,6 +84,8 @@ class HarvestJournalResponse(BaseModel):
     newBadges: list[BadgeOut] = []  # 이번 인증으로 새로 달성한 뱃지
     pointsTotal: int = 0  # 인증 반영 후 누적 점수
     message: str = ""
+    # 실패 시 부족한 점·다음 행동 안내(통과면 빈 리스트).
+    missing: list[str] = []
 
 
 class HarvestRecordOut(BaseModel):

@@ -21,7 +21,9 @@ from app.core.farmplan.coach import weekly_task_messages
 from app.core.farmplan.generator import _snap_to_visit_days, generate_plan
 from app.core.rewards.points import total_points
 from app.core.storage import delete_file, file_url, read_image
+from app.core.harvest import rules
 from app.db.models.farm_plan import FarmPlan, FarmTask, MemoImage, TaskMemo
+from app.db.models.harvest import HarvestRecord
 from app.db.session import async_session_factory, get_session
 from app.schemas.farmplan import (
     AlertsOut,
@@ -110,6 +112,8 @@ def _plan_out(plan: FarmPlan) -> FarmPlanOut:
         cropItemCode=plan.crop_item_code,
         cropKindCode=plan.crop_kind_code,
         cropName=plan.crop_name,
+        # 도감 slug(40종) — 딥링크/도감 매칭용. 카탈로그 밖 작물이면 None.
+        cropSlug=rules.plan_slug(plan),
         region=plan.region,
         province=plan.province,
         area=plan.area,
@@ -117,6 +121,7 @@ def _plan_out(plan: FarmPlan) -> FarmPlanOut:
         visitFrequency=plan.visit_frequency,
         visitDays=plan.visit_days,
         trackProgress=plan.track_progress,
+        harvested=any(r.verified for r in plan.harvest_records),
         tasks=[_task_out(t, plan.start_date) for t in plan.tasks],
         memos=[_memo_out(m) for m in plan.memos],
     )
@@ -153,6 +158,7 @@ async def _load_plan(session: AsyncSession, plan_id: int, device_id: str) -> Far
         .options(
             selectinload(FarmPlan.tasks),
             selectinload(FarmPlan.memos).selectinload(TaskMemo.images),
+            selectinload(FarmPlan.harvest_records),
         )
         # 같은 세션에서 add 후 재조회 시, 이미 로드된 인스턴스의 컬렉션을
         # 새 쿼리 결과로 덮어쓴다(신규 메모/사진이 응답에 빠지는 문제 방지).

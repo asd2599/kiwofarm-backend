@@ -47,9 +47,10 @@ _SYS = (
 )
 
 _MAX_CROPS = 3  # 한 번에 컨텍스트로 넣을 작물 수
-_RAG_K = 3
-_COMMON_K = 2
-_MAX_CTX_CHARS = 3000
+_RAG_K = 6  # 작물별 회수 청크 수(깊이) — 근거를 두껍게.
+_COMMON_K = 4  # 공통(_common) 회수 청크 수.
+_GLOBAL_K = 8  # 작물이 특정되지 않은 질문에 전 작물 임베딩에서 회수할 청크 수.
+_MAX_CTX_CHARS = 4500  # 깊어진 회수를 담도록 컨텍스트 상한도 상향.
 
 
 def _get_client() -> AsyncOpenAI | None:
@@ -69,20 +70,15 @@ def _last_user(messages: list[ChatMessage]) -> str:
 
 
 def detect_crops(text: str, context: dict | None) -> list[str]:
-    """문장에서 작물 슬러그 추출. 컨텍스트 추천작물을 우선 포함.
+    """문장에서 작물 슬러그 추출. 질문에 '명시한' 작물을 추천 맥락보다 우선한다.
 
     긴 이름 우선(방울토마토 > 토마토)으로 부분일치 스캔. 별칭(crop_ids.NAME_ALIAS) 포함.
+    명시 작물을 먼저 둬야 slugs[:_MAX_CROPS] 로 자를 때 사용자가 지금 물어본 작물이
+    추천작물에 밀려 빠지지 않는다(예: 추천 3개 후 '바질' 질문 → 바질 유지).
     """
     slugs: list[str] = []
 
-    # 1) 경로 A 컨텍스트의 추천 작물 우선
-    if context:
-        for r in context.get("recommendations", []) or []:
-            cid = r.get("crop_id") if isinstance(r, dict) else None
-            if cid and matrix.get_crop(cid) and cid not in slugs:
-                slugs.append(cid)
-
-    # 2) 본문에서 작물명 스캔
+    # 1) 본문에서 명시한 작물 먼저(현재 질문 의도 최우선)
     name_to_slug: dict[str, str] = {c["name"]: c["id"] for c in matrix.all_crops()}
     for alias, real in crop_ids.NAME_ALIAS.items():
         rec = crop_ids.find_by_name(real)
@@ -91,6 +87,13 @@ def detect_crops(text: str, context: dict | None) -> list[str]:
     for nm in sorted(name_to_slug, key=len, reverse=True):
         if nm in text and name_to_slug[nm] not in slugs:
             slugs.append(name_to_slug[nm])
+
+    # 2) 경로 A 컨텍스트의 추천 작물 보강(명시 작물 다음)
+    if context:
+        for r in context.get("recommendations", []) or []:
+            cid = r.get("crop_id") if isinstance(r, dict) else None
+            if cid and matrix.get_crop(cid) and cid not in slugs:
+                slugs.append(cid)
     return slugs
 
 
@@ -112,16 +115,38 @@ def _crop_card(slug: str) -> str | None:
     )
 
 
-async def _rag_context(slugs: list[str], query: str) -> str:
-    chunks: list[str] = []
-    for slug in slugs[:_MAX_CROPS]:
-        got = await rag.retrieve_boosted(slug, query, k=_RAG_K, boost={"garden": 0.1})
-        for g in got:
-            chunks.append(g)
-    common = await rag.retrieve("_common", query, k=_COMMON_K)
-    chunks.extend(common)
-    text = "\n".join(f"· {c.strip()}" for c in chunks if c.strip())
-    return text[:_MAX_CTX_CHARS]
+# 임베딩 kind → 사용자에게 보여줄 농사로 데이터셋 이름(출처 표기용).
+_DATASET_LABEL = {
+    "garden": "농사로 텃밭가꾸기",
+    "cultivation": "농사로 작물재배정보",
+    "monthtech": "이달의 농업기술",
+    "ncpms": "병해충정보(NCPMS)",
+    "general": "표준 재배지식",
+    "_common": "텃밭 공통 가이드",
+}
+_DATASET_ORDER = ("garden", "cultivation", "monthtech", "ncpms", "general", "_common")
+
+
+async def _rag_context(slugs: list[str], query: str) -> tuple[str, list[str]]:
+    """RAG 근거 텍스트 + 실제 사용된 농사로 데이터셋 라벨(출처) 반환."""
+    pairs: list[tuple[str, str]] = []  # (청크, kind)
+    if slugs:
+        # 특정 작물이 잡히면 그 작물 위주 + 공통 가이드.
+        for slug in slugs[:_MAX_CROPS]:
+            pairs.extend(
+                await rag.retrieve_boosted(
+                    slug, query, k=_RAG_K, boost={"garden": 0.1}, with_meta=True
+                )
+            )
+        for c in await rag.retrieve("_common", query, k=_COMMON_K):
+            pairs.append((c, "_common"))
+    else:
+        # 작물이 특정되지 않으면 전 작물 임베딩에서 전역 검색(모든 작물정보 활용).
+        pairs.extend(await rag.retrieve_global(query, k=_GLOBAL_K, with_meta=True))
+    text = "\n".join(f"· {c.strip()}" for c, _ in pairs if c.strip())[:_MAX_CTX_CHARS]
+    kinds = {k for _, k in pairs}
+    labels = [_DATASET_LABEL[k] for k in _DATASET_ORDER if k in kinds]
+    return text, labels
 
 
 def _chips(context: dict | None, slugs: list[str]) -> list[str]:
@@ -148,7 +173,8 @@ async def answer(messages: list[ChatMessage], context: dict | None) -> ChatRespo
     cards = (
         "\n".join(filter(None, (_crop_card(s) for s in slugs[:_MAX_CROPS]))) or "(특정 작물 미지정)"
     )
-    rag_ctx = await _rag_context(slugs, query) if slugs else ""
+    # 작물이 잡히면 그 작물 위주, 안 잡히면 전 작물 임베딩에서 전역 검색(_rag_context 내부 처리).
+    rag_ctx, data_sources = await _rag_context(slugs, query)
     reco_ctx = ""
     if context and context.get("recommendations"):
         names = [
@@ -182,4 +208,6 @@ async def answer(messages: list[ChatMessage], context: dict | None) -> ChatRespo
 
     if not text:
         text = "죄송해요, 지금 답변을 만들지 못했어요. 잠시 후 다시 시도해 주세요."
-    return ChatResponse(answer=text, chips=chips, sources=sources)
+    return ChatResponse(
+        answer=text, chips=chips, sources=sources, dataSources=data_sources
+    )
