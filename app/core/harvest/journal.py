@@ -33,22 +33,25 @@ SYSTEM = """\
 - crop_match: 사진 속 작물이 지정 작물과 일치하는가
 - growth_consistent: 사진들이 같은 개체의 파종→생육→수확 흐름으로 자연스럽게
   이어지는가. 생육 단계가 통째로 비거나, 서로 다른 작물·장소가 섞이면 false
-- care_consistent: 일지 기록 간격이 작물을 실제로 돌본 수준인가. 파종 직후
-  장기간(예: 2주 이상) 무기록이거나, 관리 흔적 없이 띄엄띄엄한 기록뿐이면
-  방치로 보아 false (그 사이 시들거나 죽었을 가능성이 높음). 아래에 제공하는
-  '경과일·기대 수확일·기록 공백' 수치를 핵심 근거로 삼으세요
-- has_harvest: 실제 수확 정황이 분명한가. 수확물을 손에 들거나 담은 사진, 또는
-  메모의 명확한 수확 기록이 있어야 true. 아직 기르는 중이거나 수확 증거가
-  없는데 수확을 주장하면 false
+- care_consistent: 작물을 실제로 돌본 수준인가. 일지 기록 간격 + '작업 진행(캘린더
+  카드 완료)'을 함께 본다. 핵심 단계(파종·솎아내기·웃거름·병해충 등) 작업을 꾸준히
+  완료했으면 관리 신호. 파종 직후 장기간(예: 2주 이상) 무기록이고 완료한 작업도
+  거의 없으면 방치로 보아 false. '경과일·기대 수확일·기록 공백' 수치와 작업 완료
+  현황을 핵심 근거로 삼으세요
+- has_harvest: 실제 수확 정황이 분명한가. (a) 수확물을 손에 들거나 담은 사진,
+  (b) 메모의 명확한 수확 기록, (c) '수확(harvest)' 작업 카드 완료 — 셋 중 하나라도
+  분명하면 true. 아직 기르는 중이거나 셋 다 없는데 수확을 주장하면 false
 - fake_suspect: 모니터/인쇄물 재촬영, 스톡사진, 무관한 사진 짜깁기 등 직접
   재배가 아닌 정황이 보이면 true
 - quantity: 눈으로 추정한 수확량 (예: "상추 약 10장", "방울토마토 한 줌")
 - confidence: 전체 판정 확신도 0.0~1.0
-- reason: 사용자에게 보여줄 한 문장 (친근한 존댓말). 통과 못 하면 무엇이
-  부족한지(예: 관리 공백·수확 증거 부족) 구체적으로 알려주세요
+- reason: 사용자에게 보여줄 한 문장 (친근한 존댓말). 통과 못 하면 무엇이 부족한지를
+  메모·사진·작업완료를 종합해 구체적으로 알려주세요(예: "수확 작업을 아직 카드에서
+  완료하지 않았고 수확물 사진도 없어요")
 - summary: 재배 여정 한두 문장 요약 (도감 기록용, 존댓말)
 
-주의: 기대 수확일보다 한참 이른 수확 주장, 큰 무기록 공백은 강한 거짓 신호입니다."""
+주의: 기대 수확일보다 한참 이른 수확 주장, 큰 무기록 공백, 핵심 작업 미완료는 강한
+거짓/미수확 신호입니다. 일지·사진·작업 완료를 종합해 판정하세요."""
 
 
 @dataclass(frozen=True)
@@ -123,13 +126,34 @@ def _pick_photos(
     return head + mid + tail
 
 
+def _task_progress(tasks: list[dict] | None) -> str:
+    """캘린더 카드 완료 현황 요약 — care_consistent·has_harvest 판단의 객관 근거.
+
+    tasks 항목: {"title": str, "category": str, "done": bool}.
+    """
+    if not tasks:
+        return "작업 정보 없음"
+    done = [t for t in tasks if t.get("done")]
+    pending = [t for t in tasks if not t.get("done")]
+    has_harvest_task = any(t.get("category") == "harvest" for t in tasks)
+    harvest_done = any(t.get("category") == "harvest" and t.get("done") for t in tasks)
+    hv = ("완료" if harvest_done else "미완료") if has_harvest_task else "수확 작업 없음"
+    done_txt = ", ".join(t["title"] for t in done) or "없음"
+    pending_txt = ", ".join(t["title"] for t in pending) or "없음"
+    return (
+        f"완료 {len(done)}/{len(tasks)}건 · 수확 작업 {hv} / "
+        f"완료=[{done_txt}] / 미완료=[{pending_txt}]"
+    )
+
+
 async def judge_journal(
     crop_name: str,
     start_date: date,
     entries: list[JournalEntry],
     days_to_harvest: list[int] | None = None,
+    tasks: list[dict] | None = None,
 ) -> JournalVerdict:
-    """일지 전체 → 판정. 사진이 1장도 없거나 호출 실패 시 VerifyError."""
+    """일지(메모·사진)+작업 완료 → 종합 판정. 사진이 1장도 없거나 호출 실패 시 VerifyError."""
     photos: list[tuple[date, bytes, str]] = [
         (e.memo_date, b, m) for e in entries for (b, m) in e.photos
     ]
@@ -145,6 +169,7 @@ async def judge_journal(
         for e in sorted(entries, key=lambda e: e.memo_date)
     )
     cadence = _cadence_facts(start_date, entries)
+    task_progress = _task_progress(tasks)
     if days_to_harvest:
         lo = days_to_harvest[0]
         hi = days_to_harvest[-1]
@@ -159,9 +184,10 @@ async def judge_journal(
                 f"재배 시작일: {start_date.isoformat()}\n"
                 f"이 작물의 일반적 수확 소요: {expected}\n"
                 f"기록 간격 분석: {cadence}\n"
+                f"작업 진행(캘린더 카드 완료): {task_progress}\n"
                 f"재배 일지:\n{timeline}\n\n"
                 f"아래는 일지 사진 {len(picked)}장(시간순, 전체 {len(photos)}장 중)"
-                "입니다. 일지·기록 간격·사진을 종합해 판정해 JSON 으로 답하세요. 형식: "
+                "입니다. 일지·기록 간격·작업 완료·사진을 종합해 판정해 JSON 으로 답하세요. 형식: "
                 '{"crop_match": bool, "growth_consistent": bool, "care_consistent": bool, '
                 '"has_harvest": bool, "fake_suspect": bool, "quantity": str, '
                 '"confidence": 0.0-1.0, "reason": str, "summary": str}'

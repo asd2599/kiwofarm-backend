@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import DeviceDep
 from app.core.auth import hash_password, issue_token, verify_password
 from app.db.models.user import AppUser
 from app.db.session import get_session
@@ -79,4 +80,33 @@ async def login(payload: Credentials, session: SessionDep) -> AuthOut:
     )
     if user is None or not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="아이디 또는 비밀번호가 올바르지 않습니다.")
+    return _auth_out(user)
+
+
+class ProfileUpdate(BaseModel):
+    nickname: str = Field(min_length=1, max_length=40)
+    address: str | None = Field(default=None, max_length=60)
+
+
+@router.patch("/me", response_model=AuthOut)
+async def update_profile(
+    payload: ProfileUpdate, session: SessionDep, device: DeviceDep
+) -> AuthOut:
+    """로그인 사용자의 닉네임·주소 수정. (게스트는 401)"""
+    if not device.startswith("user:"):
+        raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
+    try:
+        user_id = int(device.split(":", 1)[1])
+    except (ValueError, IndexError):
+        raise HTTPException(status_code=401, detail="로그인이 필요합니다.") from None
+    user = await session.get(AppUser, user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+    nickname = payload.nickname.strip()
+    if not nickname:
+        raise HTTPException(status_code=422, detail="닉네임을 입력해 주세요.")
+    user.nickname = nickname
+    user.address_sigungu = (payload.address or "").strip() or None
+    await session.commit()
+    await session.refresh(user)
     return _auth_out(user)

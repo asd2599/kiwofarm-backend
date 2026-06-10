@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.farm_plan import FarmPlan, MemoImage, TaskMemo
 from app.db.models.harvest import HarvestRecord
+from app.db.models.point import PointLedger
 
 POINTS_MEMO = 5  # 날짜별 메모(텍스트) 1건
 POINTS_PHOTO = 10  # 일지 사진 1장
@@ -47,12 +48,22 @@ async def build_points(session: AsyncSession, device_id: str) -> dict[str, Any]:
             )
         )
     ) or 0
+    # 단일 포인트 풀 — 나눔 경매 정산(낙찰 −/판매 +)을 활동점수에 합산해
+    # 도감·순위 점수에도 소모/획득이 반영되게 한다(point_ledger 합계).
+    ledger = (
+        await session.scalar(
+            select(func.coalesce(func.sum(PointLedger.amount), 0)).where(
+                PointLedger.device_id == device_id
+            )
+        )
+    ) or 0
+    activity = (
+        memo_count * POINTS_MEMO
+        + photo_count * POINTS_PHOTO
+        + harvest_count * POINTS_HARVEST
+    )
     return {
-        "total": (
-            memo_count * POINTS_MEMO
-            + photo_count * POINTS_PHOTO
-            + harvest_count * POINTS_HARVEST
-        ),
+        "total": activity + int(ledger),
         "memoCount": memo_count,
         "photoCount": photo_count,
         "harvestCount": harvest_count,

@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Response, UploadFile
@@ -15,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, undefer
 
 from app.api.deps import DeviceDep
+from app.core.rewards import wallet
 from app.core.storage import read_image
 from app.db.models.community import (
     CommunityPost,
@@ -22,10 +24,15 @@ from app.db.models.community import (
     PostImage,
     PostLike,
     PostShareRequest,
+    ShareBid,
 )
 from app.db.models.farm_plan import FarmPlan, MemoImage, TaskMemo
 from app.db.session import get_session
 from app.schemas.community import (
+    AuctionOut,
+    AuctionSummaryOut,
+    BidIn,
+    BidOut,
     CommentIn,
     CommentOut,
     LikeToggleOut,
@@ -35,6 +42,7 @@ from app.schemas.community import (
     ShareRequestIn,
     ShareRequestOut,
     ShareRequestPatchIn,
+    WalletOut,
 )
 
 router = APIRouter(prefix="/community", tags=["community"])
@@ -42,6 +50,63 @@ router = APIRouter(prefix="/community", tags=["community"])
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 PREVIEW_LEN = 140
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _passed(dl: datetime | None) -> bool:
+    """마감 지났는지 — DB가 naive 로 돌려줘도(예: sqlite) UTC 로 보아 안전 비교."""
+    if dl is None:
+        return False
+    if dl.tzinfo is None:
+        dl = dl.replace(tzinfo=timezone.utc)
+    return dl <= _now()
+
+
+def _auction_summary(post: CommunityPost) -> AuctionSummaryOut | None:
+    """목록용 경매 요약(post.bids 로드 필요)."""
+    if post.post_type != "share" or post.auction_deadline is None:
+        return None
+    top = max((b.amount for b in post.bids), default=None)
+    closed = post.auction_settled or _passed(post.auction_deadline)
+    return AuctionSummaryOut(
+        deadline=post.auction_deadline,
+        settled=post.auction_settled,
+        closed=closed,
+        topBid=top,
+        bidCount=len(post.bids),
+    )
+
+
+async def _auction_detail(
+    session: AsyncSession, post: CommunityPost, device: str
+) -> AuctionOut | None:
+    """상세용 경매 정보(post.bids 로드 필요)."""
+    if post.post_type != "share" or post.auction_deadline is None:
+        return None
+    bids = sorted(post.bids, key=lambda b: (-b.amount, b.id))
+    top = bids[0] if bids else None
+    my_bid = max((b.amount for b in bids if b.bidder_device == device), default=None)
+    closed = post.auction_settled or _passed(post.auction_deadline)
+    avail = (
+        await wallet.available(session, device, exclude_post=post.id)
+        if device.startswith("user:")
+        else 0
+    )
+    return AuctionOut(
+        deadline=post.auction_deadline,
+        settled=post.auction_settled,
+        closed=closed,
+        topBid=top.amount if top else None,
+        topBidderName=top.bidder_name if top else None,
+        bidCount=len(bids),
+        myBid=my_bid,
+        iAmSeller=post.device_id == device,
+        winnerIsMe=post.auction_winner_device == device,
+        myAvailable=avail,
+    )
 
 
 def _image_url(img: PostImage) -> str:
@@ -88,17 +153,19 @@ async def _build_detail(session: AsyncSession, post_id: int, device: str) -> Pos
             selectinload(CommunityPost.comments),
             selectinload(CommunityPost.likes),
             selectinload(CommunityPost.share_requests),
+            selectinload(CommunityPost.bids),
         )
     )
     if post is None:
         raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다.")
     is_mine = post.device_id == device
-    # 나눔 신청: 작성자에겐 전체, 그 외엔 본인 신청만 노출.
+    # 나눔 신청(레거시): 작성자에겐 전체, 그 외엔 본인 신청만 노출.
     reqs = (
         post.share_requests
         if is_mine
         else [s for s in post.share_requests if s.requester_device_id == device]
     )
+    bids_sorted = sorted(post.bids, key=lambda b: (-b.amount, b.id))
     return PostDetailOut(
         id=post.id,
         postType=post.post_type,  # type: ignore[arg-type]
@@ -114,6 +181,17 @@ async def _build_detail(session: AsyncSession, post_id: int, device: str) -> Pos
         shareStatus=post.share_status,  # type: ignore[arg-type]
         comments=[_comment_out(c, device) for c in post.comments],
         shareRequests=[_share_out(s, device) for s in reqs],
+        auction=await _auction_detail(session, post, device),
+        bids=[
+            BidOut(
+                id=b.id,
+                bidderName=b.bidder_name,
+                amount=b.amount,
+                createdAt=b.created_at,
+                isMine=b.bidder_device == device,
+            )
+            for b in bids_sorted
+        ],
         createdAt=post.created_at,
     )
 
@@ -128,9 +206,13 @@ async def list_posts(
     offset: int = Query(0, ge=0),
 ) -> list[PostListItemOut]:
     """공용 피드 — 모두의 글을 최신순. type(show|share)·crop 으로 필터."""
+    await wallet.settle_expired(session)  # 마감 지난 경매 정산(lazy)
     q = (
         select(CommunityPost)
-        .options(selectinload(CommunityPost.images))
+        .options(
+            selectinload(CommunityPost.images),
+            selectinload(CommunityPost.bids),
+        )
         .order_by(CommunityPost.created_at.desc())
     )
     if type in ("show", "share"):
@@ -180,6 +262,7 @@ async def list_posts(
             likedByMe=p.id in liked,
             isMine=p.device_id == device,
             shareStatus=p.share_status,  # type: ignore[arg-type]
+            auction=_auction_summary(p),
             createdAt=p.created_at,
         )
         for p in posts
@@ -198,14 +281,33 @@ async def create_post(
     cropName: Annotated[str | None, Form()] = None,
     harvestRecordId: Annotated[int | None, Form()] = None,
     fromMemoImageIds: Annotated[list[int] | None, Form()] = None,
+    auctionDeadline: Annotated[str | None, Form()] = None,
     files: Annotated[list[UploadFile] | None, File()] = None,
 ) -> PostDetailOut:
-    """게시글 작성(multipart). 사진은 직접 업로드 + 내 메모 사진 복사 둘 다 지원."""
+    """게시글 작성(multipart). 자랑은 누구나, 나눔은 로그인 + 마감시간(경매)."""
     body = content.strip()
     if not body:
         raise HTTPException(status_code=422, detail="내용을 입력해 주세요.")
     name = (authorName or "").strip()[:40] or "텃밭러"
     pt = postType if postType in ("show", "share") else "show"
+
+    # 나눔(share)=포인트 경매: 로그인 + 마감시간 필수.
+    deadline = None
+    if pt == "share":
+        if not device.startswith("user:"):
+            raise HTTPException(
+                status_code=401, detail="나눔(경매)은 로그인 후 이용할 수 있어요."
+            )
+        if not auctionDeadline:
+            raise HTTPException(status_code=422, detail="나눔 마감 시간을 정해주세요.")
+        try:
+            deadline = datetime.fromisoformat(auctionDeadline.replace("Z", "+00:00"))
+        except ValueError:
+            raise HTTPException(status_code=422, detail="마감 시간 형식이 올바르지 않아요.") from None
+        if deadline.tzinfo is None:
+            deadline = deadline.replace(tzinfo=timezone.utc)
+        if deadline <= _now():
+            raise HTTPException(status_code=422, detail="마감 시간은 현재 이후여야 해요.")
 
     post = CommunityPost(
         device_id=device,
@@ -216,6 +318,7 @@ async def create_post(
         crop_slug=cropSlug or None,
         crop_name=cropName or None,
         harvest_record_id=harvestRecordId,
+        auction_deadline=deadline,
     )
     session.add(post)
     await session.flush()  # post.id 확보
@@ -261,7 +364,74 @@ async def create_post(
 
 @router.get("/posts/{post_id}", response_model=PostDetailOut)
 async def get_post(post_id: int, session: SessionDep, device: DeviceDep) -> PostDetailOut:
+    await wallet.settle_expired(session)  # 마감 지난 경매 정산(lazy)
     return await _build_detail(session, post_id, device)
+
+
+@router.get("/wallet", response_model=WalletOut)
+async def get_wallet(session: SessionDep, device: DeviceDep) -> WalletOut:
+    """내 포인트 지갑 — 잔액(활동점수+경매정산) / 사용가능(에스크로 제외)."""
+    await wallet.settle_expired(session)
+    return WalletOut(
+        balance=await wallet.balance(session, device),
+        available=await wallet.available(session, device),
+    )
+
+
+@router.post("/posts/{post_id}/bids", response_model=AuctionOut)
+async def place_bid(
+    post_id: int, payload: BidIn, session: SessionDep, device: DeviceDep
+) -> AuctionOut:
+    """나눔 경매 입찰 — 로그인 필수, 현재 최고가 초과, 사용가능 포인트 이하."""
+    await wallet.settle_expired(session)
+    post = await session.scalar(
+        select(CommunityPost)
+        .where(CommunityPost.id == post_id)
+        .options(selectinload(CommunityPost.bids))
+    )
+    if post is None:
+        raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다.")
+    if post.post_type != "share" or post.auction_deadline is None:
+        raise HTTPException(status_code=422, detail="경매 글이 아니에요.")
+    if not device.startswith("user:"):
+        raise HTTPException(status_code=401, detail="로그인 후 입찰할 수 있어요.")
+    if post.auction_settled or _passed(post.auction_deadline):
+        raise HTTPException(status_code=409, detail="마감된 경매예요.")
+    if post.device_id == device:
+        raise HTTPException(status_code=409, detail="본인 나눔글에는 입찰할 수 없어요.")
+
+    amount = payload.amount
+    if amount < 1:
+        raise HTTPException(status_code=422, detail="1포인트 이상 입찰해주세요.")
+    top = max((b.amount for b in post.bids), default=0)
+    if amount <= top:
+        raise HTTPException(
+            status_code=409, detail=f"현재 최고가({top}P)보다 높게 입찰해주세요."
+        )
+    avail = await wallet.available(session, device, exclude_post=post_id)
+    if amount > avail:
+        raise HTTPException(
+            status_code=409, detail=f"사용 가능 포인트({avail}P)를 초과했어요."
+        )
+
+    session.add(
+        ShareBid(
+            post_id=post_id,
+            bidder_device=device,
+            bidder_name=(payload.bidderName or "").strip()[:40] or "텃밭러",
+            amount=amount,
+        )
+    )
+    await session.commit()
+    post = await session.scalar(
+        select(CommunityPost)
+        .where(CommunityPost.id == post_id)
+        .options(selectinload(CommunityPost.bids))
+        .execution_options(populate_existing=True)  # 방금 추가한 입찰까지 반영
+    )
+    result = await _auction_detail(session, post, device)
+    assert result is not None
+    return result
 
 
 @router.delete("/posts/{post_id}", status_code=204)
