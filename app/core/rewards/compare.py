@@ -6,12 +6,13 @@
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import timedelta
 from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.clock import kst_today
 from app.core.rewards.streak import _active_days
 from app.data import community
 from app.db.models.harvest import HarvestRecord
@@ -44,7 +45,7 @@ def _weekly_message(active_days: int, top: int, q: dict[str, int]) -> tuple[bool
 async def build_compare(
     session: AsyncSession, device_id: str, crop_slug: str | None = None
 ) -> dict[str, Any]:
-    today = date.today()
+    today = kst_today()
     week_ago = today - timedelta(days=6)
     days = await _active_days(session, device_id)
     weekly = sum(1 for d in days if week_ago <= d <= today)

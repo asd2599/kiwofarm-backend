@@ -9,7 +9,6 @@ GET  /harvest          인증 기록 목록 (도감·뱃지 집계용)
 from __future__ import annotations
 
 import logging
-from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
@@ -20,6 +19,7 @@ from sqlalchemy.orm import selectinload
 from app.api.deps import DeviceDep
 from app.config import settings
 from app.core import storage
+from app.core.clock import kst_today
 from app.core.harvest import card as card_mod
 from app.core.harvest import rules
 from app.core.harvest.journal import JournalEntry, judge_journal
@@ -71,7 +71,9 @@ async def verify_harvest(
     # 1차 규칙(경고만) — EXIF + 재배 계획 연속성
     warnings: list[str] = []
     warnings += rules.check_exif(data).warnings
-    warnings += (await rules.check_continuity(session, plan_id, crop_slug)).warnings
+    warnings += (
+        await rules.check_continuity(session, plan_id, crop_slug, device)
+    ).warnings
 
     # 2차 멀티모달 판정
     try:
@@ -96,7 +98,7 @@ async def verify_harvest(
         confidence=verdict.confidence,
         verdict={**verdict.as_dict(), "warnings": warnings, "demo_mode": demo},
         reason=verdict.reason,
-        harvested_at=datetime.now().date(),
+        harvested_at=kst_today(),
     )
     session.add(record)
     await session.commit()
@@ -177,7 +179,9 @@ async def verify_harvest_journal(
         )
 
     # 1차 규칙(경고만) — 생육 기간 연속성
-    warnings = (await rules.check_continuity(session, plan.id, slug)).warnings
+    warnings = (
+        await rules.check_continuity(session, plan.id, slug, device)
+    ).warnings
 
     # 2차 멀티모달 일지 판정 — 기대 수확 소요일을 함께 넘겨 관리 연속성·조기수확 판단.
     try:
@@ -211,7 +215,7 @@ async def verify_harvest_journal(
             "demo_mode": demo,
         },
         reason=verdict.reason,
-        harvested_at=datetime.now().date(),
+        harvested_at=kst_today(),
     )
     session.add(record)
     await session.commit()

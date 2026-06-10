@@ -22,6 +22,11 @@ class AppUser(Base):
         String(32), nullable=False, unique=True, index=True
     )
     password_hash: Mapped[str] = mapped_column(String(256), nullable=False)
+    # 커뮤니티 피드 표시 이름. 가입 시 입력(필수). 구 계정 보호를 위해 nullable —
+    # 비면 username 으로 폴백한다.
+    nickname: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    # 주소(선택). 시·군·구까지만 "경기도 성남시" 형태. 작목 추천 지역 프리필용.
+    address_sigungu: Mapped[str | None] = mapped_column(String(60), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

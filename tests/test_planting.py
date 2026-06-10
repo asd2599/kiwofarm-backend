@@ -65,8 +65,9 @@ def test_recommend_hard_filter_excludes_field_only():
     assert "pumpkin" not in ids
 
 
-def test_next_month_start_shifts():
-    nxt = PlantingInput(**{**SAMPLE.model_dump(), "start": "next_month"})
+def test_start_date_shifts_month():
+    # startDate(YYYY-MM-DD)가 있으면 그 달 기준으로 추천한다(now_month 무시).
+    nxt = PlantingInput(**{**SAMPLE.model_dump(), "startDate": "2026-07-15"})
     res = recommend(nxt, now_month=6)
     assert res.month == 7
 
