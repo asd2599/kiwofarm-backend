@@ -20,10 +20,17 @@ from app.core.farmplan.alerts import build_alerts
 from app.core.farmplan.coach import weekly_task_messages
 from app.core.farmplan.generator import _snap_to_visit_days, generate_plan
 from app.core.rewards.points import total_points
+from app.core.rewards.wallet import (
+    CALENDAR_COST,
+    available,
+    grant_signup_bonus,
+    is_demo,
+)
 from app.core.storage import delete_file, file_url, read_image
 from app.core.harvest import rules
 from app.db.models.farm_plan import FarmPlan, FarmTask, MemoImage, TaskMemo
 from app.db.models.harvest import HarvestRecord
+from app.db.models.point import PointLedger
 from app.db.session import async_session_factory, get_session
 from app.schemas.farmplan import (
     AlertsOut,
@@ -177,8 +184,24 @@ async def create_plan(
     """시작일·작목·지역·면적으로 RAG 기반 농사계획 생성.
 
     첫 호출은 농사로 PDF 다운 → 임베딩 → RAG → GPT 로 길어진다(30~90초).
+
+    캘린더 1개당 CALENDAR_COST 팜 차감(demo 면제). 잔액 부족이면 402.
     """
+    if not is_demo(device):
+        # 로그인 유저 가입보너스 멱등 지급(기존 계정 소급 포함) 후 잔액 확인.
+        if await grant_signup_bonus(session, device):
+            await session.commit()
+        if await available(session, device) < CALENDAR_COST:
+            raise HTTPException(
+                status_code=402,
+                detail=f"팜이 부족해요. 캘린더 1개에 {CALENDAR_COST}팜이 필요합니다.",
+            )
     plan = await generate_plan(session, payload, device)
+    if not is_demo(device):
+        session.add(
+            PointLedger(device_id=device, amount=-CALENDAR_COST, reason="calendar_create")
+        )
+        await session.commit()
     plan = await _load_plan(session, plan.id, device)
     return _plan_out(plan)
 
@@ -191,7 +214,22 @@ async def create_plans_batch(
 
     작물마다 독립 세션으로 생성하므로 한 작물이 실패해도 나머지는 계속 만들고,
     실패는 failed 로 보고한다. created 는 입력 순서를 따른다.
+
+    캘린더 1개당 CALENDAR_COST 팜(demo 면제). 잔액으로 살 수 있는 개수만 생성하고,
+    예산을 넘긴 작물은 '팜 부족'으로 failed 처리한다.
     """
+    exempt = is_demo(device)
+    indexed = list(enumerate(payload.plans))
+    if exempt:
+        affordable = len(indexed)
+    else:
+        if await grant_signup_bonus(session, device):
+            await session.commit()
+        avail = await available(session, device)
+        affordable = max(0, min(len(indexed), avail // CALENDAR_COST))
+    to_create = indexed[:affordable]
+    rejected = indexed[affordable:]
+
     sem = asyncio.Semaphore(_BATCH_CONCURRENCY)
 
     async def _one(idx: int, p: FarmPlanCreate) -> tuple[int, int | None, str | None]:
@@ -205,22 +243,40 @@ async def create_plans_batch(
                 log.exception("배치 계획 생성 실패 idx=%s crop=%s", idx, p.cropName)
                 return idx, None, str(e)
 
-    results = await asyncio.gather(
-        *[_one(i, p) for i, p in enumerate(payload.plans)]
-    )
+    results = await asyncio.gather(*[_one(i, p) for i, p in to_create])
 
     created: list[FarmPlanOut] = []
     failed: list[BatchFailure] = []
+    success = 0
     for idx, plan_id, err in sorted(results):
         if plan_id is not None:
             plan = await _load_plan(session, plan_id, device)
             created.append(_plan_out(plan))
+            success += 1
         else:
             failed.append(
                 BatchFailure(
                     index=idx, cropName=payload.plans[idx].cropName, error=err or "unknown"
                 )
             )
+    for idx, p in rejected:
+        failed.append(
+            BatchFailure(
+                index=idx,
+                cropName=p.cropName,
+                error=f"팜이 부족해요 (캘린더 1개={CALENDAR_COST}팜)",
+            )
+        )
+    failed.sort(key=lambda f: f.index)
+    # 생성 성공분만 차감.
+    if not exempt and success:
+        for _ in range(success):
+            session.add(
+                PointLedger(
+                    device_id=device, amount=-CALENDAR_COST, reason="calendar_create"
+                )
+            )
+        await session.commit()
     return FarmPlanBatchOut(created=created, failed=failed)
 
 
