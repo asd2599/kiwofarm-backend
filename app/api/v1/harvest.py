@@ -175,10 +175,12 @@ async def verify_harvest_journal(
             detail="인증할 사진이 없습니다. 기르는 동안 캘린더에 사진을 남겨주세요.",
         )
 
-    # 캘린더 카드 완료 현황 — 메모·사진과 함께 종합 분석 근거로 넘긴다.
+    # 캘린더 카드 — 실제로 '기록한(done)' 작업만 근거로. 건너뛴(해당없음) 작업은 제외.
+    # 예정으로 남은 작업은 방치가 아니라 '아직 안 한' 예보이므로 판정에서 불리하게 보지 않는다.
     task_list = [
         {"title": t.title, "category": t.category, "done": t.status == "done"}
         for t in plan.tasks
+        if t.status != "skipped"
     ]
 
     # 1차 규칙(경고만) — 생육 기간 연속성

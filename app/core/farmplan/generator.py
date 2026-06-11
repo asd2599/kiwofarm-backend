@@ -92,6 +92,39 @@ def _conditions_block(payload: FarmPlanCreate) -> str:
     return "재배자 조건:\n" + "\n".join(f"- {x}" for x in lines) + "\n\n"
 
 
+def _method_place_rules(payload: FarmPlanCreate) -> str:
+    """재배 방식(직파/모종)·장소(화분/노지)별 강제 규칙 — 맥락에 안 맞는 작업 차단."""
+    rules: list[str] = []
+    if payload.growPlace == "pot":
+        rules.append(
+            "화분·베란다 재배입니다. 노지/밭으로 옮겨 심는 정식, 이랑·두둑 만들기, "
+            "멀칭 등 노지 전용 작업은 절대 넣지 마세요. 모든 작업은 화분·플랜터 기준."
+        )
+    elif payload.growPlace == "field":
+        rules.append("텃밭·노지(밭) 재배입니다. 작업은 밭 기준으로 구성하세요.")
+    if payload.cultivationMethod == "direct":
+        rules.append(
+            "직파(씨앗을 재배 장소에 직접 뿌림)입니다. 육묘 트레이·포트 모종 기르기와 "
+            "옮겨심기(정식/이식) 작업은 넣지 말고, 파종 후 솎아주기로 관리하세요."
+        )
+    elif payload.cultivationMethod == "seedling":
+        rules.append(
+            "모종을 심습니다. 옮겨심기(정식)는 최초 1회만 넣고, 정식 후 다시 다른 곳으로 "
+            "옮기는 이중 이식 작업은 절대 넣지 마세요."
+        )
+    elif payload.cultivationMethod == "germinate":
+        rules.append(
+            "솜·스펀지·물에 씨앗을 먼저 발아시킨 뒤 싹이 나면 흙으로 옮겨 심습니다. "
+            "'씨앗 발아'와 '흙에 옮겨심기(정식)' 단계를 넣되 옮겨심기는 1회만 — "
+            "이후 추가 이식은 절대 넣지 마세요."
+        )
+    if not rules:
+        return ""
+    return "재배 방식·장소 규칙(반드시 지키세요):\n" + "\n".join(
+        f"- {r}" for r in rules
+    ) + "\n\n"
+
+
 def _build_prompt(payload: FarmPlanCreate, context: str) -> str:
     # region 은 보통 "시·도 시·군·구" 전체를 담는다. province 가 이미 포함돼 있으면 중복 접두 방지.
     region = payload.region.strip()
@@ -101,6 +134,7 @@ def _build_prompt(payload: FarmPlanCreate, context: str) -> str:
     if not region:
         region = prov
     conditions = _conditions_block(payload)
+    method_rules = _method_place_rules(payload)
     # 면적 미입력(화분·소규모) 이면 면적 줄 대신 소규모 안내를 넣는다.
     area_line = (
         f"농지 면적: {payload.area} {payload.areaUnit}"
@@ -122,17 +156,20 @@ def _build_prompt(payload: FarmPlanCreate, context: str) -> str:
         f"지역: {region}\n"
         f"{area_line}\n\n"
         f"{conditions}"
+        f"{method_rules}"
         f"--- 농업기술 참고자료 (농사로 기반) ---\n{context or '(참고자료 없음)'}\n--- 끝 ---\n\n"
         "위 자료를 바탕으로 시작일부터 한 작기(보통 1년 이내)의 농사 일정을 만드세요. "
-        "각 작업은 시작일로부터의 day_offset(0=시작일 당일)과 "
-        "duration_days(작업 지속 일수)로 표현합니다. "
+        "각 작업은 시작일로부터의 day_offset(0=시작일 당일)으로 표현하는 하루 단위 단일 작업입니다. "
+        "물주기·육묘 관리처럼 여러 날 이어지는 일도 기간형으로 묶지 말고, 실제 수행하는 "
+        "날짜의 단일 작업(예: '물주기 점검', '육묘 상태 확인')으로 넣으세요. "
         "지역 기후와 면적을 고려해 현실적인 시기를 잡고, 병해충 예방 작업을 반드시 포함하세요. "
+        "옮겨심기(정식·이식)는 전체 일정에서 최대 1회만 넣으세요. "
         f"{cond_guide}"
         "일정은 수확까지만 다루고, 수확 후 저장·선별·유통 같은 작업은 넣지 마세요. "
         "출력은 JSON 객체 하나만. 형식: "
         '{"tasks": [{"title": "작업명(30자 이내)", "detail": "구체 방법 80자 이내", '
         '"category": "seeding|growing|fertilize|water|pest|harvest|etc", '
-        '"day_offset": 정수, "duration_days": 정수, "source_note": "근거 한 줄"}]}. '
+        '"day_offset": 정수, "source_note": "근거 한 줄"}]}. '
         "작업은 시간순으로 8~16개. day_offset 오름차순 정렬. "
         "본문에 없는 시기는 표준 재배력으로 합리적으로 추정."
     )
@@ -227,17 +264,13 @@ def _normalize_tasks(raw: list[dict]) -> list[FarmTask]:
             day_offset = max(0, int(item.get("day_offset", 0)))
         except (TypeError, ValueError):
             day_offset = 0
-        try:
-            duration = max(1, int(item.get("duration_days", 1)))
-        except (TypeError, ValueError):
-            duration = 1
         tasks.append(
             FarmTask(
                 title=title[:255],
                 detail=detail,
                 category=category,
                 day_offset=day_offset,
-                duration_days=duration,
+                duration_days=1,  # 모든 작업은 하루 단위 단일 작업
                 source_note=(str(item.get("source_note") or "").strip() or None),
             )
         )
@@ -247,35 +280,52 @@ def _normalize_tasks(raw: list[dict]) -> list[FarmTask]:
     return tasks
 
 
-# 표준 재배 단계 fallback (GPT/RAG 전부 실패 시). 작목 무관 골격.
-_FALLBACK: list[tuple[str, str, int, int]] = [
-    ("정식 준비 · 토양 정비", "fertilize", 0, 7),
-    ("파종 / 정식", "seeding", 7, 5),
-    ("초기 관수 · 활착 관리", "water", 14, 14),
-    ("1차 웃거름", "fertilize", 30, 2),
-    ("병해충 예찰 · 예방 방제", "pest", 45, 3),
-    ("생육 관리 · 정지/유인", "growing", 60, 21),
-    ("2차 웃거름", "fertilize", 75, 2),
-    ("병해충 정기 방제", "pest", 90, 3),
-    ("수확 시작", "harvest", 110, 14),
-    ("수확 마무리", "harvest", 130, 7),
-]
+def _fallback_tasks(payload: FarmPlanCreate) -> list[FarmTask]:
+    """표준 재배 단계 fallback (GPT/RAG 전부 실패 시). 재배 방식·장소에 맞춰 분기.
 
+    - 화분: '밭 준비/노지' 대신 '화분·흙 준비'.
+    - 직파: 파종 + 솎아주기(옮겨심기 없음).
+    - 발아: 씨앗 발아(솜·스펀지) → 흙에 옮겨심기 1회.
+    - 모종/기본: '모종 심기(정식)' 1회.
+    모든 작업은 하루 단위 단일 작업(duration=1).
+    """
+    pot = payload.growPlace == "pot"
+    method = payload.cultivationMethod
+    prep = ("화분·흙 준비", "fertilize") if pot else ("밭 준비 · 토양 정비", "fertilize")
 
-def _fallback_tasks() -> list[FarmTask]:
-    tasks = [
+    spec: list[tuple[str, str, int]] = []
+    if method == "germinate":
+        spec.append(("씨앗 발아 (솜·스펀지)", "seeding", 0))
+        spec.append((prep[0], prep[1], 3))
+        spec.append(("싹 나면 흙에 옮겨심기", "seeding", 7))
+    elif method == "direct":
+        spec.append((prep[0], prep[1], 0))
+        spec.append(("파종 · 씨앗 직접 뿌리기", "seeding", 5))
+        spec.append(("솎아주기 · 간격 조절", "growing", 20))
+    else:  # seedling/기본
+        spec.append((prep[0], prep[1], 0))
+        spec.append(("모종 심기 (정식)", "seeding", 5))
+    spec += [
+        ("초기 관수 · 활착 점검", "water", 12),
+        ("1차 웃거름", "fertilize", 30),
+        ("병해충 예찰 · 예방", "pest", 42),
+        ("생육 상태 점검", "growing", 55),
+        ("2차 웃거름", "fertilize", 72),
+        ("병해충 정기 방제", "pest", 88),
+        ("수확", "harvest", 100),
+    ]
+    return [
         FarmTask(
             title=title,
             detail=None,
             category=cat,
             day_offset=off,
-            duration_days=dur,
+            duration_days=1,
             order=i,
             source_note="표준 재배력 기반 기본 일정",
         )
-        for i, (title, cat, off, dur) in enumerate(_FALLBACK)
+        for i, (title, cat, off) in enumerate(spec)
     ]
-    return tasks
 
 
 def _snap_to_visit_days(
@@ -330,7 +380,7 @@ async def generate_plan(
         context = f"{context}\n\n{block}" if context else block
 
     raw = await _gpt_tasks(payload, context)
-    tasks = _normalize_tasks(raw) or _fallback_tasks()
+    tasks = _normalize_tasks(raw) or _fallback_tasks(payload)
 
     # 방문 요일이 지정되면 단기 작업을 방문일로 스냅한 뒤 재정렬·order 재부여
     _snap_to_visit_days(tasks, payload.startDate, payload.visitDays)

@@ -38,6 +38,9 @@ class FarmPlanCreate(BaseModel):
     visitDays: list[int] | None = None
     # 추천받기에서 넘어온 재배 조건(선택). 생성 시 프롬프트에 반영.
     growConditions: GrowConditions | None = None
+    # 재배 방식·장소 — 맥락 인지 일정 생성(이중 이식·노지 작업 방지).
+    cultivationMethod: str | None = None  # "direct"(직파) | "seedling"(모종)
+    growPlace: str | None = None  # "pot"(화분·베란다) | "field"(텃밭·노지)
 
 
 class FarmPlanBatchCreate(BaseModel):
@@ -118,6 +121,20 @@ class FarmPlanBatchOut(BaseModel):
 class TaskStatusUpdate(BaseModel):
     status: TaskStatus  # planned|done|delayed
     delayDays: int | None = Field(default=None, ge=0)
+
+
+class TaskLogIn(BaseModel):
+    """예정 작업을 실제로 한 날짜에 완료로 기록(이후 일정 자동 재정비)."""
+
+    date: date
+
+
+class TaskCreateIn(BaseModel):
+    """직접 입력한 작업을 해당 날짜에 완료로 기록."""
+
+    title: str = Field(min_length=1, max_length=255)
+    date: date
+    category: str | None = None  # seeding|growing|fertilize|water|pest|harvest|etc
 
 
 class TaskDelayBatch(BaseModel):

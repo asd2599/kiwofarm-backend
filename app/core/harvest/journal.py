@@ -32,14 +32,16 @@ SYSTEM = """\
 판정 기준(각 boolean, 근거 없으면 false):
 - crop_match: 사진 속 작물이 지정 작물과 일치하는가
 - growth_consistent: 사진들이 같은 개체의 파종→생육→수확 흐름으로 자연스럽게
-  이어지는가. 생육 단계가 통째로 비거나, 서로 다른 작물·장소가 섞이면 false
-- care_consistent: 작물을 실제로 돌본 수준인가. 일지 기록 간격 + '작업 진행(캘린더
-  카드 완료)'을 함께 본다. 핵심 단계(파종·솎아내기·웃거름·병해충 등) 작업을 꾸준히
-  완료했으면 관리 신호. 파종 직후 장기간(예: 2주 이상) 무기록이고 완료한 작업도
-  거의 없으면 방치로 보아 false. '경과일·기대 수확일·기록 공백' 수치와 작업 완료
-  현황을 핵심 근거로 삼으세요
+  이어지는가. 초기 발아(솜·스펀지·물)·육묘 단계가 사진에 포함될 수 있고, 이는
+  같은 재배의 자연스러운 흐름이면 정상이다. 생육 단계가 통째로 비거나, 서로 다른
+  작물·장소가 섞이면 false
+- care_consistent: 작물을 실제로 돌본 수준인가. **일지 기록 간격(무기록 공백)**을
+  핵심 근거로 본다. 파종 직후 장기간(예: 2주 이상) 무기록이거나 전 기간 기록이 거의
+  없으면 방치로 보아 false. 사용자는 '실제로 한 작업만' 기록하는 방식이므로,
+  완료하지 않고 예정으로 남은 작업이 많은 것은 방치 근거가 아니다 — 기록·사진이
+  꾸준하면 관리 신호로 본다. 기록한 작업은 가점 신호
 - has_harvest: 실제 수확 정황이 분명한가. (a) 수확물을 손에 들거나 담은 사진,
-  (b) 메모의 명확한 수확 기록, (c) '수확(harvest)' 작업 카드 완료 — 셋 중 하나라도
+  (b) 메모의 명확한 수확 기록, (c) '수확(harvest)' 작업 기록 — 셋 중 하나라도
   분명하면 true. 아직 기르는 중이거나 셋 다 없는데 수확을 주장하면 false
 - fake_suspect: 모니터/인쇄물 재촬영, 스톡사진, 무관한 사진 짜깁기 등 직접
   재배가 아닌 정황이 보이면 true
@@ -50,8 +52,9 @@ SYSTEM = """\
   완료하지 않았고 수확물 사진도 없어요")
 - summary: 재배 여정 한두 문장 요약 (도감 기록용, 존댓말)
 
-주의: 기대 수확일보다 한참 이른 수확 주장, 큰 무기록 공백, 핵심 작업 미완료는 강한
-거짓/미수확 신호입니다. 일지·사진·작업 완료를 종합해 판정하세요."""
+주의: 기대 수확일보다 한참 이른 수확 주장, 큰 무기록 공백, 수확 정황 전무는 강한
+거짓/미수확 신호입니다. (예정 작업이 미완료로 남은 것 자체는 신호가 아닙니다.)
+일지 기록 간격·사진·수확 정황을 종합해 판정하세요."""
 
 
 @dataclass(frozen=True)
@@ -127,22 +130,19 @@ def _pick_photos(
 
 
 def _task_progress(tasks: list[dict] | None) -> str:
-    """캘린더 카드 완료 현황 요약 — care_consistent·has_harvest 판단의 객관 근거.
+    """사용자가 '실제로 기록한(done)' 작업 요약 — 가점·수확 정황 근거.
 
+    예정으로 남은 작업은 방치 근거가 아니므로 나열하지 않는다(가점 신호만 전달).
     tasks 항목: {"title": str, "category": str, "done": bool}.
     """
     if not tasks:
         return "작업 정보 없음"
     done = [t for t in tasks if t.get("done")]
-    pending = [t for t in tasks if not t.get("done")]
-    has_harvest_task = any(t.get("category") == "harvest" for t in tasks)
     harvest_done = any(t.get("category") == "harvest" and t.get("done") for t in tasks)
-    hv = ("완료" if harvest_done else "미완료") if has_harvest_task else "수확 작업 없음"
     done_txt = ", ".join(t["title"] for t in done) or "없음"
-    pending_txt = ", ".join(t["title"] for t in pending) or "없음"
     return (
-        f"완료 {len(done)}/{len(tasks)}건 · 수확 작업 {hv} / "
-        f"완료=[{done_txt}] / 미완료=[{pending_txt}]"
+        f"기록한 작업 {len(done)}건 · 수확 작업 {'기록됨' if harvest_done else '미기록'} / "
+        f"기록=[{done_txt}]"
     )
 
 

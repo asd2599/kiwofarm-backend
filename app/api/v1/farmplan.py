@@ -18,6 +18,7 @@ from sqlalchemy.orm import selectinload, undefer
 from app.api.deps import DeviceDep
 from app.core.farmplan.alerts import build_alerts
 from app.core.farmplan.coach import weekly_task_messages
+from app.core.clock import kst_today
 from app.core.farmplan.generator import _snap_to_visit_days, generate_plan
 from app.core.rewards.points import total_points
 from app.core.rewards.wallet import (
@@ -49,7 +50,9 @@ from app.schemas.farmplan import (
     MemoImageOut,
     MemoUpsert,
     SettingsUpdate,
+    TaskCreateIn,
     TaskDelayBatch,
+    TaskLogIn,
     TaskMemoOut,
     TaskStatusUpdate,
     WeeklyDigestOut,
@@ -65,7 +68,7 @@ _BATCH_CONCURRENCY = 4
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
-_VALID_STATUS = {"planned", "done", "delayed"}
+_VALID_STATUS = {"planned", "done", "delayed", "skipped"}
 
 
 def _task_out(task: FarmTask, start: date) -> FarmTaskOut:
@@ -512,13 +515,16 @@ async def update_task(
     payload: TaskStatusUpdate,
     session: SessionDep, device: DeviceDep,
 ) -> FarmPlanOut:
-    """작업 완료(done)/지연(delayed)/되돌리기(planned) 표시.
+    """작업 완료(done)/지연(delayed)/건너뛰기(skipped)/되돌리기(planned) 표시.
 
     지연이면 대상 작업 + 이후 작업의 일정을 delayDays 만큼 자동 시프트한다.
-    (track_progress 값과 무관하게 상태 변경을 허용한다 — 캘린더 카드의 완료/지연 버튼.)
+    건너뛰기(해당없음)는 시프트 없이 상태만 바꿔 일정에서 빠지게 한다.
+    (track_progress 값과 무관하게 상태 변경을 허용한다 — 캘린더 카드의 버튼.)
     """
     if payload.status not in _VALID_STATUS:
-        raise HTTPException(status_code=422, detail="status 는 planned|done|delayed")
+        raise HTTPException(
+            status_code=422, detail="status 는 planned|done|delayed|skipped"
+        )
 
     plan = await _load_plan(session, plan_id, device)
     target = next((t for t in plan.tasks if t.id == task_id), None)
@@ -544,10 +550,118 @@ async def update_task(
         target.actual_date = plan.start_date + timedelta(days=target.day_offset)
     elif payload.status == "done":
         target.actual_date = plan.start_date + timedelta(days=target.day_offset)
-    else:  # planned 로 되돌림
+    else:  # planned(되돌리기) 또는 skipped(건너뛰기) — 실제일 비움, 시프트 없음
         target.actual_date = None
 
     await session.commit()
+    plan = await _load_plan(session, plan_id, device)
+    return _plan_out(plan)
+
+
+@router.delete("/{plan_id}/tasks/{task_id}", response_model=FarmPlanOut)
+async def delete_task(
+    plan_id: int, task_id: int, session: SessionDep, device: DeviceDep
+) -> FarmPlanOut:
+    """작업 삭제 — 내 텃밭에 맞지 않는 작업을 계획에서 제거한다."""
+    plan = await _load_plan(session, plan_id, device)
+    target = next((t for t in plan.tasks if t.id == task_id), None)
+    if target is None:
+        raise HTTPException(status_code=404, detail="해당 작업을 찾을 수 없습니다.")
+    await session.delete(target)
+    await session.commit()
+    plan = await _load_plan(session, plan_id, device)
+    return _plan_out(plan)
+
+
+_TASK_CATEGORIES = {
+    "seeding", "growing", "fertilize", "water", "pest", "harvest", "etc",
+}
+
+
+def _reflow(plan: FarmPlan, exclude: FarmTask | None = None) -> None:
+    """방문요일 스냅(단기, exclude 제외) + day_offset 재정렬 + order 재부여."""
+    others = [t for t in plan.tasks if t is not exclude]
+    _snap_to_visit_days(others, plan.start_date, plan.visit_days)
+    plan.tasks.sort(key=lambda x: x.day_offset)
+    for i, t in enumerate(plan.tasks):
+        t.order = i
+
+
+@router.post("/{plan_id}/tasks/{task_id}/log", response_model=FarmPlanOut)
+async def log_task(
+    plan_id: int,
+    task_id: int,
+    payload: TaskLogIn,
+    session: SessionDep,
+    device: DeviceDep,
+) -> FarmPlanOut:
+    """예정 작업을 '실제로 한 날짜'에 완료로 기록 + 이후 일정을 차이만큼 자동 이동(앞/뒤).
+
+    예: 10일 예정 옮겨심기를 5일에 하면 이후 작업이 5일씩 당겨진다.
+    """
+    plan = await _load_plan(session, plan_id, device)
+    target = next((t for t in plan.tasks if t.id == task_id), None)
+    if target is None:
+        raise HTTPException(status_code=404, detail="해당 작업을 찾을 수 없습니다.")
+    new_offset = max(0, (payload.date - plan.start_date).days)
+    delta = new_offset - target.day_offset
+    if delta != 0:
+        # 대상 + 이후 작업을 차이만큼 이동(음수=당김). 대상은 실제일로 고정(스냅 제외).
+        for t in plan.tasks:
+            if t.order >= target.order:
+                t.day_offset = max(0, t.day_offset + delta)
+        _reflow(plan, exclude=target)
+    target.status = "done"
+    target.actual_date = payload.date
+    await session.commit()
+    plan = await _load_plan(session, plan_id, device)
+    return _plan_out(plan)
+
+
+@router.post("/{plan_id}/tasks", response_model=FarmPlanOut)
+async def add_task(
+    plan_id: int, payload: TaskCreateIn, session: SessionDep, device: DeviceDep
+) -> FarmPlanOut:
+    """직접 입력한 작업을 해당 날짜에 완료로 기록(목록에 없던 실제 작업)."""
+    plan = await _load_plan(session, plan_id, device)
+    category = payload.category if payload.category in _TASK_CATEGORIES else "etc"
+    offset = max(0, (payload.date - plan.start_date).days)
+    plan.tasks.append(
+        FarmTask(
+            title=payload.title.strip()[:255],
+            detail=None,
+            category=category,
+            day_offset=offset,
+            duration_days=1,
+            status="done",
+            actual_date=payload.date,
+            source_note="직접 기록",
+        )
+    )
+    plan.tasks.sort(key=lambda x: x.day_offset)
+    for i, t in enumerate(plan.tasks):
+        t.order = i
+    await session.commit()
+    plan = await _load_plan(session, plan_id, device)
+    return _plan_out(plan)
+
+
+@router.post("/{plan_id}/reschedule", response_model=FarmPlanOut)
+async def reschedule_plan(
+    plan_id: int, session: SessionDep, device: DeviceDep
+) -> FarmPlanOut:
+    """남은(예정/지연) 작업을 오늘 기준으로 다시 맞춤 — 가장 이른 미완료 작업을 오늘로 이동."""
+    plan = await _load_plan(session, plan_id, device)
+    pending = [t for t in plan.tasks if t.status in ("planned", "delayed")]
+    if pending:
+        earliest = min(t.day_offset for t in pending)
+        today_offset = max(0, (kst_today() - plan.start_date).days)
+        delta = today_offset - earliest
+        if delta != 0:
+            for t in pending:
+                t.day_offset = max(0, t.day_offset + delta)
+            _reflow(plan)
+            await session.commit()
     plan = await _load_plan(session, plan_id, device)
     return _plan_out(plan)
 
