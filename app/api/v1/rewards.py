@@ -12,7 +12,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import DeviceDep
 from app.core.rewards.attendance import AlreadyCheckedIn, build_attendance, check_in
-from app.core.rewards.badges import build_badges
+from app.core.rewards.badges import (
+    BadgeAlreadyClaimed,
+    BadgeNotFound,
+    BadgeNotMet,
+    build_badges,
+    claim_badge,
+    sync_crop_rewards,
+)
 from app.core.rewards.collection import build_collection
 from app.core.rewards.compare import build_compare
 from app.core.rewards.points import build_points
@@ -21,6 +28,7 @@ from app.db.session import get_session
 from app.schemas.rewards import (
     AttendanceClaimOut,
     AttendanceOut,
+    BadgeClaimOut,
     BadgeOut,
     CollectionOut,
     CompareOut,
@@ -36,12 +44,31 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 @router.get("/collection", response_model=CollectionOut)
 async def get_collection(session: SessionDep, device: DeviceDep) -> CollectionOut:
+    await sync_crop_rewards(session, device)  # 작물 레벨업 팜 자동 적립
     return CollectionOut(**await build_collection(session, device))
 
 
 @router.get("/badges", response_model=list[BadgeOut])
 async def get_badges(session: SessionDep, device: DeviceDep) -> list[BadgeOut]:
+    """뱃지 도감 — 달성(achieved)/획득(claimed)/획득가능(claimable) 상태 포함. 팜은 claim 으로만."""
     return [BadgeOut(**b) for b in await build_badges(session, device)]
+
+
+@router.post("/badges/{badge_id}/claim", response_model=BadgeClaimOut)
+async def post_badge_claim(
+    badge_id: str, session: SessionDep, device: DeviceDep
+) -> BadgeClaimOut:
+    """뱃지 획득 — 달성한 뱃지의 팜을 적립. 미달성=400, 중복=409, 없음=404."""
+    try:
+        return BadgeClaimOut(**await claim_badge(session, device, badge_id))
+    except BadgeNotFound:
+        raise HTTPException(status_code=404, detail="존재하지 않는 뱃지예요.") from None
+    except BadgeNotMet:
+        raise HTTPException(
+            status_code=400, detail="아직 달성하지 못한 뱃지예요."
+        ) from None
+    except BadgeAlreadyClaimed:
+        raise HTTPException(status_code=409, detail="이미 획득한 뱃지예요.") from None
 
 
 @router.get("/streak", response_model=StreakOut)
@@ -83,6 +110,7 @@ async def get_compare(
 @router.get("/summary", response_model=RewardsSummary)
 async def get_summary(session: SessionDep, device: DeviceDep) -> RewardsSummary:
     """도감 화면용 통합 응답."""
+    await sync_crop_rewards(session, device)  # 작물 레벨업 팜 자동 적립(뱃지 팜은 claim 으로만)
     return RewardsSummary(
         collection=CollectionOut(**await build_collection(session, device)),
         badges=[BadgeOut(**b) for b in await build_badges(session, device)],
