@@ -21,13 +21,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.core.rag import knowledge
 from app.core.rag import retrieve as rag_retrieve
+from app.core.farmplan.farmwork import schedule_for
 from app.core.rag.ingest import crop_key, ensure_crop_ingested
 from app.db.models.farm_plan import FarmPlan, FarmTask
 from app.schemas.farmplan import FarmPlanCreate
 
 log = logging.getLogger(__name__)
 
-_MODEL = "gpt-4o-mini"
+_MODEL = "gpt-4o-mini"  # 비용 고려해 mini 유지. 정확도는 농작업일정 주입·RAG 가중으로 보완.
 
 # 계획 facet → RAG 질의문. 병해충 예방을 명시적 facet 으로 포함.
 _FACETS: list[tuple[str, str]] = [
@@ -57,11 +58,15 @@ async def _gather_context(ckey: str) -> str:
     7개 facet 쿼리를 단일 배치 임베딩(retrieve_many)으로 묶어 왕복을 7회→1회로 줄인다.
     """
     try:
-        results = await rag_retrieve.retrieve_many(
-            ckey, [query for _, query in _FACETS], k=4
+        # cultivation·general(GPT 생성) kind 는 낮추고, 진짜 농사로 데이터를 우선시킨다.
+        results = await rag_retrieve.retrieve_many_boosted(
+            ckey,
+            [query for _, query in _FACETS],
+            k=4,
+            boost={"cultivation": -0.06, "general": -0.06},
         )
     except Exception as e:  # noqa: BLE001 - 컨텍스트 회수 실패해도 fallback 계획은 제공
-        log.info("retrieve_many 실패 reason=%s", e)
+        log.info("retrieve_many_boosted 실패 reason=%s", e)
         return ""
     blocks: list[str] = []
     for (label, _query), chunks in zip(_FACETS, results):
@@ -135,6 +140,7 @@ def _build_prompt(payload: FarmPlanCreate, context: str) -> str:
         region = prov
     conditions = _conditions_block(payload)
     method_rules = _method_place_rules(payload)
+    farmwork = schedule_for(crop_key(payload.itemCode, payload.kindCode))
     # 면적 미입력(화분·소규모) 이면 면적 줄 대신 소규모 안내를 넣는다.
     area_line = (
         f"농지 면적: {payload.area} {payload.areaUnit}"
@@ -157,11 +163,14 @@ def _build_prompt(payload: FarmPlanCreate, context: str) -> str:
         f"{area_line}\n\n"
         f"{conditions}"
         f"{method_rules}"
+        f"{farmwork}"
         f"--- 농업기술 참고자료 (농사로 기반) ---\n{context or '(참고자료 없음)'}\n--- 끝 ---\n\n"
         "위 자료를 바탕으로 시작일부터 한 작기(보통 1년 이내)의 농사 일정을 만드세요. "
-        "각 작업은 시작일로부터의 day_offset(0=시작일 당일)으로 표현하는 하루 단위 단일 작업입니다. "
-        "물주기·육묘 관리처럼 여러 날 이어지는 일도 기간형으로 묶지 말고, 실제 수행하는 "
-        "날짜의 단일 작업(예: '물주기 점검', '육묘 상태 확인')으로 넣으세요. "
+        "파종(씨뿌리기)·정식(아주심기)·수확 시기는 농작업일정의 월을 반드시 따르세요. "
+        "지역이 남부지방이면 농작업일정보다 약간 이르게, 북부·고랭지면 약간 늦게 시기를 조정하세요. "
+        "각 작업은 시작일로부터의 day_offset(0=시작일 당일)과 duration_days(작업 지속 일수)로 표현합니다. "
+        "관수·생육 관리·육묘처럼 일정 기간 이어지는 작업은 duration_days로 기간을 잡고(예: 14), "
+        "파종·옮겨심기·웃거름·방제·수확 같은 단발 작업은 duration_days=1로 하세요. "
         "지역 기후와 면적을 고려해 현실적인 시기를 잡고, 병해충 예방 작업을 반드시 포함하세요. "
         "옮겨심기(정식·이식)는 전체 일정에서 최대 1회만 넣으세요. "
         f"{cond_guide}"
@@ -169,9 +178,9 @@ def _build_prompt(payload: FarmPlanCreate, context: str) -> str:
         "출력은 JSON 객체 하나만. 형식: "
         '{"tasks": [{"title": "작업명(30자 이내)", "detail": "구체 방법 80자 이내", '
         '"category": "seeding|growing|fertilize|water|pest|harvest|etc", '
-        '"day_offset": 정수, "source_note": "근거 한 줄"}]}. '
+        '"day_offset": 정수, "duration_days": 정수, "source_note": "근거 한 줄"}]}. '
         "작업은 시간순으로 8~16개. day_offset 오름차순 정렬. "
-        "본문에 없는 시기는 표준 재배력으로 합리적으로 추정."
+        "농작업일정·참고자료의 시기를 우선해 그대로 따르고, 자료에 없는 작업만 표준 재배력으로 보수적으로 추정하세요."
     )
 
 
@@ -264,13 +273,17 @@ def _normalize_tasks(raw: list[dict]) -> list[FarmTask]:
             day_offset = max(0, int(item.get("day_offset", 0)))
         except (TypeError, ValueError):
             day_offset = 0
+        try:
+            duration = max(1, int(item.get("duration_days", 1)))
+        except (TypeError, ValueError):
+            duration = 1
         tasks.append(
             FarmTask(
                 title=title[:255],
                 detail=detail,
                 category=category,
                 day_offset=day_offset,
-                duration_days=1,  # 모든 작업은 하루 단위 단일 작업
+                duration_days=duration,  # 기간형(관수·생육 등) 예보 span 허용
                 source_note=(str(item.get("source_note") or "").strip() or None),
             )
         )
@@ -287,32 +300,34 @@ def _fallback_tasks(payload: FarmPlanCreate) -> list[FarmTask]:
     - 직파: 파종 + 솎아주기(옮겨심기 없음).
     - 발아: 씨앗 발아(솜·스펀지) → 흙에 옮겨심기 1회.
     - 모종/기본: '모종 심기(정식)' 1회.
-    모든 작업은 하루 단위 단일 작업(duration=1).
+    단발 작업은 하루(1), 관수·생육·육묘 같은 이어지는 작업은 기간형(예보 span).
     """
     pot = payload.growPlace == "pot"
     method = payload.cultivationMethod
     prep = ("화분·흙 준비", "fertilize") if pot else ("밭 준비 · 토양 정비", "fertilize")
 
-    spec: list[tuple[str, str, int]] = []
+    # (title, category, day_offset, duration) — duration>1 = 기간형 예보 span
+    spec: list[tuple[str, str, int, int]] = []
     if method == "germinate":
-        spec.append(("씨앗 발아 (솜·스펀지)", "seeding", 0))
-        spec.append((prep[0], prep[1], 3))
-        spec.append(("싹 나면 흙에 옮겨심기", "seeding", 7))
+        spec.append(("씨앗 발아 (솜·스펀지)", "seeding", 0, 1))
+        spec.append((prep[0], prep[1], 3, 1))
+        spec.append(("육묘 관리 (싹 키우기)", "growing", 1, 6))
+        spec.append(("싹 나면 흙에 옮겨심기", "seeding", 7, 1))
     elif method == "direct":
-        spec.append((prep[0], prep[1], 0))
-        spec.append(("파종 · 씨앗 직접 뿌리기", "seeding", 5))
-        spec.append(("솎아주기 · 간격 조절", "growing", 20))
+        spec.append((prep[0], prep[1], 0, 1))
+        spec.append(("파종 · 씨앗 직접 뿌리기", "seeding", 5, 1))
+        spec.append(("솎아주기 · 간격 조절", "growing", 20, 1))
     else:  # seedling/기본
-        spec.append((prep[0], prep[1], 0))
-        spec.append(("모종 심기 (정식)", "seeding", 5))
+        spec.append((prep[0], prep[1], 0, 1))
+        spec.append(("모종 심기 (정식)", "seeding", 5, 1))
     spec += [
-        ("초기 관수 · 활착 점검", "water", 12),
-        ("1차 웃거름", "fertilize", 30),
-        ("병해충 예찰 · 예방", "pest", 42),
-        ("생육 상태 점검", "growing", 55),
-        ("2차 웃거름", "fertilize", 72),
-        ("병해충 정기 방제", "pest", 88),
-        ("수확", "harvest", 100),
+        ("관수 · 물 관리", "water", 12, 14),
+        ("1차 웃거름", "fertilize", 30, 1),
+        ("병해충 예찰 · 예방", "pest", 42, 1),
+        ("생육 관리", "growing", 55, 21),
+        ("2차 웃거름", "fertilize", 72, 1),
+        ("병해충 정기 방제", "pest", 88, 1),
+        ("수확", "harvest", 100, 1),
     ]
     return [
         FarmTask(
@@ -320,11 +335,11 @@ def _fallback_tasks(payload: FarmPlanCreate) -> list[FarmTask]:
             detail=None,
             category=cat,
             day_offset=off,
-            duration_days=1,
+            duration_days=dur,
             order=i,
             source_note="표준 재배력 기반 기본 일정",
         )
-        for i, (title, cat, off) in enumerate(spec)
+        for i, (title, cat, off, dur) in enumerate(spec)
     ]
 
 
