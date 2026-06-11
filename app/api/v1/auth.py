@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import DeviceDep
 from app.core.auth import hash_password, issue_token, verify_password
+from app.core.rewards.wallet import grant_signup_bonus
 from app.db.models.user import AppUser
 from app.db.session import get_session
 
@@ -70,6 +71,9 @@ async def signup(payload: SignupIn, session: SessionDep) -> AuthOut:
     session.add(user)
     await session.commit()
     await session.refresh(user)
+    # 가입보너스: 로그인 계정 1회 +300 팜.
+    await grant_signup_bonus(session, f"user:{user.id}")
+    await session.commit()
     return _auth_out(user)
 
 

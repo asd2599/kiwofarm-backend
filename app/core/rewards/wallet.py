@@ -84,6 +84,33 @@ async def available(
     return await balance(session, device) - await held(session, device, exclude_post)
 
 
+# --- 팜 경제: 가입보너스 · 캘린더 생성 비용 ---
+SIGNUP_BONUS = 300  # 로그인 계정 가입 시 1회 지급
+CALENDAR_COST = 300  # 캘린더(농사계획) 1개 생성 비용
+
+
+def is_demo(device: str) -> bool:
+    """시연(demo) 계정은 팜 차감 면제."""
+    return device == "demo"
+
+
+async def grant_signup_bonus(session: AsyncSession, device: str) -> bool:
+    """로그인 계정 가입 시 +300 팜 1회 지급(멱등). 지급 시 True. 커밋은 호출자."""
+    if not device.startswith("user:"):
+        return False
+    exists = await session.scalar(
+        select(PointLedger.id)
+        .where(PointLedger.device_id == device, PointLedger.reason == "signup_bonus")
+        .limit(1)
+    )
+    if exists is not None:
+        return False
+    session.add(
+        PointLedger(device_id=device, amount=SIGNUP_BONUS, reason="signup_bonus")
+    )
+    return True
+
+
 async def top_bid(session: AsyncSession, post_id: int) -> ShareBid | None:
     """경매 현재 최고 입찰(동점은 먼저 입찰)."""
     return await session.scalar(
