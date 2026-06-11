@@ -98,6 +98,41 @@ async def retrieve_many(
     return out
 
 
+async def retrieve_many_boosted(
+    crop_key: str,
+    queries: list[str],
+    k: int = 6,
+    boost: dict[str, float] | None = None,
+) -> list[list[str]]:
+    """retrieve_many + kind별 가중치. boost={'cultivation':-0.06} 면 그 kind 점수에 -0.06.
+
+    cultivation·general(GPT 생성) kind 를 낮춰 진짜 농사로 데이터(garden·monthfd·
+    monthtech)가 컨텍스트에 우선 잡히게 한다. 배치 임베딩 1회 유지.
+    """
+    boost = boost or {}
+    if not queries:
+        return []
+    groups = store.load_grouped(crop_key)
+    if not groups:
+        return [[] for _ in queries]
+    qvecs = await embed_texts(queries)
+    norm_groups = [
+        (kind, chunks, vecs / (np.linalg.norm(vecs, axis=1, keepdims=True) + 1e-8))
+        for kind, chunks, vecs in groups
+    ]
+    out: list[list[str]] = []
+    for qv in qvecs:
+        q = _unit(np.asarray(qv, dtype=np.float32))
+        scored: list[tuple[float, str]] = []
+        for kind, chunks, vn in norm_groups:
+            sims = vn @ q
+            b = boost.get(kind, 0.0)
+            scored.extend((float(sims[i]) + b, c) for i, c in enumerate(chunks))
+        scored.sort(key=lambda x: -x[0])
+        out.append([c for _, c in scored[:k]])
+    return out
+
+
 async def retrieve_boosted(
     crop_key: str,
     query: str,

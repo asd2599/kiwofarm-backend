@@ -603,6 +603,37 @@ async def log_task(
     target = next((t for t in plan.tasks if t.id == task_id), None)
     if target is None:
         raise HTTPException(status_code=404, detail="해당 작업을 찾을 수 없습니다.")
+
+    if target.duration_days > 1:
+        # 기간형(관수·생육 등) — 예보 span 은 그대로 두고, 누른 날 하루만 완료로 기록.
+        # 같은 날 같은 작업을 이미 기록했으면 중복 추가하지 않는다.
+        dup = any(
+            t.title == target.title
+            and t.status == "done"
+            and t.actual_date == payload.date
+            for t in plan.tasks
+        )
+        if not dup:
+            plan.tasks.append(
+                FarmTask(
+                    title=target.title,
+                    detail=None,
+                    category=target.category,
+                    day_offset=max(0, (payload.date - plan.start_date).days),
+                    duration_days=1,
+                    status="done",
+                    actual_date=payload.date,
+                    source_note="기간 작업 일일 기록",
+                )
+            )
+            plan.tasks.sort(key=lambda x: x.day_offset)
+            for i, t in enumerate(plan.tasks):
+                t.order = i
+            await session.commit()
+        plan = await _load_plan(session, plan_id, device)
+        return _plan_out(plan)
+
+    # 단발(milestone) — 완료 + 이후 일정 재정비
     new_offset = max(0, (payload.date - plan.start_date).days)
     delta = new_offset - target.day_offset
     if delta != 0:
