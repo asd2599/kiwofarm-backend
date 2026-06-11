@@ -67,6 +67,18 @@ def _run_ending(days: set[date], anchor: date) -> int:
     return n
 
 
+def _best_run(days: set[date]) -> int:
+    """역대 최장 연속 출석 일수(단조증가 — 뱃지 영구 달성용)."""
+    if not days:
+        return 0
+    ordered = sorted(days)
+    best = run = 1
+    for prev, cur in zip(ordered, ordered[1:]):
+        run = run + 1 if (cur - prev).days == 1 else 1
+        best = max(best, run)
+    return best
+
+
 async def build_attendance(session: AsyncSession, device: str) -> dict[str, Any]:
     today = kst_today()
     days = await _attendance_dates(session, device)
@@ -81,6 +93,7 @@ async def build_attendance(session: AsyncSession, device: str) -> dict[str, Any]
     return {
         "checkedToday": checked,
         "streak": streak,
+        "best": _best_run(days),  # 역대 최고 연속(뱃지 달성 판정용, 단조증가)
         "cycleDay": cycle_day,
         "todayReward": reward_for_day(cycle_day),
         "cycleDays": CYCLE_DAYS,

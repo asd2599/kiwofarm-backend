@@ -8,6 +8,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.planting import matrix
+from app.core.rewards.crop_level import (
+    CROP_LEVEL_STEP,
+    CROP_MAX_LEVEL,
+    crop_level,
+    level_reward,
+)
 from app.db.models.harvest import HarvestRecord
 
 
@@ -31,6 +37,9 @@ async def build_collection(session: AsyncSession, device_id: str) -> dict[str, A
     entries = []
     for crop in matrix.all_crops():
         recs = by_slug.get(crop["id"], [])
+        hc = len(recs)
+        level = crop_level(hc)
+        maxed = level >= CROP_MAX_LEVEL
         entries.append(
             {
                 "cropSlug": crop["id"],
@@ -38,7 +47,13 @@ async def build_collection(session: AsyncSession, device_id: str) -> dict[str, A
                 "category": crop.get("category", ""),
                 "difficulty": crop.get("difficulty"),
                 "collected": bool(recs),
-                "harvestCount": len(recs),
+                "harvestCount": hc,
+                # 수확 레벨(5회마다 +1, 최대 Lv5) — 도감 카드/모달 표시용.
+                "level": level,
+                "maxLevel": CROP_MAX_LEVEL,
+                "nextLevelAt": None if maxed else (level + 1) * CROP_LEVEL_STEP,
+                "nextReward": None if maxed else level_reward(level + 1),
+                "levelProgress": 1.0 if maxed else (hc - level * CROP_LEVEL_STEP) / CROP_LEVEL_STEP,
                 "firstHarvestedAt": recs[0].harvested_at.isoformat() if recs else None,
                 "lastHarvestedAt": recs[-1].harvested_at.isoformat() if recs else None,
             }

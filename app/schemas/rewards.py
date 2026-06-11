@@ -12,6 +12,11 @@ class CollectionEntry(BaseModel):
     difficulty: int | None = None
     collected: bool
     harvestCount: int
+    level: int  # 수확 레벨(0~maxLevel)
+    maxLevel: int
+    nextLevelAt: int | None = None  # 다음 레벨 도달 수확 횟수(최고 레벨이면 None)
+    nextReward: int | None = None  # 다음 레벨 보상 팜
+    levelProgress: float = 0.0  # 다음 레벨까지 진행도 0~1
     firstHarvestedAt: str | None = None
     lastHarvestedAt: str | None = None
 
@@ -28,10 +33,21 @@ class BadgeOut(BaseModel):
     emoji: str
     name: str
     description: str
-    achieved: bool
+    difficulty: int
+    rewardFarm: int
+    achieved: bool  # 조건 충족(스티키)
+    claimed: bool  # 팜 획득 완료
+    claimable: bool  # 지금 획득 가능(달성+미획득)
     progress: float
     current: int
     threshold: int
+
+
+class BadgeClaimOut(BaseModel):
+    id: str
+    name: str
+    rewardFarm: int
+    total: int  # 획득 후 보유 팜
 
 
 class StreakOut(BaseModel):

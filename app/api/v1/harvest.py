@@ -23,7 +23,7 @@ from app.core.harvest import rules
 from app.core.harvest.journal import JournalEntry, judge_journal
 from app.core.harvest.verify import VerifyError
 from app.core.planting import matrix
-from app.core.rewards.badges import achieved_ids, build_badges
+from app.core.rewards.badges import achieved_ids, build_badges, sync_crop_rewards
 from app.core.rewards.points import total_points
 from app.db.models.farm_plan import FarmPlan, MemoImage, TaskMemo
 from app.db.models.harvest import HarvestRecord
@@ -237,6 +237,8 @@ async def verify_harvest_journal(
         card_data = HarvestCard(**built) if built else None
         after = await build_badges(session, device)
         new_badges = [b for b in after if b["achieved"] and b["id"] not in before_badges]
+        # 작물 수확 레벨업 팜 자동 적립(pointsTotal 반영). 뱃지 팜은 도감에서 직접 획득.
+        await sync_crop_rewards(session, device)
         message = f"{crop['name']} 수확을 인정합니다! 도감에 등록했어요 🎉"
         if demo and not verdict.passed:
             message += " (데모 모드 통과)"
