@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy.pool import NullPool
 
 from app.config import settings
 
@@ -38,13 +39,26 @@ else:
     connect_args = {
         "timeout": 10,
         "statement_cache_size": 0,
+        # SQLAlchemy asyncpg 다이얼렉트 자체 prepared statement 캐시(기본 100)도 꺼야
+        # 한다. 안 끄면 캐시된 statement 객체가 풀 커넥션 너머로 재사용되는데,
+        # 트랜잭션 풀러는 매 트랜잭션마다 다른 백엔드를 배정하므로 그 이름이
+        # 사라져 "prepared statement does not exist" 가 다시 터진다.
+        "prepared_statement_cache_size": 0,
         "prepared_statement_name_func": lambda: f"__asyncpg_{uuid4()}__",
     }
 
+# Supabase 트랜잭션 풀러(supavisor, :6543)는 트랜잭션마다 다른 백엔드를 배정한다.
+# SQLAlchemy QueuePool 이 asyncpg 커넥션을 오래 재사용하면, 그 커넥션이 준비한
+# prepared statement 가 다음 트랜잭션의 백엔드에는 없어 "does not exist" 가 간헐적
+# 으로 터진다. NullPool 로 클라이언트 측 풀링을 끄고(요청마다 새 커넥션) 풀링은
+# supavisor 가 서버 측에서 처리하게 둔다. SQLite 로컬은 풀링 그대로 둔다.
+_engine_kwargs = (
+    {"pool_pre_ping": True} if _is_sqlite else {"poolclass": NullPool}
+)
 engine = create_async_engine(
     settings.database_url,
-    pool_pre_ping=True,
     connect_args=connect_args,
+    **_engine_kwargs,
 )
 
 
