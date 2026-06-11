@@ -7,10 +7,11 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import DeviceDep
+from app.core.rewards.attendance import AlreadyCheckedIn, build_attendance, check_in
 from app.core.rewards.badges import build_badges
 from app.core.rewards.collection import build_collection
 from app.core.rewards.compare import build_compare
@@ -18,6 +19,8 @@ from app.core.rewards.points import build_points
 from app.core.rewards.streak import build_streak
 from app.db.session import get_session
 from app.schemas.rewards import (
+    AttendanceClaimOut,
+    AttendanceOut,
     BadgeOut,
     CollectionOut,
     CompareOut,
@@ -52,6 +55,23 @@ async def get_points(session: SessionDep, device: DeviceDep) -> PointsOut:
     return PointsOut(**await build_points(session, device))
 
 
+@router.get("/attendance", response_model=AttendanceOut)
+async def get_attendance(session: SessionDep, device: DeviceDep) -> AttendanceOut:
+    """출석 현황 — 연속 출석·오늘 출석 여부·20일 보상표."""
+    return AttendanceOut(**await build_attendance(session, device))
+
+
+@router.post("/attendance/check-in", response_model=AttendanceClaimOut)
+async def post_attendance_check_in(
+    session: SessionDep, device: DeviceDep
+) -> AttendanceClaimOut:
+    """오늘 출석 — 연속 일차에 맞는 팜 적립. 하루 1회(중복 시 409)."""
+    try:
+        return AttendanceClaimOut(**await check_in(session, device))
+    except AlreadyCheckedIn:
+        raise HTTPException(status_code=409, detail="오늘은 이미 출석했어요.") from None
+
+
 @router.get("/compare", response_model=CompareOut)
 async def get_compare(
     session: SessionDep, device: DeviceDep, crop_slug: str | None = None
@@ -68,5 +88,6 @@ async def get_summary(session: SessionDep, device: DeviceDep) -> RewardsSummary:
         badges=[BadgeOut(**b) for b in await build_badges(session, device)],
         streak=StreakOut(**await build_streak(session, device)),
         points=PointsOut(**await build_points(session, device)),
+        attendance=AttendanceOut(**await build_attendance(session, device)),
         compare=CompareOut(**await build_compare(session, device)),
     )

@@ -66,9 +66,27 @@ class PointsOut(BaseModel):
     harvestCount: int
 
 
+class AttendanceOut(BaseModel):
+    checkedToday: bool
+    streak: int  # 현재 연속 출석 일수
+    cycleDay: int  # 오늘 해당 1~20 사이클 일차(미출석이면 출석 시 받게 될 일차)
+    todayReward: int  # 오늘 출석으로 받는/받은 팜
+    cycleDays: int  # 사이클 길이(20)
+    rewards: list[int]  # 길이 20 일차별 보상표
+    total: int  # 현재 보유 팜
+
+
+class AttendanceClaimOut(BaseModel):
+    cycleDay: int
+    reward: int
+    streak: int
+    total: int
+
+
 class RewardsSummary(BaseModel):
     collection: CollectionOut
     badges: list[BadgeOut]
     streak: StreakOut
     points: PointsOut
+    attendance: AttendanceOut
     compare: CompareOut | None = None
