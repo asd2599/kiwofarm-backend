@@ -52,6 +52,10 @@ class FarmPlan(Base):
     track_progress: Mapped[bool] = mapped_column(
         Boolean, server_default="false", nullable=False
     )
+    # 사용자가 경작을 포기한 계획 — 삭제하지 않고 완료 탭에 '포기'로 남긴다.
+    abandoned: Mapped[bool] = mapped_column(
+        Boolean, server_default="false", nullable=False
+    )
     visit_frequency: Mapped[str | None] = mapped_column(String(16), nullable=True)
     visit_days: Mapped[list[int] | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(

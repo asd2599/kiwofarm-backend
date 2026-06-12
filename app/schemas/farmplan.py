@@ -96,6 +96,8 @@ class FarmPlanOut(BaseModel):
     trackProgress: bool
     # 검증된 수확 인증 기록이 하나라도 있으면 true → 캘린더에서 '완료'로 분류.
     harvested: bool = False
+    # 사용자가 경작을 포기한 계획 → 완료 탭에 '포기' 뱃지로 분류.
+    abandoned: bool = False
     tasks: list[FarmTaskOut]
     memos: list[TaskMemoOut]
 
@@ -150,9 +152,10 @@ class MemoUpsert(BaseModel):
 
 
 class SettingsUpdate(BaseModel):
-    # 둘 다 선택 — 제공된 필드만 갱신(완료 추적 토글 / 텃밭 이름 변경에 공용).
+    # 모두 선택 — 제공된 필드만 갱신(완료 추적 토글 / 텃밭 이름 변경 / 경작 포기에 공용).
     trackProgress: bool | None = None
     name: str | None = None
+    abandoned: bool | None = None
 
 
 # ── 주간 다이제스트 (이번 주 할 일 3가지 + 코칭 한 줄) ───────────────────
@@ -201,6 +204,7 @@ class FarmPlanSummary(BaseModel):
     area: float
     areaUnit: AreaUnit
     trackProgress: bool
+    abandoned: bool = False
     taskCount: int
 
 

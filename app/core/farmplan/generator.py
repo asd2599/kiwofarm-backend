@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.core.rag import knowledge
 from app.core.rag import retrieve as rag_retrieve
-from app.core.farmplan.farmwork import schedule_for
+from app.core.farmplan.farmwork import harvest_offset_for, schedule_for
 from app.core.rag.ingest import crop_key, ensure_crop_ingested
 from app.db.models.farm_plan import FarmPlan, FarmTask
 from app.schemas.farmplan import FarmPlanCreate
@@ -343,6 +343,38 @@ def _fallback_tasks(payload: FarmPlanCreate) -> list[FarmTask]:
     ]
 
 
+# 기간 보정 허용 밴드 — 일정의 마지막 작업 offset 이 권위값(농작업일정)의 이 배수
+# 밖일 때만 끌어당긴다. 밴드 안이면 GPT 가 만든 자연스러운 간격을 그대로 둔다.
+_PERIOD_LOW = 0.6
+_PERIOD_HIGH = 1.6
+
+
+def _correct_period(tasks: list[FarmTask], slug: str, start: date) -> None:
+    """일정 전체 기간을 농작업일정 기준으로 검증·보정(GPT/fallback 공통).
+
+    가장 늦은 작업 offset(anchor)이 권위 있는 수확 offset 의 허용 밴드를 벗어나면,
+    모든 day_offset 을 target/anchor 배율로 비례 스케일해 현실적 기간으로 맞춘다.
+    같은 작목이 28일~145일로 튀던 GPT 편차를 작기 기준(예: 상추 ~60일)으로 수렴시킨다.
+    """
+    if not tasks:
+        return
+    target = harvest_offset_for(slug, start)
+    if not target:
+        return
+    anchor = max(t.day_offset for t in tasks)
+    if anchor <= 0:
+        return
+    if _PERIOD_LOW * target <= anchor <= _PERIOD_HIGH * target:
+        return  # 밴드 내 — 보정하지 않음
+    factor = target / anchor
+    for t in tasks:
+        t.day_offset = max(0, round(t.day_offset * factor))
+    log.info(
+        "기간 보정 slug=%s anchor=%d→target=%d (factor=%.2f)",
+        slug, anchor, target, factor,
+    )
+
+
 def _snap_to_visit_days(
     tasks: list[FarmTask], start: date, visit_days: list[int] | None
 ) -> None:
@@ -396,6 +428,9 @@ async def generate_plan(
 
     raw = await _gpt_tasks(payload, context)
     tasks = _normalize_tasks(raw) or _fallback_tasks(payload)
+
+    # 전체 기간을 농작업일정 기준으로 검증·보정(GPT 편차/100일 고정 fallback 모두 수렴).
+    _correct_period(tasks, ckey, payload.startDate)
 
     # 방문 요일이 지정되면 단기 작업을 방문일로 스냅한 뒤 재정렬·order 재부여
     _snap_to_visit_days(tasks, payload.startDate, payload.visitDays)
