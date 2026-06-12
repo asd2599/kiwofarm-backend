@@ -87,6 +87,7 @@ async def available(
 # --- 팜 경제: 가입보너스 · 캘린더 생성 비용 ---
 SIGNUP_BONUS = 300  # 로그인 계정 가입 시 1회 지급
 CALENDAR_COST = 300  # 캘린더(농사계획) 1개 생성 비용
+BRAG_COMPOSE_COST = 100  # 자랑글 AI 자동작성 1회 비용
 
 
 def is_demo(device: str) -> bool:

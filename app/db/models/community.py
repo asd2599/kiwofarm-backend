@@ -46,6 +46,12 @@ class CommunityPost(Base):
     )
     title: Mapped[str | None] = mapped_column(String(255), nullable=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
+    # 글 꾸미기 프리셋 — "font|size|align" (예: "gowun|md|left"). null=기본 프리셋.
+    style: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    # AI 자동작성 사용 여부 — 피드에 'AI 자동작성' 뱃지로 표시.
+    ai_assisted: Mapped[bool] = mapped_column(
+        Boolean, server_default="false", default=False, nullable=False
+    )
     # 나눔 진행 상태 — 'open'=경매 진행, 'closed'=마감/정산됨
     share_status: Mapped[str] = mapped_column(
         String(16), nullable=False, server_default="open"

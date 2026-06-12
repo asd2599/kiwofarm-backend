@@ -16,6 +16,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, undefer
 
 from app.api.deps import DeviceDep
+from app.core.community.compose import PHOTO_MARKER, ComposeError, compose_brag
+from app.core.harvest import rules
+from app.core.planting import matrix
 from app.core.rewards import wallet
 from app.core.storage import read_image
 from app.db.models.community import (
@@ -27,6 +30,7 @@ from app.db.models.community import (
     ShareBid,
 )
 from app.db.models.farm_plan import FarmPlan, MemoImage, TaskMemo
+from app.db.models.point import PointLedger
 from app.db.session import get_session
 from app.schemas.community import (
     AuctionOut,
@@ -35,6 +39,8 @@ from app.schemas.community import (
     BidOut,
     CommentIn,
     CommentOut,
+    ComposeDraftIn,
+    ComposeDraftOut,
     LikeToggleOut,
     PostDetailOut,
     PostImageOut,
@@ -50,6 +56,24 @@ router = APIRouter(prefix="/community", tags=["community"])
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 PREVIEW_LEN = 140
+
+# 글 꾸미기 프리셋 허용값 — 잘못된 값은 무시(기본 프리셋으로 폴백).
+_STYLE_FONTS = {"gowun", "pretendard", "nanum"}
+_STYLE_SIZES = {"sm", "md", "lg"}
+_STYLE_ALIGNS = {"left", "center"}
+
+
+def _clean_style(raw: str | None) -> str | None:
+    """ "font|size|align" 검증·정규화. 형식·허용값 어긋나면 None(=기본)."""
+    if not raw:
+        return None
+    parts = raw.split("|")
+    if len(parts) != 3:
+        return None
+    font, size, align = (p.strip() for p in parts)
+    if font in _STYLE_FONTS and size in _STYLE_SIZES and align in _STYLE_ALIGNS:
+        return f"{font}|{size}|{align}"
+    return None
 
 
 def _now() -> datetime:
@@ -174,6 +198,8 @@ async def _build_detail(session: AsyncSession, post_id: int, device: str) -> Pos
         cropName=post.crop_name,
         title=post.title,
         content=post.content,
+        style=post.style,
+        aiAssisted=post.ai_assisted,
         images=[_img_out(i) for i in post.images],
         likeCount=len(post.likes),
         likedByMe=any(lk.device_id == device for lk in post.likes),
@@ -254,7 +280,9 @@ async def list_posts(
             cropSlug=p.crop_slug,
             cropName=p.crop_name,
             title=p.title,
-            contentPreview=p.content[:PREVIEW_LEN],
+            contentPreview=p.content.replace(PHOTO_MARKER, " ").strip()[:PREVIEW_LEN],
+            style=p.style,
+            aiAssisted=p.ai_assisted,
             images=[_img_out(i) for i in p.images],
             likeCount=like_counts.get(p.id, 0),
             commentCount=comment_counts.get(p.id, 0),
@@ -269,6 +297,69 @@ async def list_posts(
     ]
 
 
+@router.post("/compose-draft", response_model=ComposeDraftOut)
+async def compose_draft(
+    payload: ComposeDraftIn, session: SessionDep, device: DeviceDep
+) -> ComposeDraftOut:
+    """선택한 작물 캘린더의 메모를 AI가 블로그형 자랑글 초안으로 정리해 돌려준다.
+
+    사진은 프론트가 '내 기록 사진'으로 첨부하므로 여기선 글(제목·본문)만 생성한다.
+    """
+    plans = (
+        await session.scalars(
+            select(FarmPlan)
+            .where(FarmPlan.device_id == device)
+            .options(selectinload(FarmPlan.memos).selectinload(TaskMemo.images))
+        )
+    ).all()
+    crop = matrix.get_crop(payload.cropSlug)
+    crop_name = crop["name"] if crop else payload.cropSlug
+
+    # 메모(텍스트)와 사진 id 를 날짜순으로 모은다 — 본문·사진 시간순 정렬을 맞추기 위해.
+    entries: list[tuple[str, str, list[int]]] = []
+    for plan in plans:
+        if rules.plan_slug(plan) != payload.cropSlug:
+            continue
+        for m in plan.memos:
+            text = (m.content or "").strip()
+            # data(bytea)는 deferred — async 세션에서 직접 접근하면 lazy-load(MissingGreenlet)
+            # 로 500. 업로드 시 size_bytes=len(data) 로 채워지므로 그걸로 존재 여부를 본다.
+            img_ids = [img.id for img in m.images if img.size_bytes > 0]
+            if text or img_ids:
+                entries.append((m.memo_date.isoformat(), text, img_ids))
+    entries.sort(key=lambda x: x[0])
+    dated = [(d, t) for d, t, _ in entries if t]
+    image_ids = [iid for _, _, ids in entries for iid in ids]
+    if not dated:
+        raise HTTPException(
+            status_code=422,
+            detail="정리할 메모 기록이 없어요. 캘린더에 메모를 남기고 다시 시도해 주세요.",
+        )
+    # 팜 차감(demo 면제). 캘린더 생성과 동일 패턴 — 먼저 잔액 확인, 생성 성공 후 차감.
+    cost = wallet.BRAG_COMPOSE_COST
+    if not wallet.is_demo(device):
+        if await wallet.grant_signup_bonus(session, device):
+            await session.commit()
+        if await wallet.available(session, device) < cost:
+            raise HTTPException(
+                status_code=402,
+                detail=f"팜이 부족해요. AI 자동작성에 {cost}팜이 필요합니다.",
+            )
+    try:
+        draft = await compose_brag(crop_name, dated, len(image_ids))
+    except ComposeError as e:
+        raise HTTPException(
+            status_code=503, detail="AI 자동 작성을 지금 사용할 수 없어요."
+        ) from e
+    # 성공했을 때만 차감(AI 실패 시 과금 없음).
+    if not wallet.is_demo(device):
+        session.add(
+            PointLedger(device_id=device, amount=-cost, reason="brag_compose")
+        )
+        await session.commit()
+    return ComposeDraftOut(**draft, imageIds=image_ids)
+
+
 @router.post("/posts", response_model=PostDetailOut)
 async def create_post(
     session: SessionDep,
@@ -277,6 +368,8 @@ async def create_post(
     authorName: Annotated[str, Form()],
     postType: Annotated[str, Form()] = "show",
     title: Annotated[str | None, Form()] = None,
+    style: Annotated[str | None, Form()] = None,
+    aiAssisted: Annotated[bool, Form()] = False,
     cropSlug: Annotated[str | None, Form()] = None,
     cropName: Annotated[str | None, Form()] = None,
     harvestRecordId: Annotated[int | None, Form()] = None,
@@ -315,6 +408,8 @@ async def create_post(
         post_type=pt,
         title=(title or "").strip()[:255] or None,
         content=body,
+        style=_clean_style(style),
+        ai_assisted=bool(aiAssisted),
         crop_slug=cropSlug or None,
         crop_name=cropName or None,
         harvest_record_id=harvestRecordId,
