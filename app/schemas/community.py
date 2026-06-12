@@ -11,6 +11,7 @@ from typing import Literal
 from pydantic import BaseModel
 
 PostType = Literal["show", "share"]
+# (ComposeDraftIn/Out 은 아래에 정의)
 ShareStatus = Literal["open", "closed"]
 ShareRequestStatus = Literal["pending", "accepted", "declined"]
 
@@ -21,6 +22,16 @@ class PostImageOut(BaseModel):
     originalName: str | None = None
     contentType: str | None = None
     size: int = 0
+
+
+class ComposeDraftIn(BaseModel):
+    cropSlug: str
+
+
+class ComposeDraftOut(BaseModel):
+    title: str
+    content: str  # 본문(사진 자리표시 [[사진]] 포함)
+    imageIds: list[int] = []  # 본문 [[사진]] 순서에 맞춘 일지 사진 id(시간순)
 
 
 class CommentOut(BaseModel):
@@ -81,6 +92,8 @@ class PostListItemOut(BaseModel):
     cropName: str | None = None
     title: str | None = None
     contentPreview: str
+    style: str | None = None
+    aiAssisted: bool = False
     images: list[PostImageOut] = []
     likeCount: int = 0
     commentCount: int = 0
@@ -100,6 +113,8 @@ class PostDetailOut(BaseModel):
     cropName: str | None = None
     title: str | None = None
     content: str
+    style: str | None = None
+    aiAssisted: bool = False
     images: list[PostImageOut] = []
     likeCount: int = 0
     likedByMe: bool = False
