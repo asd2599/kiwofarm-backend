@@ -132,6 +132,7 @@ def _plan_out(plan: FarmPlan) -> FarmPlanOut:
         visitDays=plan.visit_days,
         trackProgress=plan.track_progress,
         harvested=any(r.verified for r in plan.harvest_records),
+        abandoned=plan.abandoned,
         tasks=[_task_out(t, plan.start_date) for t in plan.tasks],
         memos=[_memo_out(m) for m in plan.memos],
     )
@@ -150,6 +151,7 @@ def _plan_summary(plan: FarmPlan) -> FarmPlanSummary:
         area=plan.area,
         areaUnit=plan.area_unit,  # type: ignore[arg-type]
         trackProgress=plan.track_progress,
+        abandoned=plan.abandoned,
         taskCount=len(plan.tasks),
     )
 
@@ -460,12 +462,14 @@ async def plan_alerts(
 async def update_settings(
     plan_id: int, payload: SettingsUpdate, session: SessionDep, device: DeviceDep
 ) -> FarmPlanOut:
-    """계획 설정 — 완료/지연 표시(진행 추적) on/off + 텃밭 이름 변경. 제공된 필드만 갱신."""
+    """계획 설정 — 진행 추적 on/off + 텃밭 이름 변경 + 경작 포기. 제공된 필드만 갱신."""
     plan = await _load_plan(session, plan_id, device)
     if payload.trackProgress is not None:
         plan.track_progress = payload.trackProgress
     if payload.name is not None:
         plan.name = payload.name.strip()[:255] or None
+    if payload.abandoned is not None:
+        plan.abandoned = payload.abandoned
     await session.commit()
     plan = await _load_plan(session, plan_id, device)
     return _plan_out(plan)
