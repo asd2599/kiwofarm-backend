@@ -82,20 +82,38 @@ class PointsOut(BaseModel):
     harvestCount: int
 
 
+class AttendanceMilestone(BaseModel):
+    days: int  # 연속 일수 목표(7·14·30)
+    reward: int  # 달성 보너스 팜
+    reached: bool  # 역대 최고 연속으로 달성했는지(스티키)
+
+
 class AttendanceOut(BaseModel):
     checkedToday: bool
+    dailyReward: int  # 매일 출석 기본 팜
     streak: int  # 현재 연속 출석 일수
-    cycleDay: int  # 오늘 해당 1~20 사이클 일차(미출석이면 출석 시 받게 될 일차)
-    todayReward: int  # 오늘 출석으로 받는/받은 팜
-    cycleDays: int  # 사이클 길이(20)
-    rewards: list[int]  # 길이 20 일차별 보상표
+    best: int  # 역대 최고 연속
+    monthDays: int  # 이번 달(달력 월) 출석 일수
+    monthTarget: int  # 월간 보너스 목표 일수(20)
+    monthBonus: int  # 월간 달성 보너스 팜
+    monthAchieved: bool  # 이번 달 목표 달성(또는 보너스 지급 완료)
+    monthBest: int  # 역대 한 달 최다 출석 일수
+    milestones: list[AttendanceMilestone]  # 연속 마일스톤 현황
     total: int  # 현재 보유 팜
 
 
-class AttendanceClaimOut(BaseModel):
-    cycleDay: int
+class AttendanceBonus(BaseModel):
+    type: str  # 'month' | 'streak'
+    label: str
     reward: int
+
+
+class AttendanceClaimOut(BaseModel):
+    reward: int  # 일일 기본 팜
+    bonusReward: int  # 이번 출석으로 추가로 받은 보너스 합
+    bonuses: list[AttendanceBonus]  # 새로 달성한 보너스 목록(연출용)
     streak: int
+    monthDays: int
     total: int
 
 

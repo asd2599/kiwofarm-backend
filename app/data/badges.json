@@ -15,5 +15,7 @@
   { "id": "photo_50", "emoji": "/svg/badge/photo_50.svg", "name": "텃밭 갤러리", "description": "일지 사진 50장 첨부", "difficulty": 4, "rewardFarm": 70, "metric": "photoCount", "threshold": 50 },
   { "id": "attend_5", "emoji": "/svg/badge/attend_5.svg", "name": "꾸준함의 시작", "description": "5일 연속 출석 달성", "difficulty": 1, "rewardFarm": 10, "metric": "attendanceBest", "threshold": 5 },
   { "id": "attend_20", "emoji": "/svg/badge/attend_20.svg", "name": "개근상", "description": "20일 연속 출석 달성", "difficulty": 4, "rewardFarm": 70, "metric": "attendanceBest", "threshold": 20 },
+  { "id": "attend_streak_30", "emoji": "/svg/badge/attend_20.svg", "name": "한 달 연속 개근", "description": "30일 연속 출석 달성", "difficulty": 5, "rewardFarm": 120, "metric": "attendanceBest", "threshold": 30 },
+  { "id": "attend_month_20", "emoji": "/svg/badge/attend_20.svg", "name": "이달의 텃밭지기", "description": "한 달에 20일 출석 달성", "difficulty": 3, "rewardFarm": 50, "metric": "attendanceMonthBest", "threshold": 20 },
   { "id": "first_memo", "emoji": "/svg/badge/first_memo.svg", "name": "기록의 첫걸음", "description": "첫 일지 메모를 남겼어요", "difficulty": 1, "rewardFarm": 10, "metric": "memoCount", "threshold": 1 }
 ]
