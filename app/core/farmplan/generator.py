@@ -21,7 +21,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.core.rag import knowledge
 from app.core.rag import retrieve as rag_retrieve
-from app.core.farmplan.farmwork import harvest_offset_for, schedule_for
+from app.core.farmplan.farmwork import (
+    growth_period_block,
+    harvest_offset_for,
+    schedule_for,
+    water_interval_for,
+)
 from app.core.rag.ingest import crop_key, ensure_crop_ingested
 from app.db.models.farm_plan import FarmPlan, FarmTask
 from app.schemas.farmplan import FarmPlanCreate
@@ -140,7 +145,9 @@ def _build_prompt(payload: FarmPlanCreate, context: str) -> str:
         region = prov
     conditions = _conditions_block(payload)
     method_rules = _method_place_rules(payload)
-    farmwork = schedule_for(crop_key(payload.itemCode, payload.kindCode))
+    ckey = crop_key(payload.itemCode, payload.kindCode)
+    farmwork = schedule_for(ckey)
+    growth = growth_period_block(ckey)
     # 면적 미입력(화분·소규모) 이면 면적 줄 대신 소규모 안내를 넣는다.
     area_line = (
         f"농지 면적: {payload.area} {payload.areaUnit}"
@@ -164,6 +171,7 @@ def _build_prompt(payload: FarmPlanCreate, context: str) -> str:
         f"{conditions}"
         f"{method_rules}"
         f"{farmwork}"
+        f"{growth}"
         f"--- 농업기술 참고자료 (농사로 기반) ---\n{context or '(참고자료 없음)'}\n--- 끝 ---\n\n"
         "위 자료를 바탕으로 시작일부터 한 작기(보통 1년 이내)의 농사 일정을 만드세요. "
         "파종(씨뿌리기)·정식(아주심기)·수확 시기는 농작업일정의 월을 반드시 따르세요. "
@@ -171,7 +179,16 @@ def _build_prompt(payload: FarmPlanCreate, context: str) -> str:
         "각 작업은 시작일로부터의 day_offset(0=시작일 당일)과 duration_days(작업 지속 일수)로 표현합니다. "
         "관수·생육 관리·육묘처럼 일정 기간 이어지는 작업은 duration_days로 기간을 잡고(예: 14), "
         "파종·옮겨심기·웃거름·방제·수확 같은 단발 작업은 duration_days=1로 하세요. "
-        "지역 기후와 면적을 고려해 현실적인 시기를 잡고, 병해충 예방 작업을 반드시 포함하세요. "
+        "관수(물 주기)는 한 줄로만 넣되 정식~수확까지 이어지는 기간으로 잡으세요 — "
+        "실제 물 주는 날짜는 시스템이 작물 물 수요에 맞춰 자동으로 나눕니다(개별 날짜로 쪼개지 마세요). "
+        "지역 기후와 면적을 고려해 현실적인 시기를 잡으세요. "
+        "상식 규칙(반드시 지키세요): "
+        "①day_offset 이 가장 작은 첫 작업은 밭·화분 준비, 파종 또는 모종 심기여야 합니다 — "
+        "병해충 방제나 수확을 첫 작업으로 넣지 마세요. "
+        "②병해충 예방·방제는 작물이 어느 정도 자란 뒤에만 의미가 있으니 파종·정식 후 최소 2~3주 "
+        "(day_offset 이 심기보다 14일 이상 뒤)부터 배치하고, 심기 전이나 당일에는 절대 넣지 마세요. "
+        "③수확은 위 생육기간을 지켜 충분히 자란 뒤에 배치하세요. "
+        "병해충 예방 작업은 반드시 1개 이상 포함하되 위 시점 규칙을 지키세요. "
         "옮겨심기(정식·이식)는 전체 일정에서 최대 1회만 넣으세요. "
         f"{cond_guide}"
         "일정은 수확까지만 다루고, 수확 후 저장·선별·유통 같은 작업은 넣지 마세요. "
@@ -343,10 +360,19 @@ def _fallback_tasks(payload: FarmPlanCreate) -> list[FarmTask]:
     ]
 
 
-# 기간 보정 허용 밴드 — 일정의 마지막 작업 offset 이 권위값(농작업일정)의 이 배수
-# 밖일 때만 끌어당긴다. 밴드 안이면 GPT 가 만든 자연스러운 간격을 그대로 둔다.
-_PERIOD_LOW = 0.6
-_PERIOD_HIGH = 1.6
+# 기간 보정 허용 밴드 — 일정의 마지막 작업 offset 이 권위값(생육기간/농작업일정)의 이
+# 배수 밖일 때만 끌어당긴다. days_to_harvest 라는 정확한 근거가 생겨 밴드를 좁혀,
+# "2달짜리가 1달 만에 끝나는" 과소 추정을 적극 보정한다. 밴드 안이면 GPT 간격 유지.
+_PERIOD_LOW = 0.8
+_PERIOD_HIGH = 1.45
+
+# 병해충 작업이 의미 있으려면 심은 뒤 이만큼은 지나야 함 — 첫날 방제 같은 배치를 막는 버퍼(일).
+_PEST_MIN_AFTER_PLANT = 14
+
+# 관수 외 기간형 작업(생육 관리·육묘 등)을 펼칠 때의 점검 간격(일) — 주 1회.
+_PERIOD_CHECK_INTERVAL = 7
+# 한 기간형 작업이 만들 수 있는 개별 일과 상한 — 폭주 방지 안전장치.
+_MAX_EXPANDED = 120
 
 
 def _correct_period(tasks: list[FarmTask], slug: str, start: date) -> None:
@@ -373,6 +399,106 @@ def _correct_period(tasks: list[FarmTask], slug: str, start: date) -> None:
         "기간 보정 slug=%s anchor=%d→target=%d (factor=%.2f)",
         slug, anchor, target, factor,
     )
+
+
+def _enforce_sane_ordering(tasks: list[FarmTask]) -> None:
+    """상식에 안 맞는 시점 배치 보정 — GPT 가 규칙을 어겨도 결정론적으로 바로잡는다.
+
+    파종·정식(seeding) 작업의 최소 offset 을 '심은 날'로 보고, 그보다 이르거나
+    심은 직후(버퍼 이내)인 병해충(pest) 작업을 '심은 날 + 버퍼'로 밀어낸다.
+    seeding 이 하나도 없으면 심은 날을 0 으로 봐 최소한 첫날 방제는 막는다.
+    호출부에서 이후 재정렬·order 재부여를 수행한다.
+    """
+    if not tasks:
+        return
+    plant_offsets = [t.day_offset for t in tasks if t.category == "seeding"]
+    plant = min(plant_offsets) if plant_offsets else 0
+    floor = plant + _PEST_MIN_AFTER_PLANT
+    for t in tasks:
+        if t.category == "pest" and t.day_offset < floor:
+            t.day_offset = floor
+
+
+def _clone_on(t: FarmTask, day_offset: int) -> FarmTask:
+    """기간형 작업 t 를 특정 날짜(day_offset)의 단발 일과로 복제."""
+    return FarmTask(
+        title=t.title,
+        detail=t.detail,
+        category=t.category,
+        day_offset=day_offset,
+        duration_days=1,
+        source_note=t.source_note,
+    )
+
+
+def _expand_period_tasks(
+    tasks: list[FarmTask], slug: str, pot: bool
+) -> list[FarmTask]:
+    """기간형(duration>1) 작업을 개별 '하루' 일과 여러 개로 펼친다.
+
+    - 관수(water): 작물 물 수요·재배장소 기준 간격으로, 첫 관수일부터 수확까지 반복.
+    - 그 외(생육 관리·육묘 등): 자기 기간 안에서 주 1회 점검으로 반복.
+    duration<=1 단발 작업은 그대로 둔다. 캘린더에 실제 작업하는 날마다 일과가 찍힌다.
+    """
+    if not tasks:
+        return tasks
+    # 전체 일정의 마지막(수확) 시점 — 관수 시리즈 종료점.
+    harvest_off = max(t.day_offset + max(0, t.duration_days - 1) for t in tasks)
+    out: list[FarmTask] = []
+    has_water = False
+    for t in tasks:
+        span = t.duration_days or 1
+        if t.category == "water":
+            has_water = True
+            interval = water_interval_for(slug, pot)
+            end_off = max(harvest_off, t.day_offset)
+        elif span > 1:
+            interval = _PERIOD_CHECK_INTERVAL
+            end_off = t.day_offset + span - 1
+        else:
+            out.append(t)
+            continue
+        off = t.day_offset
+        for _ in range(_MAX_EXPANDED):
+            out.append(_clone_on(t, off))
+            off += interval
+            if off > end_off:
+                break
+    # GPT 가 관수를 아예 안 넣은 드문 경우 — 정식~수확 구간에 기본 관수 시리즈 주입.
+    if not has_water:
+        plant = min(
+            (t.day_offset for t in tasks if t.category == "seeding"), default=0
+        )
+        interval = water_interval_for(slug, pot)
+        off = plant + interval
+        for _ in range(_MAX_EXPANDED):
+            if off > harvest_off:
+                break
+            out.append(
+                FarmTask(
+                    title="물 주기",
+                    detail=None,
+                    category="water",
+                    day_offset=off,
+                    duration_days=1,
+                    source_note="작물 물 수요 기준 관수",
+                )
+            )
+            off += interval
+    return out
+
+
+def _dedupe_same_day(tasks: list[FarmTask]) -> list[FarmTask]:
+    """같은 날·같은 제목 작업 하나만 남긴다(관수 펼침·방문일 스냅 충돌 정리)."""
+    seen: set[tuple[int, str]] = set()
+    out: list[FarmTask] = []
+    for t in sorted(tasks, key=lambda t: t.day_offset):
+        key = (t.day_offset, t.title)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(t)
+    return out
 
 
 def _snap_to_visit_days(
@@ -429,11 +555,18 @@ async def generate_plan(
     raw = await _gpt_tasks(payload, context)
     tasks = _normalize_tasks(raw) or _fallback_tasks(payload)
 
-    # 전체 기간을 농작업일정 기준으로 검증·보정(GPT 편차/100일 고정 fallback 모두 수렴).
+    # 전체 기간을 생육기간/농작업일정 기준으로 검증·보정(GPT 편차/100일 고정 fallback 모두 수렴).
     _correct_period(tasks, ckey, payload.startDate)
 
-    # 방문 요일이 지정되면 단기 작업을 방문일로 스냅한 뒤 재정렬·order 재부여
+    # 첫날 병해충 방제 등 상식에 안 맞는 시점 배치를 결정론적으로 바로잡는다(보정 후 offset 기준).
+    _enforce_sane_ordering(tasks)
+
+    # 기간형(관수·생육 등) 작업을 작물 주기에 맞춘 개별 '하루' 일과로 펼친다.
+    tasks = _expand_period_tasks(tasks, ckey, payload.growPlace == "pot")
+
+    # 방문 요일이 지정되면 단기 작업을 방문일로 스냅 → 같은 날 중복 정리 → 재정렬·order 재부여
     _snap_to_visit_days(tasks, payload.startDate, payload.visitDays)
+    tasks = _dedupe_same_day(tasks)
     tasks.sort(key=lambda t: t.day_offset)
     for i, t in enumerate(tasks):
         t.order = i
