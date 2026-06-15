@@ -9,14 +9,10 @@ class Settings(BaseSettings):
     database_url: str = "sqlite+aiosqlite:///./data/kiwofarm.db"
 
     openai_api_key: str = ""
-    data_go_kr_key: str = ""
     # 농사로 통합 키 — 전 서비스(cropEbook·monthFd·fildMnfct·farmWorkingPlanNew 등)
     # 단일 신청. 구 KEY2/KEY3 체계는 2026-06-04 폐기.
     nongsaro_api_key: str = ""
     ncpms_api_key: str = ""  # 국가농작물병해충관리시스템(ncpms.rda.go.kr) Open API 키
-    kamis_cert_key: str = ""
-    kamis_cert_id: str = ""
-    kma_api_key: str = ""
 
     cors_origins: str = "http://localhost:3000"
 

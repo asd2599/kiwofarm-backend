@@ -1,56 +1,8 @@
+"""면적 단위 타입 — farmplan 스키마가 공유한다.
+
+(옛 추천 API 스키마는 v3 피벗으로 제거됨. 살아있는 추천은 core/planting/recommend.py.)
+"""
+
 from typing import Literal
 
-from pydantic import BaseModel, Field
-
-Mode = Literal["returning", "weekend"]
 AreaUnit = Literal["pyeong", "sqm", "hectare"]
-FacilityType = Literal["open_field", "vinyl_house", "smart_farm"]
-CropPhase = Literal["rest", "seeding", "growing", "harvest"]
-CropColor = Literal["red", "orange", "indigo"]
-
-
-class OnboardingInput(BaseModel):
-    """Frontend 의 OnboardingInput 과 구조 일치."""
-
-    mode: Mode
-    region: str
-    province: str | None = None
-    area: float = Field(gt=0)
-    areaUnit: AreaUnit
-    laborCount: int = Field(ge=1)
-    preferredCrops: list[str] = Field(default_factory=list)
-    budgetManwon: int | None = Field(default=None, ge=0)
-    facility: FacilityType | None = None
-    # weekend 전용 — 방문 예정 요일(0=일 ~ 6=토). 주당 방문 횟수가 관리 가능 빈도.
-    visitDays: list[int] | None = None
-
-
-class CalendarMonth(BaseModel):
-    month: int = Field(ge=1, le=12)
-    phase: CropPhase
-
-
-class CropRecommendationItem(BaseModel):
-    cropId: str
-    name: str
-    emoji: str
-    matchScore: int = Field(ge=0, le=100)
-    difficulty: int = Field(ge=1, le=5)
-    expectedRevenueManwon: int
-    expectedNetManwon: int
-    expectedYieldKg: int
-    expectedDirectPriceWon: int
-    llmReason: str
-    tags: list[str]
-    calendar: list[CalendarMonth]
-    peerFarms: int
-    peerAgreeRate: int = Field(ge=0, le=100)
-    color: CropColor
-    tier: str = "standard"  # premium=우수농가 실측 매칭 / standard=공공데이터 표준 매칭
-    peerEvidence: str | None = None  # premium 한정: 유사 우수농가 근거 한 줄
-    revenueBasis: str | None = None  # premium 한정: 매출 산출 근거(KAMIS 단가×수율×면적)
-
-
-class RecommendationResponse(BaseModel):
-    mode: Mode
-    items: list[CropRecommendationItem]

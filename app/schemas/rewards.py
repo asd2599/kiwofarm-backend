@@ -98,6 +98,8 @@ class AttendanceOut(BaseModel):
     monthBonus: int  # 월간 달성 보너스 팜
     monthAchieved: bool  # 이번 달 목표 달성(또는 보너스 지급 완료)
     monthBest: int  # 역대 한 달 최다 출석 일수
+    monthAttendedDays: list[int]  # 이번 달 출석한 날짜(일) 목록 — 달력 렌더용
+    todayDay: int  # KST 오늘 날짜(일)
     milestones: list[AttendanceMilestone]  # 연속 마일스톤 현황
     total: int  # 현재 보유 팜
 
