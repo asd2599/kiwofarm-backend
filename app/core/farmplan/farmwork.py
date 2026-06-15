@@ -75,33 +75,39 @@ def days_to_harvest_for(slug: str) -> tuple[int, int] | None:
 
 
 @lru_cache(maxsize=1)
-def _slug_to_water() -> dict[str, str]:
-    """slug → water_need('많음'|'보통'|'적음'). crops_master."""
+def _slug_to_field() -> dict[str, dict]:
+    """slug → crops_master 행 전체(water_need·category 등 조회용)."""
     with open(_DATA / "crops_master.json", encoding="utf-8") as f:
         data = json.load(f)
     crops = data.get("crops", []) if isinstance(data, dict) else data
-    out: dict[str, str] = {}
-    for c in crops:
-        if isinstance(c, dict) and c.get("id") and c.get("water_need"):
-            out[c["id"]] = str(c["water_need"]).strip()
-    return out
+    return {c["id"]: c for c in crops if isinstance(c, dict) and c.get("id")}
 
 
-# 물 수요별 관수 간격(일). (노지, 화분) — 화분·플랜터는 흙이 적어 빨리 말라 더 자주.
-# 기준점: 토마토(많음·노지) ≈ 6일(사용자 "2주에 두번"). 값은 여기서 쉽게 조정 가능.
-_WATER_INTERVAL: dict[str, tuple[int, int]] = {
-    "많음": (6, 3),
-    "보통": (9, 5),
-    "적음": (14, 8),
+# 정착(steady) 관수 간격은 '작물 분류'가 핵심 신호다. 잎채소는 얕은 뿌리라 흙이
+# 마르기 쉬워 자주, 뿌리채소는 깊어 드물게 깊이 준다. (노지, 화분) — 화분은 더 자주.
+_CAT_INTERVAL: dict[str, tuple[int, int]] = {
+    "잎채소": (3, 2),
+    "열매채소": (7, 4),
+    "뿌리채소": (8, 4),
+    "허브": (6, 3),
 }
-_WATER_DEFAULT = (9, 5)  # water_need 미상 작물(보통 취급)
+_CAT_DEFAULT = (6, 4)
+# water_need 로 분류 기본값을 미세조정(일): 많음=더 자주, 적음=더 드물게.
+_NEED_ADJUST: dict[str, int] = {"많음": -1, "보통": 0, "적음": 3}
 
 
 def water_interval_for(slug: str, pot: bool) -> int:
-    """slug·재배장소 기준 관수 간격(일). 마스터에 없으면 보통(노지7/화분4)."""
-    need = _slug_to_water().get(slug, "보통")
-    field_i, pot_i = _WATER_INTERVAL.get(need, _WATER_DEFAULT)
-    return pot_i if pot else field_i
+    """정착기 관수 간격(일) — 작물 분류 기준 + water_need 보정 + 재배장소.
+
+    예: 상추(잎채소·보통·노지)=3일, 토마토(열매채소·많음·노지)=6일,
+    양파(뿌리채소·보통·노지)=8일, 고구마(뿌리채소·적음)=11일. 마스터에 없으면 보통 취급.
+    """
+    row = _slug_to_field().get(slug, {})
+    cat = str(row.get("category") or "")
+    field_i, pot_i = _CAT_INTERVAL.get(cat, _CAT_DEFAULT)
+    base = pot_i if pot else field_i
+    adj = _NEED_ADJUST.get(str(row.get("water_need") or ""), 0)
+    return max(1, base + adj)
 
 
 def growth_period_block(slug: str) -> str:

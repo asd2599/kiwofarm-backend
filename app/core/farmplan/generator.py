@@ -374,6 +374,12 @@ _PERIOD_CHECK_INTERVAL = 7
 # 한 기간형 작업이 만들 수 있는 개별 일과 상한 — 폭주 방지 안전장치.
 _MAX_EXPANDED = 120
 
+# 관수 정착 단계 길이(일) — 심은 뒤 이 기간은 발아·뿌리 정착을 위해 매일 물을 준다.
+# 직파/발아(씨앗)는 발아까지 길게, 모종은 옮김 몸살 회복만큼 짧게.
+_ESTABLISH_DAYS = {"direct": 14, "germinate": 14, "seedling": 7}
+_ESTABLISH_DEFAULT = 10
+_ESTABLISH_INTERVAL = 1  # 초기엔 매일(겉흙이 마르지 않게 촉촉하게)
+
 
 def _correct_period(tasks: list[FarmTask], slug: str, start: date) -> None:
     """일정 전체 기간을 농작업일정 기준으로 검증·보정(GPT/fallback 공통).
@@ -431,12 +437,55 @@ def _clone_on(t: FarmTask, day_offset: int) -> FarmTask:
     )
 
 
+def _watering_offsets(
+    plant_off: int, harvest_off: int, slug: str, pot: bool, method: str | None
+) -> list[int]:
+    """관수 날짜(시작일 기준 offset)를 2단계로 생성.
+
+    1단계 정착기(심은 날부터 _ESTABLISH_DAYS): 발아·뿌리 정착을 위해 매일.
+    2단계 정착 후 수확까지: 작물 분류 기준 정착기 간격(water_interval_for).
+    상추(잎채소)처럼 초기 매일 관리가 필요한 작물의 '초반 물관리 공백'을 없앤다.
+    """
+    plant_off = max(0, plant_off)
+    establish_len = _ESTABLISH_DAYS.get(method or "", _ESTABLISH_DEFAULT)
+    establish_end = min(plant_off + establish_len, harvest_off)
+    steady = water_interval_for(slug, pot)
+    offs: set[int] = set()
+    off = plant_off
+    while off <= establish_end and len(offs) < _MAX_EXPANDED:  # 정착기: 매일
+        offs.add(off)
+        off += _ESTABLISH_INTERVAL
+    off = establish_end + steady
+    while off <= harvest_off and len(offs) < _MAX_EXPANDED:  # 정착 후: 작물 주기
+        offs.add(off)
+        off += steady
+    return sorted(offs)
+
+
+def _make_water_task(off: int, establishing: bool) -> FarmTask:
+    """관수 단발 작업 생성. 정착기는 '촉촉하게', 이후는 '충분히' 안내를 단다."""
+    detail = (
+        "겉흙이 마르지 않게 매일 촉촉하게 — 발아·뿌리 정착기"
+        if establishing
+        else "겉흙이 마르면 속까지 스며들도록 충분히"
+    )
+    return FarmTask(
+        title="물 주기",
+        detail=detail,
+        category="water",
+        day_offset=off,
+        duration_days=1,
+        source_note="작물 분류·재배장소 기준 관수",
+    )
+
+
 def _expand_period_tasks(
-    tasks: list[FarmTask], slug: str, pot: bool
+    tasks: list[FarmTask], slug: str, pot: bool, method: str | None
 ) -> list[FarmTask]:
     """기간형(duration>1) 작업을 개별 '하루' 일과 여러 개로 펼친다.
 
-    - 관수(water): 작물 물 수요·재배장소 기준 간격으로, 첫 관수일부터 수확까지 반복.
+    - 관수(water): 심은 날부터 2단계(정착기 매일 → 이후 작물 주기)로 수확까지 재생성.
+      GPT/fallback 의 관수 span 위치·간격은 무시하고 작물에 맞춰 새로 깐다.
     - 그 외(생육 관리·육묘 등): 자기 기간 안에서 주 1회 점검으로 반복.
     duration<=1 단발 작업은 그대로 둔다. 캘린더에 실제 작업하는 날마다 일과가 찍힌다.
     """
@@ -444,47 +493,30 @@ def _expand_period_tasks(
         return tasks
     # 전체 일정의 마지막(수확) 시점 — 관수 시리즈 종료점.
     harvest_off = max(t.day_offset + max(0, t.duration_days - 1) for t in tasks)
+    # 심은 날 = 첫 파종/정식(seeding) offset. 없으면 가장 이른 작업.
+    seed_offs = [t.day_offset for t in tasks if t.category == "seeding"]
+    plant_off = min(seed_offs) if seed_offs else min(t.day_offset for t in tasks)
+
     out: list[FarmTask] = []
-    has_water = False
     for t in tasks:
         span = t.duration_days or 1
         if t.category == "water":
-            has_water = True
-            interval = water_interval_for(slug, pot)
-            end_off = max(harvest_off, t.day_offset)
-        elif span > 1:
-            interval = _PERIOD_CHECK_INTERVAL
+            continue  # 관수는 아래에서 작물 맞춤으로 새로 생성(원본 span 폐기)
+        if span > 1:  # 생육·육묘 등 기간형 → 주 1회 점검
+            off = t.day_offset
             end_off = t.day_offset + span - 1
+            for _ in range(_MAX_EXPANDED):
+                out.append(_clone_on(t, off))
+                off += _PERIOD_CHECK_INTERVAL
+                if off > end_off:
+                    break
         else:
             out.append(t)
-            continue
-        off = t.day_offset
-        for _ in range(_MAX_EXPANDED):
-            out.append(_clone_on(t, off))
-            off += interval
-            if off > end_off:
-                break
-    # GPT 가 관수를 아예 안 넣은 드문 경우 — 정식~수확 구간에 기본 관수 시리즈 주입.
-    if not has_water:
-        plant = min(
-            (t.day_offset for t in tasks if t.category == "seeding"), default=0
-        )
-        interval = water_interval_for(slug, pot)
-        off = plant + interval
-        for _ in range(_MAX_EXPANDED):
-            if off > harvest_off:
-                break
-            out.append(
-                FarmTask(
-                    title="물 주기",
-                    detail=None,
-                    category="water",
-                    day_offset=off,
-                    duration_days=1,
-                    source_note="작물 물 수요 기준 관수",
-                )
-            )
-            off += interval
+
+    # 관수를 작물 맞춤 2단계로 생성(심은 날~수확).
+    establish_end = min(plant_off + _ESTABLISH_DAYS.get(method or "", _ESTABLISH_DEFAULT), harvest_off)
+    for off in _watering_offsets(plant_off, harvest_off, slug, pot, method):
+        out.append(_make_water_task(off, establishing=off <= establish_end))
     return out
 
 
@@ -562,7 +594,9 @@ async def generate_plan(
     _enforce_sane_ordering(tasks)
 
     # 기간형(관수·생육 등) 작업을 작물 주기에 맞춘 개별 '하루' 일과로 펼친다.
-    tasks = _expand_period_tasks(tasks, ckey, payload.growPlace == "pot")
+    tasks = _expand_period_tasks(
+        tasks, ckey, payload.growPlace == "pot", payload.cultivationMethod
+    )
 
     # 방문 요일이 지정되면 단기 작업을 방문일로 스냅 → 같은 날 중복 정리 → 재정렬·order 재부여
     _snap_to_visit_days(tasks, payload.startDate, payload.visitDays)

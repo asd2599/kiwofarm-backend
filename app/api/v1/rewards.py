@@ -84,7 +84,7 @@ async def get_points(session: SessionDep, device: DeviceDep) -> PointsOut:
 
 @router.get("/attendance", response_model=AttendanceOut)
 async def get_attendance(session: SessionDep, device: DeviceDep) -> AttendanceOut:
-    """출석 현황 — 연속 출석·오늘 출석 여부·20일 보상표."""
+    """출석 현황 — 이번 달 출석 일수·월간 목표·연속 출석·마일스톤."""
     return AttendanceOut(**await build_attendance(session, device))
 
 
@@ -92,7 +92,7 @@ async def get_attendance(session: SessionDep, device: DeviceDep) -> AttendanceOu
 async def post_attendance_check_in(
     session: SessionDep, device: DeviceDep
 ) -> AttendanceClaimOut:
-    """오늘 출석 — 연속 일차에 맞는 팜 적립. 하루 1회(중복 시 409)."""
+    """오늘 출석 — 기본 팜 + (달성 시) 월간 20일·연속 마일스톤 보너스. 하루 1회(중복 409)."""
     try:
         return AttendanceClaimOut(**await check_in(session, device))
     except AlreadyCheckedIn:

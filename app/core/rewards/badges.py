@@ -63,6 +63,7 @@ async def _stats(session: AsyncSession, device_id: str) -> dict[str, int]:
         "photoCount": pts["photoCount"],
         "attendanceStreak": att["streak"],  # 현재 연속(비단조)
         "attendanceBest": att["best"],  # 역대 최고 연속(단조 — 뱃지 영구 달성)
+        "attendanceMonthBest": att["monthBest"],  # 역대 한 달 최다 출석(월간 개근 뱃지)
     }
 
 
@@ -79,7 +80,10 @@ async def _claimed_ids(session: AsyncSession, device_id: str) -> set[str]:
     return {r[len(_BADGE_REASON_PREFIX) :] for r in rows}
 
 
-def _evaluate(stats: dict[str, int], claimed: set[str]) -> list[dict[str, Any]]:
+def _evaluate(
+    stats: dict[str, int], claimed: set[str] | None = None
+) -> list[dict[str, Any]]:
+    claimed = claimed or set()
     out = []
     for b in BADGE_CATALOG:
         value = stats.get(b["metric"], 0)

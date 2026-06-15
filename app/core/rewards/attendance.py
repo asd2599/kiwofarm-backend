@@ -1,8 +1,12 @@
-"""출석 보상 — PointLedger(reason='attendance') 파생. 별도 테이블 없음.
+"""출석 보상 — PointLedger 파생. 별도 테이블 없음.
 
-연속 출석 20일 사이클(미스 시 1일차 리셋, 20일 채우면 1일차로 반복). 하루 1회.
-일차 보상: 기본 10, 5일=20, 10일=50, 15일=20, 20일=100.
-출석일 = 'attendance' 원장 row 의 KST 날짜 집합으로 판정(streak.py 와 동일 철학).
+세 갈래 보상(연속이 아니라 '월 누적 20일'이 주 보상):
+  - 매일 출석: 'attendance' 원장 row(KST 날짜 1개) + 기본 10팜. 하루 1회.
+  - 월간 보너스: 달력 월(KST) 출석 20일 달성 시 1회 100팜
+    ('attendance:month:YYYY-MM', 월마다 멱등).
+  - 연속 보너스: 7·14·30일 연속 출석 달성 시 1회씩 보너스
+    ('attendance:streak:{n}', 생애 1회 멱등).
+출석일 = 'attendance' 원장 row 의 KST 날짜 집합으로 판정.
 """
 
 from __future__ import annotations
@@ -18,25 +22,18 @@ from app.core.rewards.points import total_points
 from app.db.models.point import PointLedger
 
 ATTENDANCE_REASON = "attendance"
-CYCLE_DAYS = 20
-BASE_REWARD = 10
-_MILESTONES = {5: 20, 10: 50, 15: 20, 20: 100}
+_MONTH_PREFIX = "attendance:month:"
+_STREAK_PREFIX = "attendance:streak:"
+
+DAILY_REWARD = 10
+MONTHLY_TARGET = 20  # 달력 월 출석 일수 목표
+MONTHLY_BONUS = 100
+# 연속 출석 마일스톤(연속 일수 → 1회성 보너스 팜). 생애 1회 멱등 지급.
+STREAK_MILESTONES: dict[int, int] = {7: 20, 14: 50, 30: 120}
 
 
 class AlreadyCheckedIn(Exception):
     """오늘 이미 출석함."""
-
-
-def reward_for_day(cycle_day: int) -> int:
-    return _MILESTONES.get(cycle_day, BASE_REWARD)
-
-
-def _cycle_day(streak_len: int) -> int:
-    """연속 일수 → 1~20 사이클 일차. 21일째는 다시 1일차."""
-    return (streak_len - 1) % CYCLE_DAYS + 1
-
-
-REWARDS = [reward_for_day(d) for d in range(1, CYCLE_DAYS + 1)]
 
 
 def _to_kst_date(ts: datetime) -> date:
@@ -79,25 +76,67 @@ def _best_run(days: set[date]) -> int:
     return best
 
 
+def _month_key(d: date) -> str:
+    return f"{d.year:04d}-{d.month:02d}"
+
+
+def _month_count(days: set[date], ref: date) -> int:
+    """ref 가 속한 달력 월의 출석 일수."""
+    return sum(1 for d in days if d.year == ref.year and d.month == ref.month)
+
+
+def _month_best(days: set[date]) -> int:
+    """역대 한 달 최다 출석 일수(단조 — 월간 개근 뱃지 영구 달성용)."""
+    counts: dict[tuple[int, int], int] = {}
+    for d in days:
+        counts[(d.year, d.month)] = counts.get((d.year, d.month), 0) + 1
+    return max(counts.values(), default=0)
+
+
+async def _granted_suffixes(
+    session: AsyncSession, device: str, prefix: str
+) -> set[str]:
+    """이미 지급한 보너스 reason 의 접미사 집합(멱등 판정용)."""
+    rows = (
+        await session.scalars(
+            select(PointLedger.reason).where(
+                PointLedger.device_id == device,
+                PointLedger.reason.like(f"{prefix}%"),
+            )
+        )
+    ).all()
+    return {r[len(prefix) :] for r in rows}
+
+
+def _milestones_state(best: int) -> list[dict[str, Any]]:
+    """연속 마일스톤 표시용(달성=역대 최고 연속 기준, 스티키)."""
+    return [
+        {"days": d, "reward": STREAK_MILESTONES[d], "reached": best >= d}
+        for d in sorted(STREAK_MILESTONES)
+    ]
+
+
 async def build_attendance(session: AsyncSession, device: str) -> dict[str, Any]:
     today = kst_today()
     days = await _attendance_dates(session, device)
     checked = today in days
-    if checked:
-        streak = _run_ending(days, today)
-        cycle_day = _cycle_day(streak)  # 오늘 받은 일차
-    else:
-        prior = _run_ending(days, today - timedelta(days=1))
-        streak = prior  # 어제까지의 연속(오늘 출석 전)
-        cycle_day = _cycle_day(prior + 1)  # 출석 시 받게 될 일차
+    anchor = today if checked else today - timedelta(days=1)
+    streak = _run_ending(days, anchor)
+    month_days = _month_count(days, today)
+    month_granted = _month_key(today) in await _granted_suffixes(
+        session, device, _MONTH_PREFIX
+    )
     return {
         "checkedToday": checked,
-        "streak": streak,
-        "best": _best_run(days),  # 역대 최고 연속(뱃지 달성 판정용, 단조증가)
-        "cycleDay": cycle_day,
-        "todayReward": reward_for_day(cycle_day),
-        "cycleDays": CYCLE_DAYS,
-        "rewards": REWARDS,
+        "dailyReward": DAILY_REWARD,
+        "streak": streak,  # 현재 연속(비단조)
+        "best": _best_run(days),  # 역대 최고 연속(단조 — 뱃지/마일스톤 판정용)
+        "monthDays": month_days,  # 이번 달 출석 일수
+        "monthTarget": MONTHLY_TARGET,
+        "monthBonus": MONTHLY_BONUS,
+        "monthAchieved": month_granted or month_days >= MONTHLY_TARGET,
+        "monthBest": _month_best(days),  # 역대 한 달 최다 출석(월간 개근 뱃지용)
+        "milestones": _milestones_state(_best_run(days)),
         "total": await total_points(session, device),
     }
 
@@ -107,16 +146,56 @@ async def check_in(session: AsyncSession, device: str) -> dict[str, Any]:
     days = await _attendance_dates(session, device)
     if today in days:
         raise AlreadyCheckedIn
-    streak = _run_ending(days, today - timedelta(days=1)) + 1
-    cycle_day = _cycle_day(streak)
-    reward = reward_for_day(cycle_day)
+
+    # 1) 일일 출석 기록(기본 팜)
     session.add(
-        PointLedger(device_id=device, amount=reward, reason=ATTENDANCE_REASON)
+        PointLedger(device_id=device, amount=DAILY_REWARD, reason=ATTENDANCE_REASON)
     )
+    days = days | {today}
+    streak = _run_ending(days, today)
+    bonuses: list[dict[str, Any]] = []
+
+    # 2) 월간 20일 달성 보너스(달력 월 1회)
+    month_days = _month_count(days, today)
+    mkey = _month_key(today)
+    if (
+        month_days >= MONTHLY_TARGET
+        and mkey not in await _granted_suffixes(session, device, _MONTH_PREFIX)
+    ):
+        session.add(
+            PointLedger(
+                device_id=device, amount=MONTHLY_BONUS, reason=f"{_MONTH_PREFIX}{mkey}"
+            )
+        )
+        bonuses.append(
+            {
+                "type": "month",
+                "label": f"이번 달 {MONTHLY_TARGET}일 출석",
+                "reward": MONTHLY_BONUS,
+            }
+        )
+
+    # 3) 연속 마일스톤 보너스(생애 1회 멱등)
+    streak_granted = await _granted_suffixes(session, device, _STREAK_PREFIX)
+    for days_req, reward in sorted(STREAK_MILESTONES.items()):
+        if streak >= days_req and str(days_req) not in streak_granted:
+            session.add(
+                PointLedger(
+                    device_id=device,
+                    amount=reward,
+                    reason=f"{_STREAK_PREFIX}{days_req}",
+                )
+            )
+            bonuses.append(
+                {"type": "streak", "label": f"{days_req}일 연속 출석", "reward": reward}
+            )
+
     await session.commit()
     return {
-        "cycleDay": cycle_day,
-        "reward": reward,
+        "reward": DAILY_REWARD,
+        "bonusReward": sum(b["reward"] for b in bonuses),
+        "bonuses": bonuses,
         "streak": streak,
+        "monthDays": month_days,
         "total": await total_points(session, device),
     }
