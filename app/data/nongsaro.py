@@ -52,24 +52,6 @@ KAMIS_TO_NONGSARO_MAIN: dict[str, str] = {
 }
 
 
-# ─────────────────────── 병해충 (placeholder 유지) ───────────────────────
-
-
-@dataclass(frozen=True)
-class PestRisk:
-    crop_id: str
-    pest_name: str
-    month: int
-    severity: str
-    control_note: str
-
-
-async def fetch_pest_risks(crop_id: str) -> list[PestRisk]:
-    """디지털 트윈 위기 알림용. 농사로 별도 서비스 (병해충) 연결 전 placeholder."""
-    del crop_id
-    return []
-
-
 # ─────────────────────────── HTTP 헬퍼 ───────────────────────────
 
 

@@ -78,24 +78,7 @@ async def get_calendar_tasks(
     )
 
 
-async def get_pest_warnings(
-    item_code: str,
-    kind_code: str,
-    crop_name: str,
-    group_name: str | None = None,
-) -> str:
-    """병해충 발생 시기·방제법 컨텍스트 (디지털트윈용)."""
-    return await _context(
-        item_code,
-        kind_code,
-        crop_name,
-        group_name,
-        "병해충 발생 시기 방제 예방 주의사항",
-    )
-
-
 __all__ = [
     "get_cultivation_context",
     "get_calendar_tasks",
-    "get_pest_warnings",
 ]

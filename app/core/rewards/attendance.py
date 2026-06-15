@@ -126,6 +126,10 @@ async def build_attendance(session: AsyncSession, device: str) -> dict[str, Any]
     month_granted = _month_key(today) in await _granted_suffixes(
         session, device, _MONTH_PREFIX
     )
+    # 이번 달 출석한 '일(day)' 번호 — 달력 렌더용.
+    month_attended = sorted(
+        d.day for d in days if d.year == today.year and d.month == today.month
+    )
     return {
         "checkedToday": checked,
         "dailyReward": DAILY_REWARD,
@@ -136,6 +140,8 @@ async def build_attendance(session: AsyncSession, device: str) -> dict[str, Any]
         "monthBonus": MONTHLY_BONUS,
         "monthAchieved": month_granted or month_days >= MONTHLY_TARGET,
         "monthBest": _month_best(days),  # 역대 한 달 최다 출석(월간 개근 뱃지용)
+        "monthAttendedDays": month_attended,  # 이번 달 출석한 날짜(일) 목록
+        "todayDay": today.day,  # KST 오늘 날짜(일) — 달력 강조용
         "milestones": _milestones_state(_best_run(days)),
         "total": await total_points(session, device),
     }
