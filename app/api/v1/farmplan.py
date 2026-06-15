@@ -581,6 +581,11 @@ _TASK_CATEGORIES = {
     "seeding", "growing", "fertilize", "water", "pest", "harvest", "etc",
 }
 
+# 로그 기록 시 이후 일정을 끌어당기는(재정비) 마일스톤 카테고리.
+# 파종·정식·발아처럼 이후 생육을 좌우하는 작업만 해당 — 관수·생육 점검·방제 같은
+# 반복 루틴은 하루 늦거나 일러도 전체 일정을 밀면 안 되므로 그날 하루만 완료로 찍는다.
+_REFLOW_CATEGORIES = {"seeding"}
+
 
 def _reflow(plan: FarmPlan, exclude: FarmTask | None = None) -> None:
     """방문요일 스냅(단기, exclude 제외) + day_offset 재정렬 + order 재부여."""
@@ -637,10 +642,11 @@ async def log_task(
         plan = await _load_plan(session, plan_id, device)
         return _plan_out(plan)
 
-    # 단발(milestone) — 완료 + 이후 일정 재정비
+    # 단발 작업 완료. 마일스톤(파종·정식 등 seeding)만 이후 일정을 차이만큼 재정비하고,
+    # 관수·생육 점검·방제 같은 반복 루틴은 그날 하루만 완료로 찍고 일정은 건드리지 않는다.
     new_offset = max(0, (payload.date - plan.start_date).days)
     delta = new_offset - target.day_offset
-    if delta != 0:
+    if target.category in _REFLOW_CATEGORIES and delta != 0:
         # 대상 + 이후 작업을 차이만큼 이동(음수=당김). 대상은 실제일로 고정(스냅 제외).
         for t in plan.tasks:
             if t.order >= target.order:
