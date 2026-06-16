@@ -639,7 +639,7 @@ async def log_task(
             for i, t in enumerate(plan.tasks):
                 t.order = i
             await session.commit()
-        plan = await _load_plan(session, plan_id, device)
+        # 커밋 후에도 plan 컬렉션 유효(expire_on_commit=False) — 재조회 생략.
         return _plan_out(plan)
 
     # 단발 작업 완료. 마일스톤(파종·정식 등 seeding)만 이후 일정을 차이만큼 재정비하고,
@@ -647,15 +647,20 @@ async def log_task(
     new_offset = max(0, (payload.date - plan.start_date).days)
     delta = new_offset - target.day_offset
     if target.category in _REFLOW_CATEGORIES and delta != 0:
-        # 대상 + 이후 작업을 차이만큼 이동(음수=당김). 대상은 실제일로 고정(스냅 제외).
+        # 마일스톤(파종·정식 등): 대상 + 이후 작업을 차이만큼 이동(음수=당김).
+        # 대상도 order>=target.order 에 포함돼 실제일로 옮겨진다(스냅 제외).
         for t in plan.tasks:
             if t.order >= target.order:
                 t.day_offset = max(0, t.day_offset + delta)
         _reflow(plan, exclude=target)
+    else:
+        # 반복 루틴(관수·생육·방제 등): 이후 일정은 그대로 두고 이 작업만 실제로 한 날짜로
+        # 옮겨 그날에 완료 표시한다. (옮기지 않으면 예정일에 완료가 찍혀 엉뚱한 날이 done 됨)
+        target.day_offset = new_offset
     target.status = "done"
     target.actual_date = payload.date
     await session.commit()
-    plan = await _load_plan(session, plan_id, device)
+    # 커밋 후에도 plan 컬렉션 유효(expire_on_commit=False) — 재조회 생략.
     return _plan_out(plan)
 
 
@@ -683,7 +688,8 @@ async def add_task(
     for i, t in enumerate(plan.tasks):
         t.order = i
     await session.commit()
-    plan = await _load_plan(session, plan_id, device)
+    # expire_on_commit=False 라 커밋 후에도 plan 컬렉션이 유효(새 작업은 id 부여됨).
+    # 전체 재조회(원격 DB 수왕복)를 생략하고 메모리 상태로 바로 응답한다.
     return _plan_out(plan)
 
 
